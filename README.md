@@ -1,6 +1,6 @@
 # Daggerheart Italia – Campaign Book
 
-Applicazione web collaborativa per gestire il **libro di campagna** di [Daggerheart](https://www.daggerheart.com/): una wiki condivisa, mappe interattive con segnaposto e note di sessione, pensata per Game Master e giocatori di una stessa campagna. L'interfaccia è in italiano, con tema scuro e stile "glass".
+Applicazione web collaborativa per gestire la conoscenza condivisa e le note di worldbuilding per campagne di [Daggerheart](https://www.daggerheart.com/): una wiki condivisa, mappe interattive con segnaposto e note di sessione, pensata per Game Master e giocatori di una stessa campagna. L'interfaccia è in italiano, con tema scuro e stile "glass".
 
 ## Funzionalità
 
