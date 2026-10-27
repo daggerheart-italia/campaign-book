@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="100%" height="100%">
+  <defs>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="60%">
+      <stop offset="60%" stop-color="#141c2e" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080b12" stop-opacity="0.98"/>
+    </radialGradient>
+    <linearGradient id="ocean" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a101f"/>
+      <stop offset="100%" stop-color="#0e172a"/>
+    </linearGradient>
+    <linearGradient id="land" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#172033"/>
+    </linearGradient>
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background / Sea -->
+  <rect width="1600" height="1000" fill="url(#ocean)"/>
+  <rect width="1600" height="1000" fill="url(#grid)"/>
+
+  <!-- Continental Landmass -->
+  <path d="M 220 280 Q 360 140 600 180 T 980 150 Q 1200 190 1350 360 T 1420 680 Q 1320 850 1080 880 T 640 840 Q 320 860 210 690 T 150 450 Z" 
+        fill="url(#land)" stroke="#334155" stroke-width="3" filter="drop-shadow(0 12px 24px rgba(0,0,0,0.6))"/>
+  
+  <!-- Coastal outline ripples -->
+  <path d="M 200 270 Q 350 120 600 160 T 1000 130 Q 1220 170 1380 350 T 1445 690 Q 1340 870 1090 900 T 630 860 Q 300 880 190 700 T 130 440 Z" 
+        fill="none" stroke="rgba(217, 119, 6, 0.2)" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- Secondary Islands -->
+  <path d="M 1150 200 Q 1250 170 1280 230 T 1200 270 Z" fill="url(#land)" stroke="#334155" stroke-width="2"/>
+  <path d="M 350 780 Q 420 740 430 810 T 360 840 Z" fill="url(#land)" stroke="#334155" stroke-width="2"/>
+  <path d="M 1320 740 Q 1390 720 1400 770 T 1340 800 Z" fill="url(#land)" stroke="#334155" stroke-width="2"/>
+
+  <!-- Mountain Ranges -->
+  <g stroke="#f59e0b" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 450 380 L 490 320 L 530 380 L 570 310 L 610 370 L 660 300 L 710 390"/>
+    <path d="M 520 440 L 560 370 L 600 450 L 650 360 L 700 460"/>
+    <path d="M 880 420 L 920 340 L 970 430 L 1020 330 L 1070 410 L 1120 350 L 1160 430"/>
+    <path d="M 940 500 L 990 410 L 1040 510 L 1090 420 L 1140 500"/>
+  </g>
+
+  <!-- Rivers -->
+  <path d="M 570 310 Q 520 420 450 490 T 320 540 Q 240 560 160 520" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0.5"/>
+  <path d="M 1020 330 Q 1060 480 1010 590 T 930 720 Q 860 810 820 860" fill="none" stroke="#38bdf8" stroke-width="2.5" opacity="0.5"/>
+
+  <!-- Compass Rose -->
+  <g transform="translate(1380, 160) scale(0.9)" opacity="0.6">
+    <circle cx="0" cy="0" r="50" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <polygon points="0,-70 12,-15 0,0 -12,-15" fill="#f59e0b"/>
+    <polygon points="0,70 12,15 0,0 -12,15" fill="#78350f"/>
+    <polygon points="70,0 15,12 0,0 15,-12" fill="#d97706"/>
+    <polygon points="-70,0 -15,12 0,0 -15,-12" fill="#451a03"/>
+    <text x="0" y="-80" font-family="'Cinzel', serif" font-size="18" font-weight="bold" fill="#fbbf24" text-anchor="middle">N</text>
+  </g>
+
+  <!-- Title Cartouche -->
+  <g transform="translate(240, 880)">
+    <rect x="-120" y="-35" width="240" height="50" rx="8" fill="#090c15" stroke="#d97706" stroke-width="1.5" opacity="0.85"/>
+    <text x="0" y="-3" font-family="'Cinzel', serif" font-size="16" font-weight="bold" fill="#f8fafc" text-anchor="middle" letter-spacing="3">DAGGERHEART</text>
+    <text x="0" y="11" font-family="'Outfit', sans-serif" font-size="9" fill="#f59e0b" text-anchor="middle" letter-spacing="2">MAPPA DEL REAME</text>
+  </g>
+
+  <!-- Vignette overlay -->
+  <rect width="1600" height="1000" fill="url(#vignette)" pointer-events="none"/>
+</svg>
