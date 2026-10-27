@@ -17,6 +17,7 @@
         'x' => (float)$p->x,
         'y' => (float)$p->y,
         'color' => $p->color ?: '#e11d48',
+        'locked' => (bool)$p->locked,
         'wiki_page_id' => $p->wiki_page_id,
         'wiki_page_title' => $p->wikiPage ? $p->wikiPage->title : null,
         'wiki_page_url' => $p->wikiPage ? route('wiki.show', [$campaign, $p->wikiPage]) : null,
@@ -51,26 +52,43 @@
         <!-- Action Buttons -->
         <div class="flex items-center gap-2 shrink-0">
             <!-- Labels Toggle -->
-            <button @click="showLabels = !showLabels" 
+            {{-- <button @click="showLabels = !showLabels"
                     :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                    class="btn-secondary !py-1.5 !px-3 text-xs border" title="Mostra o nascondi le etichette con nome">
+                    class="hidden">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
                 <span class="hidden sm:inline">Etichette</span>
-            </button>
-
-            <!-- Zoom Controls -->
-            <div class="hidden sm:flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/10">
-                <button @click="zoomOut" class="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded" title="Riduci">-</button>
-                <span class="text-[11px] font-mono px-1.5 text-slate-300" x-text="zoomLevel + '%'"></span>
-                <button @click="zoomIn" class="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded" title="Ingrandisci">+</button>
-                <button @click="resetZoom" class="text-[10px] text-slate-500 hover:text-slate-300 px-1.5" title="Reimposta zoom">100%</button>
-            </div>
+            </button> --}}
 
             <!-- Upload New Map Button -->
             <button @click="uploadModalOpen = true" class="btn-primary text-xs py-1.5 px-3">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 <span>Carica Mappa</span>
             </button>
+        </div>
+    </div>
+
+    <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
+        <button @click="showLabels = !showLabels"
+                :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
+                class="btn-secondary !py-1.5 !px-3 text-xs border"
+                aria-label="Mostra o nascondi le etichette con nome">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+            <span>Etichette</span>
+        </button>
+
+        <div class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 p-0.5"
+             role="group"
+             aria-label="Controlli zoom mappa">
+            <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
+                    class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Riduci zoom" title="Riduci zoom">−</button>
+            <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="zoomLevel + '%'"></span>
+            <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
+                    class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Aumenta zoom" title="Aumenta zoom">+</button>
+            <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
+                    class="rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Reimposta zoom al 100%" title="Reimposta zoom">Adatta</button>
         </div>
     </div>
 
@@ -99,37 +117,39 @@
         </div>
     </template>
 
-    <!-- Interactive Map Stage (Custom Image with Pins) -->
-    <div class="glass-panel p-2 sm:p-3 rounded-2xl relative overflow-hidden">
-        <!-- Helper notice -->
-        <div class="absolute top-4 left-4 z-20 pointer-events-none">
-            <div class="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 flex items-center gap-2 shadow-lg">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Clicca sull'immagine per piazzare un pin • Trascina per spostarlo</span>
-            </div>
-        </div>
+    <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-slate-300 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+        <span>Trascina per spostare la mappa • Tasto destro o doppio clic per inserire un pin • Trascina un pin per riposizionarlo</span>
+    </div>
 
-        <!-- Scrollable / Zoomable Wrapper -->
-        <div class="w-full overflow-auto max-h-[75vh] rounded-xl border border-white/10 bg-[#070a12] scrollbar-thin select-none"
-             id="map-viewport">
-            <div class="relative transition-all duration-150 origin-top-left"
-                 :style="'width: ' + zoomLevel + '%; min-width: 100%; min-height: 400px;'">
+    <!-- Interactive Map Stage (Custom Image with Pins) -->
+    <div class="glass-panel p-2 sm:p-3 rounded-2xl relative">
+        <div x-ref="mapViewport"
+             @mousedown="startPan($event)"
+             :class="isPanning ? 'cursor-grabbing' : 'cursor-grab'"
+             class="flex h-[70vh] min-h-80 max-h-[800px] w-full overflow-auto rounded-xl border border-white/10 bg-[#070a12] scrollbar-thin select-none">
+            <div class="relative m-auto shrink-0 transition-[width,height] duration-150"
+                 :style="mapCanvasStyle">
 
                 <!-- Map Image -->
-                <img :src="currentMapUrl" 
-                     @click="handleMapClick($event)"
-                     id="map-image-element"
+                <img x-ref="mapImage" :src="currentMapUrl"
+                     @load="fitMap"
+                     @contextmenu.prevent="handleMapInsert($event)"
+                     @dblclick.stop="handleMapInsert($event)"
                      alt="Mappa di Campagna"
-                     class="w-full h-auto block rounded-lg cursor-crosshair shadow-2xl"
+                     class="pointer-events-auto block h-full w-full rounded-lg object-fill shadow-2xl"
                      draggable="false" />
 
                 <!-- Clickable Pins Overlay -->
                 <template x-for="pin in currentPins" :key="pin.id">
-                    <div class="absolute -translate-x-1/2 -translate-y-full cursor-pointer group z-30 transition-transform duration-75"
+                    <div data-map-pin
+                         class="absolute -translate-x-1/2 -translate-y-full cursor-pointer group z-30 transition-transform duration-75"
                          :style="'left: ' + pin.x + '%; top: ' + pin.y + '%;'"
                          @mousedown="startDrag($event, pin)"
                          @touchstart="startTouchDrag($event, pin)"
-                         @click.stop="openPinPopover(pin, $event)">
+                         @click.stop="openPinPopover(pin, $event)"
+                         @dblclick.stop
+                         :class="pin.locked ? 'cursor-not-allowed' : 'cursor-grab'">
                         
                         <!-- Visible Label directly over/below pin -->
                         <div x-show="showLabels"
@@ -139,14 +159,14 @@
 
                         <!-- Pin Marker Icon -->
                         <div class="relative flex flex-col items-center">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125"
+                            <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125"
                                  :style="'background-color: ' + pin.color + '; box-shadow: 0 0 12px ' + pin.color + ', 0 4px 8px rgba(0,0,0,0.6);'">
-                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
                                 </svg>
                             </div>
                             <!-- Pin Needle Point -->
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-6 -mt-[1px]"
+                            <div class="w-0 h-0 border-x-[3px] border-x-transparent border-t-[5px] -mt-[1px]"
                                  :style="'border-top-color: ' + pin.color + ';'"></div>
                         </div>
 
@@ -323,9 +343,20 @@
                     </div>
                 </template>
 
-                <div class="flex items-center justify-between text-xs pt-1">
-                    <span class="text-[11px] text-slate-500">Trascina il pin sulla mappa per riposizionarlo</span>
-                    <button type="button" @click="deletePin(selectedPin)" class="text-rose-400 hover:text-rose-300 text-xs">Elimina Segnaposto</button>
+                <p x-show="mapError" x-text="mapError" role="alert" class="text-xs text-rose-300"></p>
+                <p class="text-[11px] text-slate-500 pt-1">Trascina il pin sulla mappa per riposizionarlo</p>
+                <div class="flex items-center justify-between gap-2 text-xs">
+                    <button type="button" @click="togglePinLock(selectedPin)" :disabled="savingPinLock"
+                            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-amber-300 hover:text-amber-200 disabled:opacity-50"
+                            :aria-label="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'"
+                            :title="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path x-show="!selectedPin.locked" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0m-2 4h12v10H6V11z"/>
+                            <path x-show="selectedPin.locked" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4m-2 0h12v10H6V11z"/>
+                        </svg>
+                        <span x-text="selectedPin.locked ? 'Sblocca' : 'Blocca'"></span>
+                    </button>
+                    <button type="button" @click="deletePin(selectedPin)" class="shrink-0 whitespace-nowrap text-rose-400 hover:text-rose-300 text-xs" title="Elimina segnaposto">Elimina</button>
                 </div>
             </div>
         </div>
@@ -381,6 +412,12 @@ function customImageMap(config) {
         pins: config.initialPins,
         showLabels: true,
         zoomLevel: 100,
+        mapFitWidth: 0,
+        mapFitHeight: 0,
+        isPanning: false,
+        lastPanAt: 0,
+        mapError: '',
+        savingPinLock: false,
         createModalOpen: false,
         detailsModalOpen: false,
         uploadModalOpen: false,
@@ -394,6 +431,20 @@ function customImageMap(config) {
         },
         draggingPin: null,
         isDragging: false,
+        dragOrigin: null,
+
+        init() {
+            this.$nextTick(() => {
+                this.mapResizeObserver = new ResizeObserver(() => this.fitMap());
+                this.mapResizeObserver.observe(this.$refs.mapViewport);
+                this.fitMap();
+            });
+        },
+
+        get mapCanvasStyle() {
+            const zoom = this.zoomLevel / 100;
+            return `width: ${this.mapFitWidth * zoom}px; height: ${this.mapFitHeight * zoom}px;`;
+        },
 
         get activeMap() {
             if (!this.activeMapId && this.maps.length > 0) {
@@ -423,24 +474,42 @@ function customImageMap(config) {
         selectMap(mapId) {
             this.activeMapId = mapId;
             this.resetZoom();
+            this.$nextTick(() => this.fitMap());
+        },
+
+        fitMap() {
+            const image = this.$refs.mapImage;
+            const viewport = this.$refs.mapViewport;
+            if (!image?.naturalWidth || !image?.naturalHeight || !viewport.clientWidth || !viewport.clientHeight) {
+                return;
+            }
+
+            const fitScale = Math.min(
+                viewport.clientWidth / image.naturalWidth,
+                viewport.clientHeight / image.naturalHeight
+            );
+            this.mapFitWidth = image.naturalWidth * fitScale;
+            this.mapFitHeight = image.naturalHeight * fitScale;
         },
 
         zoomIn() {
-            if (this.zoomLevel < 250) this.zoomLevel += 25;
+            this.zoomLevel = Math.min(300, this.zoomLevel + 25);
         },
 
         zoomOut() {
-            if (this.zoomLevel > 100) this.zoomLevel -= 25;
+            this.zoomLevel = Math.max(50, this.zoomLevel - 25);
         },
 
         resetZoom() {
             this.zoomLevel = 100;
         },
 
-        handleMapClick(event) {
-            if (this.isDragging) return;
+        handleMapInsert(event) {
+            if (this.isDragging || Date.now() - this.lastPanAt < 350 || event.target !== this.$refs.mapImage) {
+                return;
+            }
 
-            const rect = event.target.getBoundingClientRect();
+            const rect = this.$refs.mapImage.getBoundingClientRect();
             const clickX = event.clientX - rect.left;
             const clickY = event.clientY - rect.top;
 
@@ -458,10 +527,75 @@ function customImageMap(config) {
             this.createModalOpen = true;
         },
 
+        startPan(event) {
+            if (event.button !== 0 || event.target.closest('[data-map-pin]')) {
+                return;
+            }
+
+            const viewport = this.$refs.mapViewport;
+            const startX = event.clientX;
+            const startY = event.clientY;
+            const startScrollLeft = viewport.scrollLeft;
+            const startScrollTop = viewport.scrollTop;
+            let moved = false;
+            this.isPanning = true;
+            event.preventDefault();
+
+            const onMouseMove = (moveEvent) => {
+                const deltaX = moveEvent.clientX - startX;
+                const deltaY = moveEvent.clientY - startY;
+                moved ||= Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2;
+                viewport.scrollLeft = startScrollLeft - deltaX;
+                viewport.scrollTop = startScrollTop - deltaY;
+            };
+
+            const onMouseUp = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                this.isPanning = false;
+                if (moved) {
+                    this.lastPanAt = Date.now();
+                }
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        },
+
         openPinPopover(pin, event) {
             if (this.isDragging) return;
             this.selectedPin = pin;
+            this.mapError = '';
             this.detailsModalOpen = true;
+        },
+
+        async togglePinLock(pin) {
+            this.savingPinLock = true;
+            this.mapError = '';
+
+            try {
+                const response = await fetch(`${config.updatePinBaseUrl}/${pin.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ locked: !pin.locked })
+                });
+                if (!response.ok) {
+                    throw new Error(`Impossibile aggiornare il blocco del segnaposto (${response.status}).`);
+                }
+
+                const data = await response.json();
+                pin.locked = data.pin.locked;
+                this.selectedPin = { ...pin };
+            } catch (error) {
+                this.mapError = error.message;
+                console.error(error);
+            } finally {
+                this.savingPinLock = false;
+            }
         },
 
         async saveNewPin() {
@@ -496,6 +630,7 @@ function customImageMap(config) {
                         x: parseFloat(data.pin.x),
                         y: parseFloat(data.pin.y),
                         color: data.pin.color,
+                        locked: data.pin.locked,
                         wiki_page_id: data.pin.wiki_page_id,
                         wiki_page_title: data.pin.wiki_page ? data.pin.wiki_page.title : null,
                         wiki_page_url: data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page.id}` : null
@@ -559,11 +694,13 @@ function customImageMap(config) {
 
         // Drag and Drop (Mouse)
         startDrag(event, pin) {
-            if (event.button !== 0) return; // left click only
+            if (event.button !== 0 || pin.locked) return;
+            event.preventDefault();
             this.draggingPin = pin;
             this.isDragging = false;
+            this.dragOrigin = { x: pin.x, y: pin.y };
 
-            const mapImg = document.getElementById('map-image-element');
+            const mapImg = this.$refs.mapImage;
             if (!mapImg) return;
 
             const onMouseMove = (moveEvent) => {
@@ -580,10 +717,11 @@ function customImageMap(config) {
                 document.removeEventListener('mouseup', onMouseUp);
 
                 if (this.isDragging && this.draggingPin) {
-                    this.savePinCoordinates(this.draggingPin);
+                    this.savePinCoordinates(this.draggingPin, this.dragOrigin);
                     setTimeout(() => { this.isDragging = false; }, 50);
                 }
                 this.draggingPin = null;
+                this.dragOrigin = null;
             };
 
             document.addEventListener('mousemove', onMouseMove);
@@ -592,13 +730,16 @@ function customImageMap(config) {
 
         // Drag and Drop (Touch for mobile)
         startTouchDrag(event, pin) {
+            if (pin.locked) return;
             this.draggingPin = pin;
             this.isDragging = false;
+            this.dragOrigin = { x: pin.x, y: pin.y };
 
-            const mapImg = document.getElementById('map-image-element');
+            const mapImg = this.$refs.mapImage;
             if (!mapImg) return;
 
             const onTouchMove = (moveEvent) => {
+                moveEvent.preventDefault();
                 this.isDragging = true;
                 const touch = moveEvent.touches[0];
                 const rect = mapImg.getBoundingClientRect();
@@ -613,19 +754,20 @@ function customImageMap(config) {
                 document.removeEventListener('touchend', onTouchEnd);
 
                 if (this.isDragging && this.draggingPin) {
-                    this.savePinCoordinates(this.draggingPin);
+                    this.savePinCoordinates(this.draggingPin, this.dragOrigin);
                     setTimeout(() => { this.isDragging = false; }, 100);
                 }
                 this.draggingPin = null;
+                this.dragOrigin = null;
             };
 
-            document.addEventListener('touchmove', onTouchMove, { passive: true });
+            document.addEventListener('touchmove', onTouchMove, { passive: false });
             document.addEventListener('touchend', onTouchEnd);
         },
 
-        async savePinCoordinates(pin) {
+        async savePinCoordinates(pin, originalPosition) {
             try {
-                await fetch(`${config.updatePinBaseUrl}/${pin.id}`, {
+                const response = await fetch(`${config.updatePinBaseUrl}/${pin.id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -637,8 +779,17 @@ function customImageMap(config) {
                         y: pin.y
                     })
                 });
-            } catch (err) {
-                console.error(err);
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || `Impossibile salvare la posizione del segnaposto (${response.status}).`);
+                }
+            } catch (error) {
+                pin.x = originalPosition.x;
+                pin.y = originalPosition.y;
+                this.mapError = error.message;
+                this.detailsModalOpen = true;
+                this.selectedPin = pin;
+                console.error(error);
             }
         }
     }

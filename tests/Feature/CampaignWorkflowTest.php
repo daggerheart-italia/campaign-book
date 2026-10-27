@@ -5,10 +5,8 @@ namespace Tests\Feature;
 use App\Models\Campaign;
 use App\Models\CampaignMap;
 use App\Models\MapPin;
-use App\Models\SessionNote;
 use App\Models\User;
 use App\Models\WikiPage;
-use App\Models\WikiPageRevision;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -168,6 +166,68 @@ class CampaignWorkflowTest extends TestCase
         $pin->refresh();
         $this->assertEquals(48.0, $pin->x);
         $this->assertEquals(62.5, $pin->y);
+    }
+
+    public function test_locked_map_pin_cannot_be_moved_until_it_is_unlocked(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Campagna Pin Bloccato',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $pin = $campaign->mapPins()->create([
+            'title' => 'Portale Antico',
+            'x' => 35,
+            'y' => 42,
+        ]);
+
+        $lockResponse = $this->actingAs($gm)->putJson(route('pins.update', [$campaign, $pin]), [
+            'locked' => true,
+        ]);
+
+        $lockResponse->assertOk();
+        $this->assertDatabaseHas('map_pins', [
+            'id' => $pin->id,
+            'locked' => true,
+        ]);
+
+        $moveResponse = $this->putJson(route('pins.update', [$campaign, $pin]), [
+            'x' => 60,
+            'y' => 70,
+        ]);
+
+        $moveResponse->assertUnprocessable();
+        $moveResponse->assertJsonValidationErrors('locked');
+        $this->assertDatabaseHas('map_pins', [
+            'id' => $pin->id,
+            'x' => 35,
+            'y' => 42,
+            'locked' => true,
+        ]);
+
+        $unlockResponse = $this->putJson(route('pins.update', [$campaign, $pin]), [
+            'locked' => false,
+        ]);
+
+        $unlockResponse->assertOk();
+        $this->assertDatabaseHas('map_pins', [
+            'id' => $pin->id,
+            'locked' => false,
+        ]);
+
+        $moveAfterUnlockResponse = $this->putJson(route('pins.update', [$campaign, $pin]), [
+            'x' => 60,
+            'y' => 70,
+        ]);
+
+        $moveAfterUnlockResponse->assertOk();
+        $this->assertDatabaseHas('map_pins', [
+            'id' => $pin->id,
+            'x' => 60,
+            'y' => 70,
+            'locked' => false,
+        ]);
     }
 
     public function test_create_wiki_page_from_map_pin(): void

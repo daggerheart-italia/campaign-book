@@ -6,6 +6,7 @@ use App\Models\Campaign;
 use App\Models\MapPin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class MapPinController extends Controller
 {
@@ -59,7 +60,7 @@ class MapPinController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Punto d\'interesse aggiunto alla mappa!',
-                'pin' => $pin
+                'pin' => $pin,
             ]);
         }
 
@@ -80,7 +81,14 @@ class MapPinController extends Controller
             'description' => 'nullable|string',
             'wiki_page_id' => 'nullable|exists:wiki_pages,id',
             'color' => 'nullable|string|max:20',
+            'locked' => 'sometimes|boolean',
         ]);
+
+        if ($pin->locked && ($request->has('x') || $request->has('y'))) {
+            throw ValidationException::withMessages([
+                'locked' => 'Sblocca il segnaposto prima di spostarlo.',
+            ]);
+        }
 
         $pin->update($validated);
         $pin->load('wikiPage');
@@ -89,7 +97,7 @@ class MapPinController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Punto d\'interesse aggiornato!',
-                'pin' => $pin
+                'pin' => $pin,
             ]);
         }
 
@@ -108,7 +116,7 @@ class MapPinController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Pin rimosso dalla mappa.'
+                'message' => 'Pin rimosso dalla mappa.',
             ]);
         }
 

@@ -22,6 +22,7 @@ class MapPin extends Model
         'y',
         'color',
         'icon',
+        'locked',
     ];
 
     protected function casts(): array
@@ -29,6 +30,7 @@ class MapPin extends Model
         return [
             'x' => 'float',
             'y' => 'float',
+            'locked' => 'boolean',
         ];
     }
 
