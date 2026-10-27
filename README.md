@@ -1,59 +1,78 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Daggerheart Italia – Campaign Book
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Applicazione web collaborativa per gestire il **libro di campagna** di [Daggerheart](https://www.daggerheart.com/): una wiki condivisa, mappe interattive con segnaposto e note di sessione, pensata per Game Master e giocatori di una stessa campagna. L'interfaccia è in italiano, con tema scuro e stile "glass".
 
-## About Laravel
+## Funzionalità
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Campagne e ruoli
+- Creazione di campagne e dashboard con l'elenco delle proprie campagne.
+- Due ruoli: **GM** e **Giocatore**. Solo il GM modifica la campagna (membri, mappe, cestino, ecc.).
+- Ingresso tramite **codici invito** distinti per GM e giocatori, anche con link diretto (`/join/{codice}`).
+- Gestione dei membri: cambio ruolo e rimozione.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Wiki
+- Pagine in **Markdown** organizzate per categoria (Personaggi & PNG, Luoghi & Città, Fazioni & Gilde, Oggetti & Reliquie, Lore & Storia, Mostri & Minacce, Altro).
+- **Cronologia delle revisioni** con ripristino di una versione precedente e compattazione delle revisioni.
+- Eliminazione "morbida" con ripristino dal cestino.
+- Creazione di una pagina direttamente da un segnaposto della mappa.
+- **Esportazione** della campagna in Markdown.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Mappe interattive
+- Più mappe per campagna, caricate come immagine, con una mappa predefinita.
+- Riquadro a dimensione fissa ("Adatta"); zoom 50–300% con scroll in entrambe le direzioni.
+- Trascinamento con il tasto sinistro per spostare la mappa.
+- **Nuovo segnaposto** con tasto destro o doppio clic sulla mappa.
+- Segnaposto con titolo, descrizione, colore (modificabile dal popup) e collegamento opzionale a una pagina wiki.
+- Trascinamento dei segnaposto per riposizionarli, con possibilità di **bloccarli** (il blocco è applicato anche lato server).
+- Le posizioni sono salvate in percentuale, quindi restano corrette a qualsiasi zoom o dimensione.
+- Elenco dei segnaposto e interruttore per mostrare/nascondere le etichette.
 
-## Learning Laravel
+### Note di sessione
+- Note in Markdown per sessione, con possibilità di fissarle in alto.
+- Eliminazione con ripristino dal cestino.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Cestino
+- Pagine wiki, segnaposto e note eliminati finiscono nel cestino e possono essere ripristinati o svuotati definitivamente dal GM.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Stack tecnico
+- **PHP 8.4** e **Laravel 13**
+- **Blade**, **Alpine.js** e **Tailwind CSS 4**, compilati con **Vite**
+- Test con **PHPUnit**; formattazione con **Laravel Pint**
+- Sviluppo con **Laravel Sail** (Docker); SQLite come database predefinito in `.env.example`
 
-## Laravel Sponsors
+## Sviluppo locale
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+cp .env.example .env
+vendor/bin/sail up -d
+vendor/bin/sail composer install
+vendor/bin/sail artisan key:generate
+vendor/bin/sail artisan migrate
+vendor/bin/sail npm install
+vendor/bin/sail npm run dev
+```
 
-### Premium Partners
+Se `vendor/` non esiste ancora, installa prima le dipendenze con un container Composer temporaneo (vedi la documentazione di Sail).
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Test e qualità
 
-## Contributing
+```bash
+vendor/bin/sail artisan test --compact
+vendor/bin/sail bin pint --dirty --format agent
+vendor/bin/sail npm run build
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Struttura
 
-## Code of Conduct
+| Percorso | Contenuto |
+| --- | --- |
+| `app/Models` | `Campaign`, `CampaignMap`, `MapPin`, `WikiPage`, `WikiPageRevision`, `SessionNote`, `User` |
+| `app/Http/Controllers` | Campagne, mappe, segnaposto, wiki, note, autenticazione |
+| `app/Policies` | Autorizzazioni GM / Giocatore |
+| `resources/views/campaigns/partials` | Schede della campagna: wiki, mappa, note, membri, cestino |
+| `routes/web.php` | Tutte le rotte (autenticate tranne landing, login e registrazione) |
+| `docs/implementation-plan.md` | Piano di implementazione originale |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Deploy
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+In produzione l'app gira su un normale stack PHP (Apache/Nginx) senza Docker. Lo script [`scripts/deploy.sh`](scripts/deploy.sh) aggiorna il codice, installa le dipendenze, esegue le migrazioni e rigenera le cache.

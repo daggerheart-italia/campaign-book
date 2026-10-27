@@ -42,7 +42,7 @@ Create a web‑application for the tabletop RPG *Daggerheart* that provides a co
 - **Laravel Sail** for local Docker development (`./vendor/bin/sail up -d`).
 
 ### Production Deployment (plain PHP/Apache)
-- Provide a **deploy.sh** script that:
+- Provide a **scripts/deploy.sh** script that:
   1. Pulls latest code on the VPS.
   2. Installs Composer dependencies (`composer install --optimize-autoloader --no-dev`).
   3. Runs migrations (`php artisan migrate --force`).
