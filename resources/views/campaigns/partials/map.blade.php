@@ -343,6 +343,19 @@
                     </div>
                 </template>
 
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[11px] text-slate-400">Colore</span>
+                    <div class="flex items-center gap-2">
+                        <template x-for="option in pinColors" :key="option.value">
+                            <button type="button" @click="changePinColor(option.value)" :disabled="savingPinColor"
+                                    :title="option.label" :aria-label="option.label"
+                                    class="h-5 w-5 rounded-full border-2 transition disabled:opacity-50"
+                                    :class="selectedPin.color === option.value ? 'border-white scale-110' : 'border-transparent hover:border-white/50'"
+                                    :style="'background-color: ' + option.value"></button>
+                        </template>
+                    </div>
+                </div>
+
                 <p x-show="mapError" x-text="mapError" role="alert" class="text-xs text-rose-300"></p>
                 <p class="text-[11px] text-slate-500 pt-1">Trascina il pin sulla mappa per riposizionarlo</p>
                 <div class="flex items-center justify-between gap-2 text-xs">
@@ -567,6 +580,49 @@ function customImageMap(config) {
             this.selectedPin = pin;
             this.mapError = '';
             this.detailsModalOpen = true;
+        },
+
+        pinColors: [
+            { value: '#e11d48', label: 'Rosso Cremisi' },
+            { value: '#f59e0b', label: 'Oro / Ambra' },
+            { value: '#10b981', label: 'Smeraldo' },
+            { value: '#06b6d4', label: 'Azzurro Arcano' },
+            { value: '#8b5cf6', label: 'Viola Mistico' },
+        ],
+        savingPinColor: false,
+
+        async changePinColor(color) {
+            const pin = this.pins.find((item) => item.id === this.selectedPin.id);
+            if (!pin || pin.color === color) {
+                return;
+            }
+
+            this.savingPinColor = true;
+            this.mapError = '';
+
+            try {
+                const response = await fetch(`${config.updatePinBaseUrl}/${pin.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ color })
+                });
+                if (!response.ok) {
+                    throw new Error(`Impossibile aggiornare il colore del segnaposto (${response.status}).`);
+                }
+
+                const data = await response.json();
+                pin.color = data.pin.color;
+                this.selectedPin = { ...this.selectedPin, color: pin.color };
+            } catch (error) {
+                this.mapError = error.message;
+                console.error(error);
+            } finally {
+                this.savingPinColor = false;
+            }
         },
 
         async togglePinLock(pin) {
