@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.4] - 2026-10-28
+
+- fix(maps): remove pins when deleting a campaign map (db84227)
+- feat(wiki): add rich markdown editor with inter-page link resolution (42fd584)
+- chore(changelog): add changelog entries for version 0.0.3 (ad78354)
+
 ## [0.0.3] - 2026-10-28
 
 - feat(map): allow editing pin details and scope wiki page links to campaign (1815506)
