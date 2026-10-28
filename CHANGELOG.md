@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.5] - 2026-10-28
+
+- refactor(nav): collapse create-campaign button to icon and add tooltips (dbe7ffa)
+- style(css): adjust prose-dagger list indentation and markers (c9fb276)
+- chore(changelog): update changelog for version 0.0.4 (256e0f3)
+
 ## [0.0.4] - 2026-10-28
 
 - fix(maps): remove pins when deleting a campaign map (db84227)
