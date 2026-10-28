@@ -232,19 +232,36 @@ class CampaignWorkflowTest extends TestCase
             'parent_id' => $parent->id,
             'content' => 'Contenuto.',
         ]);
+        $grandchild = $campaign->wikiPages()->create([
+            'title' => 'Sentinelle',
+            'category' => 'Fazioni & Gilde',
+            'parent_id' => $child->id,
+            'content' => 'Contenuto.',
+        ]);
 
         $response = $this->actingAs($gm)->get(route('campaigns.show', $campaign));
 
         $response->assertOk();
         preg_match_all('/data-wiki-page-id="(\d+)"/', $response->getContent(), $pageIds);
         $this->assertSame(
-            [(string) $aquila->id, (string) $zeta->id, (string) $parent->id, (string) $child->id],
+            [(string) $aquila->id, (string) $zeta->id, (string) $parent->id],
             $pageIds[1]
         );
         $response->assertSee('filteredPages.length > 0 && hasActiveFilter()', false);
         $response->assertSee('x-for="page in filteredPages"', false);
         $response->assertDontSee('hasMatchingDescendant', false);
-        $response->assertSee('aria-expanded="false"', false);
+        $response->assertSee('<dialog', false);
+        $response->assertSee('openChildPages(page.id)', false);
+        $response->assertSee('children_ids', false);
+        $response->assertSee('grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2', false);
+        $response->assertSeeInOrder(['Leggi', 'Sottopagine'], false);
+        $response->assertSee('Leggi', false);
+        $response->assertDontSee('Apri scheda', false);
+        $response->assertDontSee('Esplora', false);
+        $response->assertSee(":class=\"{ 'wiki-card-stack': page.children_ids.length > 0 }\"", false);
+        $response->assertDontSee('-right-1 -bottom-1', false);
+        $response->assertSee($child->title, false);
+        $response->assertSee($grandchild->title, false);
     }
 
     private function uploadMapInChunks(User $user, Campaign $campaign, string $title, string $contents, int $chunkSize = 1000, ?int $skipIndex = null): TestResponse

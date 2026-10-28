@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.8] - 2026-10-28
+
+- refactor(ui): replace inline wiki child expansion with modal navigation (d4e7a42)
+- chore(changelog): update changelog for version 0.0.7 (92b0e0c)
+
 ## [0.0.7] - 2026-10-28
 
 - feat(wiki): add parent and child page navigation to wiki detail view (f2eb6d5)
