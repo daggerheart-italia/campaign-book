@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Campaign;
 use App\Models\CampaignMap;
-use App\Models\WikiPage;
-use App\Models\WikiPageRevision;
 use App\Models\MapPin;
 use App\Models\SessionNote;
+use App\Models\WikiPage;
+use App\Models\WikiPageRevision;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
@@ -23,7 +23,7 @@ class CampaignController extends Controller
         $user = Auth::user();
 
         $campaigns = Campaign::where('owner_id', $user->id)
-            ->orWhereHas('users', fn($q) => $q->where('users.id', $user->id))
+            ->orWhereHas('users', fn ($q) => $q->where('users.id', $user->id))
             ->with(['owner', 'users'])
             ->withCount(['wikiPages', 'mapPins', 'sessionNotes', 'maps'])
             ->distinct()
@@ -61,7 +61,7 @@ class CampaignController extends Controller
 
         // Attach creator as GM
         $campaign->users()->syncWithoutDetaching([
-            Auth::id() => ['role' => 'gm']
+            Auth::id() => ['role' => 'gm'],
         ]);
 
         return redirect()->route('campaigns.show', $campaign)
@@ -78,10 +78,10 @@ class CampaignController extends Controller
         $campaign->load([
             'owner',
             'users',
-            'maps' => fn($q) => $q->withCount('pins')->latest(),
-            'wikiPages' => fn($q) => $q->latest(),
-            'mapPins' => fn($q) => $q->with(['wikiPage', 'campaignMap'])->latest(),
-            'sessionNotes' => fn($q) => $q->with('user')->orderBy('is_pinned', 'desc')->latest(),
+            'maps' => fn ($q) => $q->withCount('pins')->latest(),
+            'wikiPages' => fn ($q) => $q->latest(),
+            'mapPins' => fn ($q) => $q->where(fn ($pins) => $pins->whereNull('campaign_map_id')->orWhereHas('campaignMap'))->with(['wikiPage', 'campaignMap'])->latest(),
+            'sessionNotes' => fn ($q) => $q->with('user')->orderBy('is_pinned', 'desc')->latest(),
         ]);
 
         // Determine active map: default map or first uploaded map
@@ -119,6 +119,7 @@ class CampaignController extends Controller
         ]);
 
         $code = trim($request->code);
+
         return $this->processJoin($code);
     }
 
@@ -136,7 +137,7 @@ class CampaignController extends Controller
             ->orWhere('invite_code_gm', $code)
             ->first();
 
-        if (!$campaign) {
+        if (! $campaign) {
             return redirect()->route('campaigns.index')
                 ->with('error', 'Codice di invito non valido o campagna non trovata.');
         }
@@ -145,10 +146,11 @@ class CampaignController extends Controller
         $role = ($code === $campaign->invite_code_gm) ? 'gm' : 'player';
 
         $campaign->users()->syncWithoutDetaching([
-            $user->id => ['role' => $role]
+            $user->id => ['role' => $role],
         ]);
 
         $roleLabel = ($role === 'gm') ? 'Game Master' : 'Giocatore';
+
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', "Ti sei unito a \"{$campaign->name}\" con il ruolo di {$roleLabel}!");
     }
@@ -164,7 +166,7 @@ class CampaignController extends Controller
             'role' => 'required|in:gm,player',
         ]);
 
-        if ((int)$userId === (int)$campaign->owner_id) {
+        if ((int) $userId === (int) $campaign->owner_id) {
             return back()->with('error', 'Il proprietario della campagna non può cambiare ruolo.');
         }
 
@@ -182,7 +184,7 @@ class CampaignController extends Controller
     {
         $this->authorize('manageMembers', $campaign);
 
-        if ((int)$userId === (int)$campaign->owner_id) {
+        if ((int) $userId === (int) $campaign->owner_id) {
             return back()->with('error', 'Non puoi rimuovere il proprietario della campagna.');
         }
 
@@ -241,32 +243,32 @@ class CampaignController extends Controller
 
         $campaign->load(['wikiPages', 'sessionNotes', 'mapPins.campaignMap']);
 
-        $md = "# " . $campaign->name . "\n\n";
-        $md .= "**Sistema:** " . $campaign->system . "\n";
-        $md .= "**Data Esportazione:** " . now()->format('d/m/Y H:i') . "\n\n";
+        $md = '# '.$campaign->name."\n\n";
+        $md .= '**Sistema:** '.$campaign->system."\n";
+        $md .= '**Data Esportazione:** '.now()->format('d/m/Y H:i')."\n\n";
 
         if ($campaign->description) {
             $md .= "## Descrizione della Campagna\n\n";
-            $md .= $campaign->description . "\n\n---\n\n";
+            $md .= $campaign->description."\n\n---\n\n";
         }
 
         $md .= "# Wiki & Grimorio\n\n";
         $grouped = $campaign->wikiPages->groupBy('category');
         foreach ($grouped as $cat => $pages) {
-            $md .= "## Categoria: " . $cat . "\n\n";
+            $md .= '## Categoria: '.$cat."\n\n";
             foreach ($pages as $page) {
-                $md .= "### " . $page->title . "\n\n";
-                $md .= $page->content . "\n\n";
+                $md .= '### '.$page->title."\n\n";
+                $md .= $page->content."\n\n";
                 $md .= "---\n\n";
             }
         }
 
         $md .= "# Mappa & Punti d'Interesse Segnati\n\n";
         foreach ($campaign->mapPins as $pin) {
-            $mapName = $pin->campaignMap ? " [Mappa: {$pin->campaignMap->title}]" : "";
-            $md .= "- **" . $pin->title . "**" . $mapName . " (X: {$pin->x}%, Y: {$pin->y}%)";
+            $mapName = $pin->campaignMap ? " [Mappa: {$pin->campaignMap->title}]" : '';
+            $md .= '- **'.$pin->title.'**'.$mapName." (X: {$pin->x}%, Y: {$pin->y}%)";
             if ($pin->description) {
-                $md .= " - " . $pin->description;
+                $md .= ' - '.$pin->description;
             }
             if ($pin->wikiPage) {
                 $md .= " [Vedi Wiki: {$pin->wikiPage->title}]";
@@ -278,15 +280,15 @@ class CampaignController extends Controller
         $md .= "# Diario di Sessione\n\n";
         foreach ($campaign->sessionNotes as $note) {
             $date = $note->session_date ? $note->session_date->format('d/m/Y') : $note->created_at->format('d/m/Y');
-            $md .= "### " . $note->title . " ({$date})\n\n";
-            $md .= $note->content . "\n\n";
+            $md .= '### '.$note->title." ({$date})\n\n";
+            $md .= $note->content."\n\n";
         }
 
-        $filename = Str::slug($campaign->name) . "-export.md";
+        $filename = Str::slug($campaign->name).'-export.md';
 
         return Response::make($md, 200, [
             'Content-Type' => 'text/markdown',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 }

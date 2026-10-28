@@ -157,6 +157,7 @@ class CampaignMapController extends Controller
     {
         $this->authorize('update', $campaign);
 
+        $map->pins()->delete();
         $map->delete();
 
         // If default was deleted, set next map as default

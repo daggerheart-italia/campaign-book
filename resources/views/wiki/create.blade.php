@@ -3,18 +3,7 @@
 @section('title', 'Nuova Scheda Wiki - ' . $campaign->name)
 
 @section('content')
-<div class="max-w-4xl mx-auto my-4 sm:my-8" x-data="{ 
-    content: @js(old('content', $prefillContent ?? '')),
-    activeTab: 'edit',
-    get parsedHtml() {
-        if (!this.content) return '<p class=\'text-slate-500 italic\'>L\'anteprima apparirà qui...</p>';
-        try {
-            return window.marked ? window.marked.parse(this.content) : this.content;
-        } catch(e) {
-            return this.content;
-        }
-    }
-}">
+<div class="max-w-4xl mx-auto my-4 sm:my-8">
     <!-- Breadcrumbs -->
     <div class="flex items-center gap-2 text-xs text-slate-400 mb-4">
         <a href="{{ route('campaigns.show', $campaign) }}" class="hover:text-white transition-colors">{{ $campaign->name }}</a>
@@ -66,27 +55,10 @@
 
             <!-- Editor & Live Preview Switcher -->
             <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300">Contenuto (Markdown) *</label>
-                    
-                    <div class="inline-flex p-0.5 rounded-lg bg-black/40 border border-white/10 text-xs">
-                        <button type="button" @click="activeTab = 'edit'" :class="activeTab === 'edit' ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition-all">Scrivi</button>
-                        <button type="button" @click="activeTab = 'preview'" :class="activeTab === 'preview' ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-slate-400 hover:text-white'" class="px-2.5 py-1 rounded-md transition-all">Anteprima</button>
-                    </div>
-                </div>
-
-                <div x-show="activeTab === 'edit'">
-                    <textarea name="content" x-model="content" rows="14" required
-                              class="input-premium font-mono text-sm leading-relaxed" 
-                              placeholder="# Panoramica&#10;&#10;Scrivi qui la descrizione in formato Markdown..."></textarea>
-                    <div class="mt-1 text-[11px] text-slate-500 flex items-center justify-between">
-                        <span>Supporta formattazione Markdown: # Titoli, **grassetto**, *corsivo*, > citazioni, elenchi.</span>
-                    </div>
-                </div>
-
-                <div x-show="activeTab === 'preview'" class="input-premium min-h-[350px] p-4 bg-slate-950/70 border-white/10 overflow-y-auto" style="display: none;">
-                    <div class="prose-dagger" x-html="parsedHtml"></div>
-                </div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Contenuto *</label>
+                <x-markdown-editor :campaign="$campaign" :value="old('content', $prefillContent ?? '')" min-height="22rem"
+                                   placeholder="Scrivi qui la descrizione. Digita [[ per collegare un'altra pagina della wiki." />
+                <p class="mt-1 text-[11px] text-slate-500">Salvato come Markdown. Usa [[Titolo pagina]] per creare link tra le schede.</p>
             </div>
 
             <div class="pt-4 border-t border-white/[0.08] flex items-center justify-end gap-3">

@@ -3,6 +3,7 @@ import Alpine from 'alpinejs';
 import { marked } from 'marked';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { registerMarkdownEditor } from './markdown-editor';
 
 // Fix leaflet default marker icons in bundlers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -15,5 +16,7 @@ L.Icon.Default.mergeOptions({
 window.Alpine = Alpine;
 window.marked = marked;
 window.L = L;
+
+registerMarkdownEditor(Alpine);
 
 Alpine.start();

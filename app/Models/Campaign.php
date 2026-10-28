@@ -56,6 +56,55 @@ class Campaign extends Model
         return $this->hasMany(WikiPage::class);
     }
 
+    /**
+     * Render Markdown to safe HTML, resolving [[Page title]] and
+     * [[Page title|label]] into links to this campaign's wiki pages.
+     */
+    public function renderMarkdown(?string $markdown): string
+    {
+        $html = Str::markdown($markdown ?? '', [
+            'html_input' => 'strip',
+            'allow_unsafe_links' => false,
+        ]);
+
+        $pagesByTitle = $this->wikiPages->keyBy(fn (WikiPage $page) => mb_strtolower(trim($page->title)));
+
+        $segments = preg_split('/(<[^>]+>)/', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $skipDepth = 0;
+
+        foreach ($segments as $index => $segment) {
+            if (str_starts_with($segment, '<')) {
+                if (preg_match('/^<(\/?)(code|pre|a)\b/i', $segment, $tag)) {
+                    $skipDepth = max(0, $skipDepth + ($tag[1] === '/' ? -1 : 1));
+                }
+
+                continue;
+            }
+
+            if ($skipDepth > 0) {
+                continue;
+            }
+
+            $segments[$index] = preg_replace_callback(
+                '/\[\[([^\[\]|]+?)(?:\|([^\[\]]+?))?\]\]/',
+                function (array $match) use ($pagesByTitle): string {
+                    $typedTitle = trim($match[1]);
+                    $label = isset($match[2]) && trim($match[2]) !== '' ? trim($match[2]) : $typedTitle;
+                    $page = $pagesByTitle->get(mb_strtolower(html_entity_decode($typedTitle, ENT_QUOTES)));
+
+                    if ($page === null) {
+                        return '<span class="wikilink-missing" title="Pagina non trovata">'.$label.'</span>';
+                    }
+
+                    return '<a href="'.e(route('wiki.show', [$this, $page])).'" class="wikilink">'.$label.'</a>';
+                },
+                $segment
+            );
+        }
+
+        return implode('', $segments);
+    }
+
     public function mapPins(): HasMany
     {
         return $this->hasMany(MapPin::class);
@@ -71,7 +120,7 @@ class Campaign extends Model
      */
     public function isGm(?User $user): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -90,7 +139,7 @@ class Campaign extends Model
      */
     public function isMember(?User $user): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -106,7 +155,7 @@ class Campaign extends Model
      */
     public function roleOf(?User $user): ?string
     {
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
@@ -115,6 +164,7 @@ class Campaign extends Model
         }
 
         $pivot = $this->users()->where('user_id', $user->id)->first();
+
         return $pivot ? $pivot->pivot->role : null;
     }
 }

@@ -463,4 +463,64 @@ class CampaignWorkflowTest extends TestCase
         $this->assertStringContainsString('Grimorio Completo', $response->getContent());
         $this->assertStringContainsString('Foresta Nebbiosa', $response->getContent());
     }
+
+    public function test_wiki_links_are_resolved_within_the_campaign_and_html_is_stripped(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Rete di Conoscenza']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $otherCampaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Altra Campagna']);
+        $target = WikiPage::create(['campaign_id' => $campaign->id, 'title' => 'Kar-Drak', 'content' => 'x']);
+        WikiPage::create(['campaign_id' => $otherCampaign->id, 'title' => 'Segreto Altrui', 'content' => 'x']);
+
+        $html = $campaign->fresh()->renderMarkdown(
+            "Vai a [[kar-drak]], [[Kar-Drak|la cittadella]], [[Segreto Altrui]] e `[[Kar-Drak]]`.\n\n<script>alert(1)</script>"
+        );
+
+        $url = route('wiki.show', [$campaign, $target]);
+        $this->assertStringContainsString('<a href="'.$url.'" class="wikilink">kar-drak</a>', $html);
+        $this->assertStringContainsString('class="wikilink">la cittadella</a>', $html);
+        $this->assertStringContainsString('<span class="wikilink-missing" title="Pagina non trovata">Segreto Altrui</span>', $html);
+        $this->assertStringContainsString('<code>[[Kar-Drak]]</code>', $html);
+        $this->assertStringNotContainsString('<script>', $html);
+    }
+
+    public function test_wiki_page_view_renders_links_to_other_pages(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Collegamenti']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $target = WikiPage::create(['campaign_id' => $campaign->id, 'title' => 'Alleanza', 'content' => 'x']);
+        $source = WikiPage::create(['campaign_id' => $campaign->id, 'title' => 'Trattato', 'content' => 'Vedi [[Alleanza]].']);
+
+        $this->actingAs($gm)->get(route('wiki.show', [$campaign, $source]))
+            ->assertOk()
+            ->assertSee('href="'.route('wiki.show', [$campaign, $target]).'"', false);
+    }
+
+    public function test_deleting_a_map_removes_its_pins_from_the_campaign(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Mappe']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $map = CampaignMap::create(['campaign_id' => $campaign->id, 'created_by' => $gm->id, 'title' => 'Regno', 'image_path' => 'https://example.com/a.png', 'is_default' => true]);
+        $otherMap = CampaignMap::create(['campaign_id' => $campaign->id, 'created_by' => $gm->id, 'title' => 'Isola', 'image_path' => 'https://example.com/b.png']);
+        MapPin::create(['campaign_id' => $campaign->id, 'campaign_map_id' => $map->id, 'title' => 'Torre', 'x' => 10, 'y' => 10]);
+        $kept = MapPin::create(['campaign_id' => $campaign->id, 'campaign_map_id' => $otherMap->id, 'title' => 'Faro', 'x' => 20, 'y' => 20]);
+        // Pin orphaned by a map deleted before pins were removed with it
+        $orphan = MapPin::create(['campaign_id' => $campaign->id, 'campaign_map_id' => $otherMap->id, 'title' => 'Orfano', 'x' => 5, 'y' => 5]);
+
+        $this->actingAs($gm)->delete(route('maps.destroy', [$campaign, $map]))->assertRedirect();
+
+        $this->assertSoftDeleted('map_pins', ['title' => 'Torre']);
+        $this->assertNotSoftDeleted('map_pins', ['id' => $kept->id]);
+
+        $otherMap->delete();
+        $this->assertSame([], $campaign->fresh()->mapPins()->whereHas('campaignMap')->pluck('id')->all());
+
+        $this->actingAs($gm)->get(route('campaigns.show', $campaign))->assertOk()->assertDontSee('Orfano');
+    }
 }

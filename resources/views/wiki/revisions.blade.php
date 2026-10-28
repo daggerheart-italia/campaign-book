@@ -77,7 +77,7 @@
                     <div class="p-4 rounded-xl bg-black/40 border border-white/5">
                         <div class="text-xs text-amber-300 font-bold mb-2">Titolo: {{ $rev->title }} | Categoria: {{ $rev->category }}</div>
                         <div class="prose-dagger text-xs sm:text-sm">
-                            {!! Str::markdown($rev->content) !!}
+                            {!! $campaign->renderMarkdown($rev->content) !!}
                         </div>
                     </div>
                 </div>
