@@ -4,9 +4,9 @@
      class="relative isolate space-y-3">
     @if(count($node['children']) > 0)
         <div x-show="!expanded && !shouldExpandChildren(page.id)" x-transition aria-hidden="true"
-             class="absolute inset-0 translate-x-1 translate-y-1 rounded-xl border border-white/10 border-r-2 border-b-2 bg-slate-900/90 pointer-events-none"></div>
+             class="absolute inset-0 translate-x-1 translate-y-1 rounded-xl border border-white/15 border-r-2 border-b-2 bg-slate-900 pointer-events-none"></div>
         <div x-show="!expanded && !shouldExpandChildren(page.id)" x-transition aria-hidden="true"
-             class="absolute inset-0 translate-x-2 translate-y-2 rounded-xl border border-white/10 border-r-2 border-b-2 bg-slate-950/90 pointer-events-none"></div>
+             class="absolute inset-0 translate-x-2 translate-y-2 rounded-xl border border-white/15 border-r-2 border-b-2 bg-slate-900/95 pointer-events-none"></div>
     @endif
 
     <article class="glass-panel glass-panel-hover p-4 rounded-xl flex flex-col justify-between relative z-10 group">
