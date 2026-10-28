@@ -22,14 +22,14 @@
             <!-- Desktop Navigation -->
             @auth
                 <div class="hidden md:flex items-center gap-3">
-                    <a href="{{ route('campaigns.index') }}" 
+                    <a href="{{ route('campaigns.index') }}" title="Tutte le Campagne" 
                        class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('campaigns.index') ? 'bg-white/10 text-white font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
                         Campagne
                     </a>
 
-                    <a href="{{ route('campaigns.create') }}" class="btn-primary text-xs py-1.5 px-3">
+                    <a href="{{ route('campaigns.create') }}" title="Nuova Campagna" class="btn-primary text-xs py-1.5 px-3">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>Nuova Campagna</span>
+                        <!-- <span>Nuova Campagna</span> -->
                     </a>
 
                     <div class="h-5 w-px bg-white/10 mx-1"></div>
