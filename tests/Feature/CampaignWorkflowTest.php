@@ -116,6 +116,134 @@ class CampaignWorkflowTest extends TestCase
         $this->assertEquals(3, $wiki->revisions()->count());
     }
 
+    public function test_wiki_pages_can_be_created_and_updated_with_parent_pages(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Cronache']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $parent = $campaign->wikiPages()->create([
+            'title' => 'La città',
+            'category' => 'Luoghi & Città',
+            'content' => 'La città principale.',
+        ]);
+        $otherParent = $campaign->wikiPages()->create([
+            'title' => 'La regione',
+            'category' => 'Luoghi & Città',
+            'content' => 'La regione circostante.',
+        ]);
+
+        $createResponse = $this->actingAs($gm)->post(route('wiki.store', $campaign), [
+            'title' => 'La taverna',
+            'category' => 'Luoghi & Città',
+            'parent_id' => $parent->id,
+            'content' => 'Una taverna affollata.',
+        ]);
+
+        $child = $campaign->wikiPages()->where('title', 'La taverna')->firstOrFail();
+        $createResponse->assertRedirect(route('wiki.show', [$campaign, $child]));
+        $this->assertDatabaseHas('wiki_pages', [
+            'id' => $child->id,
+            'parent_id' => $parent->id,
+        ]);
+
+        $this->actingAs($gm)->put(route('wiki.update', [$campaign, $child]), [
+            'title' => $child->title,
+            'category' => $child->category,
+            'parent_id' => $otherParent->id,
+            'content' => $child->content,
+            'summary' => '',
+        ])->assertRedirect(route('wiki.show', [$campaign, $child]));
+
+        $this->assertDatabaseHas('wiki_pages', [
+            'id' => $child->id,
+            'parent_id' => $otherParent->id,
+        ]);
+    }
+
+    public function test_wiki_pages_reject_parent_pages_from_other_campaigns_and_circular_hierarchies(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Prima campagna']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $otherCampaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Seconda campagna']);
+        $otherCampaign->users()->attach($gm->id, ['role' => 'gm']);
+        $page = $campaign->wikiPages()->create([
+            'title' => 'Pagina principale',
+            'category' => 'Lore & Storia',
+            'content' => 'Contenuto.',
+        ]);
+        $child = $campaign->wikiPages()->create([
+            'title' => 'Pagina figlia',
+            'category' => 'Lore & Storia',
+            'parent_id' => $page->id,
+            'content' => 'Contenuto.',
+        ]);
+        $foreignParent = $otherCampaign->wikiPages()->create([
+            'title' => 'Pagina estranea',
+            'category' => 'Lore & Storia',
+            'content' => 'Contenuto.',
+        ]);
+
+        $this->actingAs($gm)->post(route('wiki.store', $campaign), [
+            'title' => 'Pagina non valida',
+            'category' => 'Lore & Storia',
+            'parent_id' => $foreignParent->id,
+            'content' => 'Contenuto.',
+        ])->assertSessionHasErrors('parent_id');
+
+        $this->actingAs($gm)->put(route('wiki.update', [$campaign, $page]), [
+            'title' => $page->title,
+            'category' => $page->category,
+            'parent_id' => $child->id,
+            'content' => $page->content,
+        ])->assertSessionHasErrors('parent_id');
+
+        $this->assertDatabaseMissing('wiki_pages', ['title' => 'Pagina non valida']);
+        $this->assertDatabaseHas('wiki_pages', [
+            'id' => $page->id,
+            'parent_id' => null,
+        ]);
+    }
+
+    public function test_wiki_pages_are_sorted_by_category_and_title_in_a_collapsible_tree(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Ordinamento Wiki']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $zeta = $campaign->wikiPages()->create([
+            'title' => 'Zeta',
+            'category' => 'Altro',
+            'content' => 'Contenuto.',
+        ]);
+        $aquila = $campaign->wikiPages()->create([
+            'title' => 'Aquila',
+            'category' => 'Altro',
+            'content' => 'Contenuto.',
+        ]);
+        $parent = $campaign->wikiPages()->create([
+            'title' => 'Torre',
+            'category' => 'Luoghi & Città',
+            'content' => 'Contenuto.',
+        ]);
+        $child = $campaign->wikiPages()->create([
+            'title' => 'Guardiani',
+            'category' => 'Fazioni & Gilde',
+            'parent_id' => $parent->id,
+            'content' => 'Contenuto.',
+        ]);
+
+        $response = $this->actingAs($gm)->get(route('campaigns.show', $campaign));
+
+        $response->assertOk();
+        preg_match_all('/data-wiki-page-id="(\d+)"/', $response->getContent(), $pageIds);
+        $this->assertSame(
+            [(string) $aquila->id, (string) $zeta->id, (string) $parent->id, (string) $child->id],
+            $pageIds[1]
+        );
+        $response->assertSee('aria-expanded="false"', false);
+    }
+
     private function uploadMapInChunks(User $user, Campaign $campaign, string $title, string $contents, int $chunkSize = 1000, ?int $skipIndex = null): TestResponse
     {
         $uploadId = (string) Str::uuid();

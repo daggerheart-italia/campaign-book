@@ -9,6 +9,7 @@ use App\Models\SessionNote;
 use App\Models\WikiPage;
 use App\Models\WikiPageRevision;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
@@ -94,8 +95,29 @@ class CampaignController extends Controller
         $trashedSessionNotes = $isGm ? SessionNote::onlyTrashed()->where('campaign_id', $campaign->id)->get() : collect();
         $trashedMaps = $isGm ? CampaignMap::onlyTrashed()->where('campaign_id', $campaign->id)->get() : collect();
 
-        // Distinct categories for wiki
-        $categories = $campaign->wikiPages->pluck('category')->unique()->filter()->values();
+        $wikiPages = $campaign->wikiPages
+            ->sortBy(fn (WikiPage $page): string => mb_strtolower(($page->category ?: 'Generale')."\0".$page->title))
+            ->values();
+        $wikiPageTree = $this->buildWikiPageTree($wikiPages);
+        $wikiChildrenByParent = $wikiPages->groupBy('parent_id');
+        $wikiPageItems = $wikiPages->map(fn (WikiPage $page): array => [
+            'id' => $page->id,
+            'parent_id' => $page->parent_id,
+            'children_ids' => $wikiChildrenByParent->get($page->id, collect())->pluck('id')->all(),
+            'title' => $page->title,
+            'category' => $page->category ?: 'Generale',
+            'excerpt' => Str::limit(strip_tags($page->content), 120),
+            'updated_at' => $page->updated_at->diffForHumans(),
+            'url' => route('wiki.show', [$campaign, $page]),
+            'edit_url' => route('wiki.edit', [$campaign, $page]),
+            'revisions_url' => route('wiki.revisions', [$campaign, $page]),
+        ])->all();
+
+        $categories = $wikiPages->pluck('category')
+            ->unique()
+            ->filter()
+            ->sortBy(fn (string $category): string => mb_strtolower($category))
+            ->values();
 
         return view('campaigns.show', compact(
             'campaign',
@@ -105,8 +127,31 @@ class CampaignController extends Controller
             'trashedMapPins',
             'trashedSessionNotes',
             'trashedMaps',
-            'categories'
+            'categories',
+            'wikiPages',
+            'wikiPageItems',
+            'wikiPageTree'
         ));
+    }
+
+    private function buildWikiPageTree(Collection $pages): array
+    {
+        $pagesById = $pages->keyBy('id');
+        $childrenByParent = $pages
+            ->filter(fn (WikiPage $page): bool => $page->parent_id !== null && $pagesById->has($page->parent_id))
+            ->groupBy('parent_id');
+        $rootPages = $pages->filter(
+            fn (WikiPage $page): bool => $page->parent_id === null || ! $pagesById->has($page->parent_id)
+        );
+
+        $buildTree = function (Collection $siblings) use (&$buildTree, $childrenByParent): array {
+            return $siblings->map(fn (WikiPage $page): array => [
+                'page_id' => $page->id,
+                'children' => $buildTree($childrenByParent->get($page->id, collect())),
+            ])->all();
+        };
+
+        return $buildTree($rootPages);
     }
 
     /**
