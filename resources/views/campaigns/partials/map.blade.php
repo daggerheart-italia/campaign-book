@@ -232,7 +232,7 @@
     <div x-show="createModalOpen" 
          x-transition
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         style="display: none;">
+         x-cloak>
         <div @click.away="createModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
             <button @click="createModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -287,7 +287,7 @@
     <div x-show="detailsModalOpen" 
          x-transition
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         style="display: none;">
+         x-cloak>
         <div @click.away="detailsModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
             <button @click="detailsModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -416,7 +416,7 @@
     <div x-show="uploadModalOpen" 
          x-transition
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         style="display: none;">
+         x-cloak>
         <div @click.away="uploadModalOpen = false" class="glass-panel p-6 sm:p-8 rounded-2xl max-w-lg w-full relative">
             <button @click="uploadModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -442,11 +442,11 @@
                     <input type="file" name="image" required accept="image/*" class="input-premium text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500/20 file:text-amber-300 hover:file:bg-amber-500/30" />
                 </div>
 
-                <div x-show="uploadingMap" class="h-1.5 w-full overflow-hidden rounded-full bg-white/10" style="display: none;">
+                <div x-show="uploadingMap" class="h-1.5 w-full overflow-hidden rounded-full bg-white/10" x-cloak>
                     <div class="h-full bg-amber-400 transition-all" :style="'width: ' + uploadProgress + '%'"></div>
                 </div>
 
-                <p x-show="uploadError" x-text="uploadError" role="alert" class="text-xs text-rose-300" style="display: none;"></p>
+                <p x-show="uploadError" x-text="uploadError" role="alert" class="text-xs text-rose-300" x-cloak></p>
 
                 <div class="flex items-center justify-end gap-2 pt-2">
                     <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50">Annulla</button>

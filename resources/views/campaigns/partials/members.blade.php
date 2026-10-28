@@ -9,7 +9,7 @@
 }">
 
     <!-- Notification when link is copied -->
-    <div x-show="copyFeedback" x-transition class="p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-semibold flex items-center gap-2" style="display: none;">
+    <div x-show="copyFeedback" x-transition class="p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-semibold flex items-center gap-2" x-cloak>
         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
         <span x-text="'Copiato negli appunti: ' + copyFeedback"></span>
     </div>

@@ -40,5 +40,5 @@
     <div x-show="mode === 'visual'" class="md-editor-surface prose-dagger" x-ref="surface"></div>
 
     <textarea name="{{ $name }}" x-model="value" x-show="mode === 'markdown'" rows="12"
-              class="md-editor-source" style="min-height: {{ $minHeight }}; display: none;"></textarea>
+              class="md-editor-source" x-cloak></textarea>
 </div>

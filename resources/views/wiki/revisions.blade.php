@@ -73,7 +73,7 @@
                 </div>
 
                 <!-- Preview Content Box -->
-                <div x-show="open" x-transition class="mt-4 pt-4 border-t border-white/[0.08]" style="display: none;">
+                <div x-show="open" x-transition class="mt-4 pt-4 border-t border-white/[0.08]" x-cloak>
                     <div class="p-4 rounded-xl bg-black/40 border border-white/5">
                         <div class="text-xs text-amber-300 font-bold mb-2">Titolo: {{ $rev->title }} | Categoria: {{ $rev->category }}</div>
                         <div class="prose-dagger text-xs sm:text-sm">

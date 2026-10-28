@@ -18,7 +18,7 @@
             </button>
         </div>
 
-        <div x-show="composerOpen" x-transition class="mt-4 pt-4 border-t border-white/[0.08]" style="display: none;">
+        <div x-show="composerOpen" x-transition class="mt-4 pt-4 border-t border-white/[0.08]" x-cloak>
             <form method="POST" action="{{ route('notes.store', $campaign) }}" class="space-y-3">
                 @csrf
 
@@ -136,7 +136,7 @@
     <div x-show="editModalOpen" 
          x-transition
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         style="display: none;">
+         x-cloak>
         <div @click.away="editModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-lg w-full relative">
             <button @click="editModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>

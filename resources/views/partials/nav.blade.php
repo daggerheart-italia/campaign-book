@@ -63,7 +63,7 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!mobileMenuOpen">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                         </svg>
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="mobileMenuOpen" style="display: none;">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="mobileMenuOpen" x-cloak>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
@@ -87,7 +87,7 @@
              x-transition:leave-start="opacity-100 translate-y-0"
              x-transition:leave-end="opacity-0 -translate-y-2"
              class="md:hidden glass-panel border-x-0 border-t border-b border-white/10 px-4 py-4 space-y-3"
-             style="display: none;">
+             x-cloak>
             <div class="flex items-center gap-3 pb-3 border-b border-white/10">
                 <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/30 to-purple-500/30 border border-white/20 flex items-center justify-center font-bold text-amber-300 text-sm">
                     {{ substr(Auth::user()->name, 0, 2) }}

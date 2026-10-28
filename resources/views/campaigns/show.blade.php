@@ -120,20 +120,20 @@
             @include('campaigns.partials.wiki')
         </div>
 
-        <div x-show="tab === 'map'" style="display: none;">
+        <div x-show="tab === 'map'" x-cloak>
             @include('campaigns.partials.map')
         </div>
 
-        <div x-show="tab === 'notes'" style="display: none;">
+        <div x-show="tab === 'notes'" x-cloak>
             @include('campaigns.partials.notes')
         </div>
 
-        <div x-show="tab === 'members'" style="display: none;">
+        <div x-show="tab === 'members'" x-cloak>
             @include('campaigns.partials.members')
         </div>
 
         @if($isGm)
-            <div x-show="tab === 'trash'" style="display: none;">
+            <div x-show="tab === 'trash'" x-cloak>
                 @include('campaigns.partials.trash')
             </div>
         @endif
