@@ -24,6 +24,10 @@
     ])) }},
     storePinUrl: '{{ route('pins.store', $campaign) }}',
     updatePinBaseUrl: '{{ url("/campaigns/{$campaign->id}/pins") }}',
+    storeMapUrl: '{{ route('maps.store', $campaign) }}',
+    storeMapChunkUrl: '{{ route('maps.storeChunk', $campaign) }}',
+    mapChunkSize: {{ \App\Http\Controllers\CampaignMapController::MAX_CHUNK_BYTES }},
+    mapMaxBytes: {{ \App\Http\Controllers\CampaignMapController::MAX_IMAGE_BYTES }},
     csrfToken: '{{ csrf_token() }}'
 })" class="space-y-4">
 
@@ -390,11 +394,10 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
                 <h3 class="font-['Cinzel'] text-xl font-bold text-white mb-1">Carica Mappa di Gioco</h3>
-                <p class="text-xs text-slate-400">Carica una mappa geografica, mappa regionale o piantina di un dungeon (PNG, JPG, WebP fino a 15MB).</p>
+                <p class="text-xs text-slate-400">Carica una mappa geografica, mappa regionale o piantina di un dungeon (PNG, JPG, WebP fino a 50MB).</p>
             </div>
 
-            <form method="POST" action="{{ route('maps.store', $campaign) }}" enctype="multipart/form-data" class="space-y-4">
-                @csrf
+            <form @submit.prevent="uploadMap($event.target)" class="space-y-4">
 
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Titolo della Mappa *</label>
@@ -406,9 +409,17 @@
                     <input type="file" name="image" required accept="image/*" class="input-premium text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500/20 file:text-amber-300 hover:file:bg-amber-500/30" />
                 </div>
 
+                <div x-show="uploadingMap" class="h-1.5 w-full overflow-hidden rounded-full bg-white/10" style="display: none;">
+                    <div class="h-full bg-amber-400 transition-all" :style="'width: ' + uploadProgress + '%'"></div>
+                </div>
+
+                <p x-show="uploadError" x-text="uploadError" role="alert" class="text-xs text-rose-300" style="display: none;"></p>
+
                 <div class="flex items-center justify-end gap-2 pt-2">
-                    <button type="button" @click="uploadModalOpen = false" class="btn-secondary text-xs py-2 px-3">Annulla</button>
-                    <button type="submit" class="btn-primary text-xs py-2 px-4">Carica Mappa</button>
+                    <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50">Annulla</button>
+                    <button type="submit" :disabled="uploadingMap" class="btn-primary text-xs py-2 px-4 disabled:opacity-50">
+                        <span x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -434,6 +445,9 @@ function customImageMap(config) {
         createModalOpen: false,
         detailsModalOpen: false,
         uploadModalOpen: false,
+        uploadingMap: false,
+        uploadProgress: 0,
+        uploadError: '',
         selectedPin: {},
         newPinCoords: { x: 50, y: 50 },
         newPinForm: {
@@ -590,6 +604,68 @@ function customImageMap(config) {
             { value: '#8b5cf6', label: 'Viola Mistico' },
         ],
         savingPinColor: false,
+
+        async uploadMap(form) {
+            const file = form.elements.image.files[0];
+            if (!file) {
+                return;
+            }
+            if (file.size > config.mapMaxBytes) {
+                this.uploadError = `Il file supera il limite di ${Math.round(config.mapMaxBytes / 1048576)}MB.`;
+                return;
+            }
+
+            this.uploadingMap = true;
+            this.uploadProgress = 0;
+            this.uploadError = '';
+
+            const headers = { 'X-CSRF-TOKEN': config.csrfToken, 'Accept': 'application/json' };
+            const uploadId = crypto.randomUUID();
+            const totalChunks = Math.max(1, Math.ceil(file.size / config.mapChunkSize));
+
+            try {
+                for (let index = 0; index < totalChunks; index++) {
+                    const body = new FormData();
+                    body.append('upload_id', uploadId);
+                    body.append('index', index);
+                    body.append('chunk', file.slice(index * config.mapChunkSize, (index + 1) * config.mapChunkSize), 'chunk');
+
+                    await this.sendUploadRequest(config.storeMapChunkUrl, { method: 'POST', headers, body });
+                    this.uploadProgress = Math.round(((index + 1) / totalChunks) * 100);
+                }
+
+                await this.sendUploadRequest(config.storeMapUrl, {
+                    method: 'POST',
+                    headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: form.elements.title.value,
+                        upload_id: uploadId,
+                        total_chunks: totalChunks,
+                    })
+                });
+
+                window.location.reload();
+            } catch (error) {
+                this.uploadError = error.message;
+                this.uploadingMap = false;
+            }
+        },
+
+        async sendUploadRequest(url, options) {
+            const response = await fetch(url, options);
+            if (response.ok) {
+                return response.json();
+            }
+
+            let message = `Caricamento non riuscito (${response.status}).`;
+            try {
+                const data = await response.json();
+                message = Object.values(data.errors ?? {}).flat()[0] ?? data.message ?? message;
+            } catch (e) {
+                // La risposta non è JSON: si mantiene il messaggio generico.
+            }
+            throw new Error(message);
+        },
 
         async changePinColor(color) {
             const pin = this.pins.find((item) => item.id === this.selectedPin.id);

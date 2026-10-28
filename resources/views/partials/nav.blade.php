@@ -11,7 +11,10 @@
                     </div>
                 </div>
                 <div class="flex flex-col">
-                    <span class="font-['Cinzel'] font-bold text-lg tracking-wide text-white group-hover:text-amber-400 transition-colors">CAMPAIGN BOOK</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-['Cinzel'] font-bold text-lg tracking-wide text-white group-hover:text-amber-400 transition-colors">CAMPAIGN BOOK</span>
+                        <span class="rounded-md border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-normal text-amber-300">{{ config('app.version') }}</span>
+                    </div>
                     <span class="text-[10px] uppercase tracking-wider text-amber-500/80 font-medium -mt-1">Daggerheart Italia</span>
                 </div>
             </a>
