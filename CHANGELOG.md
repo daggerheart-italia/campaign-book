@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.6] - 2026-10-28
+
+- feat(wiki): add parent-child page hierarchy with nested tree view (49aacb0)
+- chore(changelog): update changelog for version 0.0.5 (163ed74)
+
 ## [0.0.5] - 2026-10-28
 
 - refactor(nav): collapse create-campaign button to icon and add tooltips (dbe7ffa)
