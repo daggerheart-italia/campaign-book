@@ -10,6 +10,8 @@ use App\Models\WikiPage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class CampaignWorkflowTest extends TestCase
@@ -114,9 +116,101 @@ class CampaignWorkflowTest extends TestCase
         $this->assertEquals(3, $wiki->revisions()->count());
     }
 
+    private function uploadMapInChunks(User $user, Campaign $campaign, string $title, string $contents, int $chunkSize = 1000, ?int $skipIndex = null): TestResponse
+    {
+        $uploadId = (string) Str::uuid();
+        $chunks = str_split($contents, $chunkSize);
+
+        foreach ($chunks as $index => $chunk) {
+            if ($index === $skipIndex) {
+                continue;
+            }
+
+            $this->actingAs($user)->postJson(route('maps.storeChunk', $campaign), [
+                'upload_id' => $uploadId,
+                'index' => $index,
+                'chunk' => UploadedFile::fake()->createWithContent('chunk', $chunk),
+            ])->assertOk();
+        }
+
+        return $this->actingAs($user)->postJson(route('maps.store', $campaign), [
+            'title' => $title,
+            'upload_id' => $uploadId,
+            'total_chunks' => count($chunks),
+        ]);
+    }
+
+    public function test_map_upload_with_missing_chunk_is_rejected(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Upload Incompleto']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $image = UploadedFile::fake()->image('mappa.png', 800, 600);
+        $contents = file_get_contents($image->getRealPath());
+
+        $this->uploadMapInChunks($gm, $campaign, 'Mappa rotta', $contents, 500, 1)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('image');
+
+        $this->assertSame(0, $campaign->maps()->count());
+    }
+
+    public function test_map_upload_rejects_files_that_are_not_images(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Upload Non Immagine']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $this->uploadMapInChunks($gm, $campaign, 'Falso', str_repeat('<?php echo 1; ?>', 200))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('image');
+
+        $this->assertSame(0, $campaign->maps()->count());
+        $this->assertSame([], Storage::disk('local')->allFiles());
+    }
+
+    public function test_non_members_cannot_upload_map_chunks(): void
+    {
+        Storage::fake('local');
+
+        $gm = User::factory()->create();
+        $outsider = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Solo Membri']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $this->actingAs($outsider)->postJson(route('maps.storeChunk', $campaign), [
+            'upload_id' => (string) Str::uuid(),
+            'index' => 0,
+            'chunk' => UploadedFile::fake()->createWithContent('chunk', 'abc'),
+        ])->assertForbidden();
+    }
+
+    public function test_prune_command_removes_only_stale_chunk_uploads(): void
+    {
+        Storage::fake('local');
+        $disk = Storage::disk('local');
+
+        $disk->put('map-chunks/1/1/stale/0', 'a');
+        $disk->put('map-chunks/1/1/fresh/0', 'b');
+        touch($disk->path('map-chunks/1/1/stale/0'), now()->subDays(2)->getTimestamp());
+
+        $this->artisan('maps:prune-chunks')->assertSuccessful();
+
+        $disk->assertMissing('map-chunks/1/1/stale/0');
+        $disk->assertExists('map-chunks/1/1/fresh/0');
+    }
+
     public function test_custom_map_image_upload_and_pin_placement(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         $gm = User::factory()->create();
         $campaign = Campaign::create([
@@ -125,13 +219,10 @@ class CampaignWorkflowTest extends TestCase
         ]);
         $campaign->users()->attach($gm->id, ['role' => 'gm']);
 
-        // 1. Upload custom map image
+        // 1. Upload custom map image in chunks
         $file = UploadedFile::fake()->image('dungeon_livello_1.png', 1600, 1000);
-        $uploadResponse = $this->actingAs($gm)->post(route('maps.store', $campaign), [
-            'title' => 'Sotterranei di Kar-Drak',
-            'image' => $file,
-        ]);
-        $uploadResponse->assertRedirect();
+        $uploadResponse = $this->uploadMapInChunks($gm, $campaign, 'Sotterranei di Kar-Drak', file_get_contents($file->getRealPath()));
+        $uploadResponse->assertOk()->assertJson(['success' => true]);
 
         $map = CampaignMap::where('title', 'Sotterranei di Kar-Drak')->first();
         $this->assertNotNull($map);

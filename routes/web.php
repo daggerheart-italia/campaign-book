@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/campaigns/{campaign}/revisions/compact', [CampaignController::class, 'compactRevisions'])->name('campaigns.compactRevisions');
 
     // Campaign Custom Maps
+    Route::post('/campaigns/{campaign}/maps/chunks', [CampaignMapController::class, 'storeChunk'])->name('maps.storeChunk');
     Route::post('/campaigns/{campaign}/maps', [CampaignMapController::class, 'store'])->name('maps.store');
     Route::post('/campaigns/{campaign}/maps/{map}/default', [CampaignMapController::class, 'setDefault'])->name('maps.setDefault');
     Route::delete('/campaigns/{campaign}/maps/{map}', [CampaignMapController::class, 'destroy'])->name('maps.destroy');

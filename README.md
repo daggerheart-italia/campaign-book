@@ -18,7 +18,7 @@ Applicazione web collaborativa per gestire la conoscenza condivisa e le note di 
 - **Esportazione** della campagna in Markdown.
 
 ### Mappe interattive
-- Più mappe per campagna, caricate come immagine, con una mappa predefinita.
+- Più mappe per campagna, caricate come immagine (fino a 50 MB) con upload a frammenti da 1 MB, per aggirare i limiti di dimensione di Apache/PHP, e con una mappa predefinita.
 - Riquadro a dimensione fissa ("Adatta"); zoom 50–300% con scroll in entrambe le direzioni.
 - Trascinamento con il tasto sinistro per spostare la mappa.
 - **Nuovo segnaposto** con tasto destro o doppio clic sulla mappa.

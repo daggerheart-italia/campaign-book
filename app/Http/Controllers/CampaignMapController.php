@@ -4,53 +4,137 @@ namespace App\Http\Controllers;
 
 use App\Models\Campaign;
 use App\Models\CampaignMap;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class CampaignMapController extends Controller
 {
+    public const MAX_IMAGE_BYTES = 50 * 1024 * 1024;
+
+    public const MAX_CHUNK_BYTES = 1024 * 1024;
+
     /**
-     * Upload and store a new custom campaign map image.
+     * Receive a single chunk of a map image being uploaded.
+     */
+    public function storeChunk(Request $request, Campaign $campaign): JsonResponse
+    {
+        $this->authorize('update', $campaign);
+
+        $maxChunks = (int) ceil(self::MAX_IMAGE_BYTES / self::MAX_CHUNK_BYTES);
+
+        $validated = $request->validate([
+            'upload_id' => 'required|uuid',
+            'index' => 'required|integer|min:0|lt:'.$maxChunks,
+            'chunk' => 'required|file|max:'.(int) (self::MAX_CHUNK_BYTES / 1024),
+        ]);
+
+        Storage::disk('local')->putFileAs(
+            $this->chunkDirectory($campaign, $validated['upload_id']),
+            $request->file('chunk'),
+            (string) $validated['index'],
+        );
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Assemble the uploaded chunks and store the new custom campaign map image.
      */
     public function store(Request $request, Campaign $campaign)
     {
         $this->authorize('update', $campaign);
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'image' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:15360', // max 15MB
+            'upload_id' => 'required|uuid',
+            'total_chunks' => 'required|integer|min:1|max:'.(int) ceil(self::MAX_IMAGE_BYTES / self::MAX_CHUNK_BYTES),
         ]);
 
-        $file = $request->file('image');
-        $path = $file->store('maps', 'public');
+        $directory = $this->chunkDirectory($campaign, $validated['upload_id']);
+        $disk = Storage::disk('local');
+        $assembledPath = $directory.'/assembled';
 
-        // Optional image dimensions
-        $dimensions = @getimagesize($file->getRealPath());
-        $width = $dimensions ? $dimensions[0] : null;
-        $height = $dimensions ? $dimensions[1] : null;
+        try {
+            $this->assembleChunks($directory, (int) $validated['total_chunks']);
+
+            $file = new UploadedFile($disk->path($assembledPath), 'map', null, null, true);
+
+            if ($file->getSize() > self::MAX_IMAGE_BYTES) {
+                throw ValidationException::withMessages([
+                    'image' => 'L\'immagine supera la dimensione massima consentita.',
+                ]);
+            }
+
+            Validator::make(['image' => $file], [
+                'image' => 'required|image|mimes:jpeg,png,jpg,webp,gif',
+            ])->validate();
+
+            $path = Storage::disk('public')->putFile('maps', $file);
+
+            $dimensions = @getimagesize($file->getRealPath());
+        } finally {
+            $disk->deleteDirectory($directory);
+        }
 
         // If this is the first map, mark it as default
-        $isFirst = !$campaign->maps()->exists();
+        $isFirst = ! $campaign->maps()->exists();
 
         $map = $campaign->maps()->create([
             'created_by' => Auth::id(),
-            'title' => $request->title,
+            'title' => $validated['title'],
             'image_path' => $path,
-            'width' => $width,
-            'height' => $height,
+            'width' => $dimensions ? $dimensions[0] : null,
+            'height' => $dimensions ? $dimensions[1] : null,
             'is_default' => $isFirst,
         ]);
 
+        $message = "Mappa \"{$map->title}\" caricata con successo!";
+
         if ($request->wantsJson()) {
+            session()->flash('success', $message);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Mappa caricata con successo!',
+                'message' => $message,
                 'map' => $map,
             ]);
         }
 
-        return back()->with('success', "Mappa \"{$map->title}\" caricata con successo!");
+        return back()->with('success', $message);
+    }
+
+    private function chunkDirectory(Campaign $campaign, string $uploadId): string
+    {
+        return 'map-chunks/'.$campaign->id.'/'.Auth::id().'/'.$uploadId;
+    }
+
+    private function assembleChunks(string $directory, int $totalChunks): void
+    {
+        $disk = Storage::disk('local');
+        $output = fopen($disk->path($directory.'/assembled'), 'wb');
+
+        try {
+            for ($index = 0; $index < $totalChunks; $index++) {
+                $chunkPath = $directory.'/'.$index;
+
+                if (! $disk->exists($chunkPath)) {
+                    throw ValidationException::withMessages([
+                        'image' => 'Caricamento incompleto: mancano dei frammenti del file.',
+                    ]);
+                }
+
+                $input = fopen($disk->path($chunkPath), 'rb');
+                stream_copy_to_stream($input, $output);
+                fclose($input);
+            }
+        } finally {
+            fclose($output);
+        }
     }
 
     /**
