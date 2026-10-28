@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.7] - 2026-10-28
+
+- feat(wiki): add parent and child page navigation to wiki detail view (f2eb6d5)
+- feat(wiki): show flat filtered cards when search or category filter is active (956e58a)
+- style(wiki): adjust stacked card border and background opacity (882264a)
+- chore(changelog): add entries for version 0.0.6 (1fc7f9d)
+
 ## [0.0.6] - 2026-10-28
 
 - feat(wiki): add parent-child page hierarchy with nested tree view (49aacb0)
