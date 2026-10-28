@@ -53,6 +53,21 @@
                 </div>
             </div>
 
+            <div>
+                <label for="parent_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Scheda genitore</label>
+                <select id="parent_id" name="parent_id" class="input-premium text-sm">
+                    <option value="">Nessun genitore</option>
+                    @foreach($parentPages as $parentPage)
+                        <option value="{{ $parentPage->id }}" {{ (string) old('parent_id') === (string) $parentPage->id ? 'selected' : '' }}>
+                            {{ $parentPage->category ?: 'Generale' }} — {{ $parentPage->title }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('parent_id')
+                    <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
+                @enderror
+            </div>
+
             <!-- Editor & Live Preview Switcher -->
             <div>
                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Contenuto *</label>

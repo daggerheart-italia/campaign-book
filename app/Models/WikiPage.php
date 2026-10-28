@@ -18,6 +18,7 @@ class WikiPage extends Model
         'title',
         'slug',
         'category',
+        'parent_id',
         'content',
         'created_by',
         'updated_by',
@@ -27,7 +28,7 @@ class WikiPage extends Model
     {
         static::saving(function ($page) {
             if (empty($page->slug)) {
-                $page->slug = Str::slug($page->title) . '-' . Str::random(5);
+                $page->slug = Str::slug($page->title).'-'.Str::random(5);
             }
         });
     }
@@ -35,6 +36,16 @@ class WikiPage extends Model
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(Campaign::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
     }
 
     public function creator(): BelongsTo

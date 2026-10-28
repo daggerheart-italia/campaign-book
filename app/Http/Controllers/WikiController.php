@@ -6,7 +6,9 @@ use App\Models\Campaign;
 use App\Models\WikiPage;
 use App\Models\WikiPageRevision;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class WikiController extends Controller
 {
@@ -18,6 +20,7 @@ class WikiController extends Controller
         $this->authorize('update', $campaign);
 
         $defaultCategories = ['Personaggi & PNG', 'Luoghi & Città', 'Fazioni & Gilde', 'Oggetti & Reliquie', 'Lore & Storia', 'Mostri & Minacce', 'Altro'];
+        $parentPages = $this->availableParentPages($campaign);
 
         $pin = null;
         if ($request->filled('pin_id')) {
@@ -26,15 +29,16 @@ class WikiController extends Controller
 
         $prefillTitle = $request->query('title', $pin ? $pin->title : '');
         $prefillCategory = $request->query('category', $pin ? 'Luoghi & Città' : 'Generale');
-        $prefillContent = $pin && $pin->description ? "## Note sul Luogo\n" . $pin->description . "\n" : '';
+        $prefillContent = $pin && $pin->description ? "## Note sul Luogo\n".$pin->description."\n" : '';
         $pinId = $pin ? $pin->id : null;
 
         return view('wiki.create', compact(
-            'campaign', 
-            'defaultCategories', 
-            'pin', 
-            'prefillTitle', 
-            'prefillCategory', 
+            'campaign',
+            'defaultCategories',
+            'parentPages',
+            'pin',
+            'prefillTitle',
+            'prefillCategory',
             'prefillContent',
             'pinId'
         ));
@@ -50,6 +54,7 @@ class WikiController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'category' => 'nullable|string|max:100',
+            'parent_id' => ['nullable', 'integer', Rule::in($this->availableParentPages($campaign)->modelKeys())],
             'content' => 'required|string',
             'pin_id' => 'nullable|exists:map_pins,id',
         ]);
@@ -57,6 +62,7 @@ class WikiController extends Controller
         $wiki = $campaign->wikiPages()->create([
             'title' => $data['title'],
             'category' => $data['category'] ?: 'Generale',
+            'parent_id' => $data['parent_id'] ?? null,
             'content' => $data['content'],
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
@@ -73,7 +79,7 @@ class WikiController extends Controller
         ]);
 
         // If created from a map pin, link the pin to this wiki page!
-        if (!empty($data['pin_id'])) {
+        if (! empty($data['pin_id'])) {
             $pin = $campaign->mapPins()->find($data['pin_id']);
             if ($pin) {
                 $pin->update(['wiki_page_id' => $wiki->id]);
@@ -114,8 +120,9 @@ class WikiController extends Controller
         $this->authorize('update', $campaign);
 
         $defaultCategories = ['Personaggi & PNG', 'Luoghi & Città', 'Fazioni & Gilde', 'Oggetti & Reliquie', 'Lore & Storia', 'Mostri & Minacce', 'Altro'];
+        $parentPages = $this->availableParentPages($campaign, $wiki);
 
-        return view('wiki.edit', compact('campaign', 'wiki', 'defaultCategories'));
+        return view('wiki.edit', compact('campaign', 'wiki', 'defaultCategories', 'parentPages'));
     }
 
     /**
@@ -128,6 +135,7 @@ class WikiController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'category' => 'nullable|string|max:100',
+            'parent_id' => ['nullable', 'integer', Rule::in($this->availableParentPages($campaign, $wiki)->modelKeys())],
             'content' => 'required|string',
             'summary' => 'nullable|string|max:255',
         ]);
@@ -135,6 +143,7 @@ class WikiController extends Controller
         $wiki->update([
             'title' => $data['title'],
             'category' => $data['category'] ?: 'Generale',
+            'parent_id' => array_key_exists('parent_id', $data) ? $data['parent_id'] : $wiki->parent_id,
             'content' => $data['content'],
             'updated_by' => Auth::id(),
         ]);
@@ -212,10 +221,42 @@ class WikiController extends Controller
             'title' => $wiki->title,
             'category' => $wiki->category,
             'content' => $wiki->content,
-            'summary' => 'Ripristino alla revisione del ' . $revision->created_at->format('d/m/Y H:i'),
+            'summary' => 'Ripristino alla revisione del '.$revision->created_at->format('d/m/Y H:i'),
         ]);
 
         return redirect()->route('wiki.show', [$campaign, $wiki])
             ->with('success', 'Pagina ripristinata alla revisione selezionata.');
+    }
+
+    private function availableParentPages(Campaign $campaign, ?WikiPage $wiki = null): Collection
+    {
+        $pages = $campaign->wikiPages()
+            ->get()
+            ->sortBy(fn (WikiPage $page): string => mb_strtolower(($page->category ?: 'Generale')."\0".$page->title))
+            ->values();
+
+        if ($wiki === null) {
+            return $pages;
+        }
+
+        $pagesById = $pages->keyBy('id');
+
+        return $pages->reject(function (WikiPage $candidate) use ($pagesById, $wiki): bool {
+            if ($candidate->is($wiki)) {
+                return true;
+            }
+
+            $ancestorId = $candidate->parent_id;
+
+            while ($ancestorId !== null) {
+                if ((int) $ancestorId === (int) $wiki->id) {
+                    return true;
+                }
+
+                $ancestorId = $pagesById->get($ancestorId)?->parent_id;
+            }
+
+            return false;
+        })->values();
     }
 }
