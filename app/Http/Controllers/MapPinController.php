@@ -6,6 +6,7 @@ use App\Models\Campaign;
 use App\Models\MapPin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class MapPinController extends Controller
@@ -39,7 +40,7 @@ class MapPinController extends Controller
             'y' => 'required|numeric|between:0,100', // percentage from top
             'campaign_map_id' => 'nullable|exists:campaign_maps,id',
             'description' => 'nullable|string',
-            'wiki_page_id' => 'nullable|exists:wiki_pages,id',
+            'wiki_page_id' => ['nullable', Rule::exists('wiki_pages', 'id')->where('campaign_id', $campaign->id)->whereNull('deleted_at')],
             'color' => 'nullable|string|max:20',
         ]);
 
@@ -79,7 +80,7 @@ class MapPinController extends Controller
             'x' => 'sometimes|required|numeric|between:0,100',
             'y' => 'sometimes|required|numeric|between:0,100',
             'description' => 'nullable|string',
-            'wiki_page_id' => 'nullable|exists:wiki_pages,id',
+            'wiki_page_id' => ['nullable', Rule::exists('wiki_pages', 'id')->where('campaign_id', $campaign->id)->whereNull('deleted_at')],
             'color' => 'nullable|string|max:20',
             'locked' => 'sometimes|boolean',
         ]);

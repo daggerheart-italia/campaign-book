@@ -293,12 +293,45 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
-            <div class="flex items-center gap-2.5 mb-2">
-                <span class="w-4 h-4 rounded-full" :style="'background-color: ' + selectedPin.color"></span>
-                <h3 class="font-['Cinzel'] text-xl font-bold text-white" x-text="selectedPin.title"></h3>
-            </div>
+            <template x-if="!editingPin">
+                <div>
+                    <div class="flex items-center gap-2.5 mb-2 pr-8">
+                        <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>
+                        <h3 class="font-['Cinzel'] text-xl font-bold text-white min-w-0 break-words" x-text="selectedPin.title"></h3>
+                        <button type="button" @click="startPinEdit()" class="shrink-0 p-1 text-slate-400 hover:text-amber-300" title="Modifica nome e descrizione" aria-label="Modifica nome e descrizione">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 16.536 8 18l1-5z"/></svg>
+                        </button>
+                    </div>
 
-            <p class="text-xs text-slate-300 leading-relaxed mb-4 whitespace-pre-wrap" x-text="selectedPin.description || 'Nessuna descrizione specificata.'"></p>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4 whitespace-pre-wrap" x-text="selectedPin.description || 'Nessuna descrizione specificata.'"></p>
+                </div>
+            </template>
+
+            <template x-if="editingPin">
+                <form @submit.prevent="savePinDetails()" class="space-y-3 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nome *</label>
+                        <input type="text" x-model="pinEditForm.title" required maxlength="255" class="input-premium text-sm font-semibold" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Descrizione</label>
+                        <textarea x-model="pinEditForm.description" rows="4" class="input-premium text-xs"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Scheda Wiki collegata</label>
+                        <select x-model="pinEditForm.wiki_page_id" class="input-premium text-xs">
+                            <option value="">Nessun collegamento</option>
+                            @foreach($campaign->wikiPages as $wp)
+                                <option value="{{ $wp->id }}">{{ $wp->title }} ({{ $wp->category }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-end gap-2">
+                        <button type="button" @click="editingPin = false" :disabled="savingPinDetails" class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-50">Annulla</button>
+                        <button type="submit" :disabled="savingPinDetails || !pinEditForm.title.trim()" class="btn-primary text-xs py-1.5 px-3 disabled:opacity-50">Salva</button>
+                    </div>
+                </form>
+            </template>
 
             <div class="space-y-3 pt-3 border-t border-white/10">
                 <!-- If linked to Wiki page -->
@@ -593,7 +626,65 @@ function customImageMap(config) {
             if (this.isDragging) return;
             this.selectedPin = pin;
             this.mapError = '';
+            this.editingPin = false;
             this.detailsModalOpen = true;
+        },
+
+        editingPin: false,
+        savingPinDetails: false,
+        pinEditForm: { title: '', description: '', wiki_page_id: '' },
+
+        startPinEdit() {
+            this.pinEditForm = {
+                title: this.selectedPin.title,
+                description: this.selectedPin.description ?? '',
+                wiki_page_id: this.selectedPin.wiki_page_id ? String(this.selectedPin.wiki_page_id) : '',
+            };
+            this.mapError = '';
+            this.editingPin = true;
+        },
+
+        async savePinDetails() {
+            const pin = this.pins.find((item) => item.id === this.selectedPin.id);
+            if (!pin) {
+                return;
+            }
+
+            this.savingPinDetails = true;
+            this.mapError = '';
+
+            try {
+                const response = await fetch(`${config.updatePinBaseUrl}/${pin.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: this.pinEditForm.title.trim(),
+                        description: this.pinEditForm.description.trim() || null,
+                        wiki_page_id: this.pinEditForm.wiki_page_id || null,
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error(`Impossibile aggiornare il segnaposto (${response.status}).`);
+                }
+
+                const data = await response.json();
+                pin.title = data.pin.title;
+                pin.description = data.pin.description;
+                pin.wiki_page_id = data.pin.wiki_page_id;
+                pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
+                pin.wiki_page_url = data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page_id}` : null;
+                this.selectedPin = { ...pin };
+                this.editingPin = false;
+            } catch (error) {
+                this.mapError = error.message;
+                console.error(error);
+            } finally {
+                this.savingPinDetails = false;
+            }
         },
 
         pinColors: [

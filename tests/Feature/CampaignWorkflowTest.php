@@ -207,6 +207,39 @@ class CampaignWorkflowTest extends TestCase
         $disk->assertExists('map-chunks/1/1/fresh/0');
     }
 
+    public function test_map_pin_wiki_link_can_be_changed_removed_and_is_limited_to_the_campaign(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Link Wiki']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $otherCampaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Altra Campagna']);
+
+        $firstPage = WikiPage::create(['campaign_id' => $campaign->id, 'title' => 'Prima', 'category' => 'Luoghi & Città', 'content' => 'a', 'created_by' => $gm->id]);
+        $secondPage = WikiPage::create(['campaign_id' => $campaign->id, 'title' => 'Seconda', 'category' => 'Luoghi & Città', 'content' => 'b', 'created_by' => $gm->id]);
+        $foreignPage = WikiPage::create(['campaign_id' => $otherCampaign->id, 'title' => 'Estranea', 'category' => 'Altro', 'content' => 'c', 'created_by' => $gm->id]);
+
+        $pin = MapPin::create([
+            'campaign_id' => $campaign->id,
+            'created_by' => $gm->id,
+            'title' => 'Torre',
+            'x' => 10,
+            'y' => 10,
+            'wiki_page_id' => $firstPage->id,
+        ]);
+        $url = route('pins.update', [$campaign, $pin]);
+
+        $this->actingAs($gm)->putJson($url, ['wiki_page_id' => $secondPage->id])->assertOk();
+        $this->assertSame($secondPage->id, $pin->fresh()->wiki_page_id);
+
+        $this->actingAs($gm)->putJson($url, ['wiki_page_id' => $foreignPage->id])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('wiki_page_id');
+        $this->assertSame($secondPage->id, $pin->fresh()->wiki_page_id);
+
+        $this->actingAs($gm)->putJson($url, ['wiki_page_id' => null])->assertOk();
+        $this->assertNull($pin->fresh()->wiki_page_id);
+    }
+
     public function test_custom_map_image_upload_and_pin_placement(): void
     {
         Storage::fake('public');
