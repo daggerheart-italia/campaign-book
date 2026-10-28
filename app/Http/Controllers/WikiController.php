@@ -106,10 +106,20 @@ class WikiController extends Controller
     {
         $this->authorize('view', $campaign);
 
-        $wiki->load(['creator', 'editor', 'revisions.user', 'mapPins.campaignMap']);
+        $wiki->load([
+            'creator',
+            'editor',
+            'revisions.user',
+            'mapPins.campaignMap',
+            'parent' => fn ($query) => $query->where('campaign_id', $campaign->id),
+            'children' => fn ($query) => $query->where('campaign_id', $campaign->id),
+        ]);
+        $childPages = $wiki->children
+            ->sortBy(fn (WikiPage $page): string => mb_strtolower(($page->category ?: 'Generale')."\0".$page->title))
+            ->values();
         $isGm = $campaign->isGm(Auth::user());
 
-        return view('wiki.show', compact('campaign', 'wiki', 'isGm'));
+        return view('wiki.show', compact('campaign', 'wiki', 'childPages', 'isGm'));
     }
 
     /**

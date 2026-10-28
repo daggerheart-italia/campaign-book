@@ -81,6 +81,45 @@
         </div>
     </article>
 
+    @if($wiki->parent || $childPages->isNotEmpty())
+        <nav aria-label="Navigazione tra schede correlate" class="space-y-3">
+            @if($wiki->parent)
+                <a href="{{ route('wiki.show', [$campaign, $wiki->parent]) }}"
+                   class="inline-flex min-h-11 items-center gap-2 text-sm text-amber-300 hover:text-amber-200 transition-colors">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    <span>Genitore:</span>
+                    <span class="font-semibold">{{ $wiki->parent->title }}</span>
+                </a>
+            @endif
+
+            @if($childPages->isNotEmpty())
+                <details class="rounded-xl border border-white/10 bg-white/[0.03]">
+                    <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm text-slate-200 [&::-webkit-details-marker]:hidden">
+                        <span>Schede figlie</span>
+                        <span class="inline-flex items-center gap-2 text-xs text-slate-400">
+                            {{ $childPages->count() }}
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </span>
+                    </summary>
+                    <ul class="flex flex-wrap gap-2 border-t border-white/10 px-3 py-3">
+                        @foreach($childPages as $childPage)
+                            <li>
+                                <a href="{{ route('wiki.show', [$campaign, $childPage]) }}"
+                                   class="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-amber-300 transition-colors hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-200">
+                                    {{ $childPage->title }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </details>
+            @endif
+        </nav>
+    @endif
+
     <!-- Back button -->
     <div class="flex justify-between items-center pt-2">
         <a href="{{ route('campaigns.show', ['campaign' => $campaign, 'tab' => 'wiki']) }}" class="btn-secondary text-xs py-2 px-4">

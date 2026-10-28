@@ -241,6 +241,9 @@ class CampaignWorkflowTest extends TestCase
             [(string) $aquila->id, (string) $zeta->id, (string) $parent->id, (string) $child->id],
             $pageIds[1]
         );
+        $response->assertSee('filteredPages.length > 0 && hasActiveFilter()', false);
+        $response->assertSee('x-for="page in filteredPages"', false);
+        $response->assertDontSee('hasMatchingDescendant', false);
         $response->assertSee('aria-expanded="false"', false);
     }
 
@@ -621,11 +624,29 @@ class CampaignWorkflowTest extends TestCase
         $campaign->users()->attach($gm->id, ['role' => 'gm']);
 
         $target = WikiPage::create(['campaign_id' => $campaign->id, 'title' => 'Alleanza', 'content' => 'x']);
-        $source = WikiPage::create(['campaign_id' => $campaign->id, 'title' => 'Trattato', 'content' => 'Vedi [[Alleanza]].']);
+        $parent = WikiPage::create(['campaign_id' => $campaign->id, 'title' => 'Concilio', 'content' => 'x']);
+        $source = WikiPage::create([
+            'campaign_id' => $campaign->id,
+            'parent_id' => $parent->id,
+            'title' => 'Trattato',
+            'content' => 'Vedi [[Alleanza]].',
+        ]);
+        $child = WikiPage::create([
+            'campaign_id' => $campaign->id,
+            'parent_id' => $source->id,
+            'title' => 'Protocollo',
+            'content' => 'x',
+        ]);
 
         $this->actingAs($gm)->get(route('wiki.show', [$campaign, $source]))
             ->assertOk()
-            ->assertSee('href="'.route('wiki.show', [$campaign, $target]).'"', false);
+            ->assertSee('href="'.route('wiki.show', [$campaign, $target]).'"', false)
+            ->assertSee('href="'.route('wiki.show', [$campaign, $parent]).'"', false)
+            ->assertSee('href="'.route('wiki.show', [$campaign, $child]).'"', false)
+            ->assertSee('aria-label="Navigazione tra schede correlate"', false)
+            ->assertSee('<details', false)
+            ->assertSee('Schede figlie', false)
+            ->assertSeeInOrder(['Vedi', '</article>', 'aria-label="Navigazione tra schede correlate"'], false);
     }
 
     public function test_deleting_a_map_removes_its_pins_from_the_campaign(): void
