@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.9] - 2026-10-28
+
+- feat(maps): add pinch-to-zoom and ctrl+wheel zoom on campaign map (38afb02)
+- perf(js): lazy-load markdown editor and split tiptap chunks (c023231)
+- style(ui): improve typography and replace inline display styles with x-cloak (4ca63f3)
+- feat(campaigns): add edit and update actions for game masters (fba2fdd)
+- chore(changelog): update changelog for version 0.0.8 (7264198)
+
 ## [0.0.8] - 2026-10-28
 
 - refactor(ui): replace inline wiki child expansion with modal navigation (d4e7a42)
