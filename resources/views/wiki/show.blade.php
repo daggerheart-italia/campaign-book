@@ -77,7 +77,7 @@
 
         <!-- Markdown Rendered Content -->
         <div class="prose-dagger text-slate-200 text-sm sm:text-base leading-relaxed">
-            {!! Str::markdown($wiki->content) !!}
+            {!! $campaign->renderMarkdown($wiki->content) !!}
         </div>
     </article>
 

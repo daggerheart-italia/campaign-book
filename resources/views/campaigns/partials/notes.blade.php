@@ -34,8 +34,9 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Contenuto (Markdown supportato) *</label>
-                    <textarea name="content" rows="4" required class="input-premium text-xs" placeholder="Cosa è accaduto? Chi ha parlato? Quali ricompense o ferite sono state ottenute?"></textarea>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Contenuto *</label>
+                    <x-markdown-editor :campaign="$campaign" min-height="8rem"
+                                       placeholder="Cosa è accaduto? Digita [[ per collegare una pagina della wiki." />
                 </div>
 
                 <div class="flex items-center justify-between pt-1">
@@ -124,7 +125,7 @@
 
                     <!-- Content (Markdown formatted) -->
                     <div class="prose-dagger text-xs sm:text-sm">
-                        {!! Str::markdown($note->content) !!}
+                        {!! $campaign->renderMarkdown($note->content) !!}
                     </div>
                 </div>
             @endforeach
@@ -158,8 +159,8 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Contenuto (Markdown)</label>
-                    <textarea name="content" x-model="editingNote.content" rows="6" required class="input-premium text-xs"></textarea>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Contenuto</label>
+                    <x-markdown-editor :campaign="$campaign" min-height="10rem" x-model="editingNote.content" />
                 </div>
 
                 <div class="flex items-center justify-between pt-2">
