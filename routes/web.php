@@ -33,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/campaigns/create', [CampaignController::class, 'create'])->name('campaigns.create');
     Route::post('/campaigns', [CampaignController::class, 'store'])->name('campaigns.store');
     Route::get('/campaigns/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');
+    Route::get('/campaigns/{campaign}/edit', [CampaignController::class, 'edit'])->name('campaigns.edit');
+    Route::put('/campaigns/{campaign}', [CampaignController::class, 'update'])->name('campaigns.update');
     Route::get('/campaigns/{campaign}/export', [CampaignController::class, 'export'])->name('campaigns.export');
 
     // Invites & Joining

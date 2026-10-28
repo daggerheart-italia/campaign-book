@@ -70,6 +70,34 @@ class CampaignController extends Controller
     }
 
     /**
+     * Show the form for editing campaign details.
+     */
+    public function edit(Campaign $campaign)
+    {
+        $this->authorize('updateDetails', $campaign);
+
+        return view('campaigns.edit', compact('campaign'));
+    }
+
+    /**
+     * Update campaign details.
+     */
+    public function update(Request $request, Campaign $campaign)
+    {
+        $this->authorize('updateDetails', $campaign);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+        ]);
+
+        $campaign->update($validated);
+
+        return redirect()->route('campaigns.show', $campaign)
+            ->with('success', 'Campagna aggiornata con successo.');
+    }
+
+    /**
      * Display the specified campaign workspace with tabs.
      */
     public function show(Campaign $campaign)

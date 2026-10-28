@@ -51,6 +51,113 @@ class CampaignWorkflowTest extends TestCase
         $this->assertNotNull($campaign->invite_code_gm);
     }
 
+    public function test_game_master_can_edit_campaign_name_and_description(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Campagna originale',
+            'description' => 'Descrizione originale',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $this->actingAs($gm)
+            ->get(route('campaigns.show', $campaign))
+            ->assertOk()
+            ->assertSee(route('campaigns.edit', $campaign))
+            ->assertSee('Modifica');
+
+        $this->actingAs($gm)
+            ->get(route('campaigns.edit', $campaign))
+            ->assertOk()
+            ->assertSee('Campagna originale')
+            ->assertSee('Descrizione originale');
+
+        $this->actingAs($gm)
+            ->put(route('campaigns.update', $campaign), [
+                'name' => 'Campagna aggiornata',
+                'description' => 'Una nuova descrizione.',
+            ])
+            ->assertRedirect(route('campaigns.show', $campaign));
+
+        $this->assertDatabaseHas('campaigns', [
+            'id' => $campaign->id,
+            'name' => 'Campagna aggiornata',
+            'description' => 'Una nuova descrizione.',
+        ]);
+
+        $this->actingAs($gm)
+            ->put(route('campaigns.update', $campaign), [
+                'name' => 'Campagna aggiornata',
+                'description' => '',
+            ])
+            ->assertRedirect(route('campaigns.show', $campaign));
+
+        $this->assertDatabaseHas('campaigns', [
+            'id' => $campaign->id,
+            'name' => 'Campagna aggiornata',
+            'description' => null,
+        ]);
+    }
+
+    public function test_player_cannot_edit_campaign_name_or_description(): void
+    {
+        $gm = User::factory()->create();
+        $player = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Campagna',
+            'description' => 'Descrizione originale',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $campaign->users()->attach($player->id, ['role' => 'player']);
+
+        $this->actingAs($player)
+            ->get(route('campaigns.show', $campaign))
+            ->assertOk()
+            ->assertDontSee(route('campaigns.edit', $campaign));
+
+        $this->actingAs($player)
+            ->put(route('campaigns.update', $campaign), [
+                'name' => 'Modifica non autorizzata',
+                'description' => 'Descrizione modificata',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('campaigns', [
+            'id' => $campaign->id,
+            'name' => 'Campagna',
+            'description' => 'Descrizione originale',
+        ]);
+    }
+
+    public function test_campaign_details_require_a_name_and_limit_description_length(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Campagna originale',
+            'description' => 'Descrizione originale',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $this->actingAs($gm)
+            ->put(route('campaigns.update', $campaign), [
+                'name' => '',
+                'description' => str_repeat('a', 1001),
+            ])
+            ->assertSessionHasErrors([
+                'name' => 'The name field is required.',
+                'description' => 'The description field must not be greater than 1000 characters.',
+            ]);
+
+        $this->assertDatabaseHas('campaigns', [
+            'id' => $campaign->id,
+            'name' => 'Campagna originale',
+            'description' => 'Descrizione originale',
+        ]);
+    }
+
     public function test_player_can_join_via_invite_code(): void
     {
         $gm = User::factory()->create();
