@@ -241,6 +241,9 @@ class CampaignWorkflowTest extends TestCase
             [(string) $aquila->id, (string) $zeta->id, (string) $parent->id, (string) $child->id],
             $pageIds[1]
         );
+        $response->assertSee('filteredPages.length > 0 && hasActiveFilter()', false);
+        $response->assertSee('x-for="page in filteredPages"', false);
+        $response->assertDontSee('hasMatchingDescendant', false);
         $response->assertSee('aria-expanded="false"', false);
     }
 

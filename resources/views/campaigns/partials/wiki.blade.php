@@ -2,12 +2,11 @@
     search: '',
     selectedCategory: 'all',
     pages: {{ Js::from($wikiPageItems) }},
-    pageById: {},
-    init() {
-        this.pageById = Object.fromEntries(this.pages.map(page => [page.id, page]));
-    },
     get filteredPages() {
         return this.pages.filter(page => this.matchesPage(page));
+    },
+    hasActiveFilter() {
+        return this.search.trim() !== '' || this.selectedCategory !== 'all';
     },
     matchesPage(page) {
         const searchTerm = this.search.trim().toLocaleLowerCase();
@@ -17,18 +16,6 @@
         const matchesCategory = this.selectedCategory === 'all' || page.category === this.selectedCategory;
 
         return matchesSearch && matchesCategory;
-    },
-    hasMatchingDescendant(pageId) {
-        return this.pageById[pageId].children_ids.some(childId => {
-            const child = this.pageById[childId];
-
-            return this.matchesPage(child) || this.hasMatchingDescendant(childId);
-        });
-    },
-    shouldExpandChildren(pageId) {
-        const hasActiveFilter = this.search.trim() !== '' || this.selectedCategory !== 'all';
-
-        return hasActiveFilter && this.hasMatchingDescendant(pageId);
     }
 }" class="space-y-4">
 
@@ -69,11 +56,22 @@
     </div>
 
     <!-- Wiki Cards Tree -->
-    <template x-if="filteredPages.length > 0">
+    <template x-if="filteredPages.length > 0 && !hasActiveFilter()">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($wikiPageTree as $node)
                 @include('campaigns.partials.wiki-page-card', ['node' => $node])
             @endforeach
+        </div>
+    </template>
+
+    <!-- Flat Filtered Wiki Cards -->
+    <template x-if="filteredPages.length > 0 && hasActiveFilter()">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="page in filteredPages" :key="page.id">
+                <div class="relative isolate">
+                    @include('campaigns.partials.wiki-page-card-content', ['childrenCount' => 0])
+                </div>
+            </template>
         </div>
     </template>
 
