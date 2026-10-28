@@ -10,6 +10,21 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('/node_modules/@tiptap/pm/') || id.includes('/node_modules/prosemirror-')) {
+                        return 'prosemirror';
+                    }
+
+                    if (id.includes('/node_modules/@tiptap/')) {
+                        return 'tiptap';
+                    }
+                },
+            },
+        },
+    },
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],

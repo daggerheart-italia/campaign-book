@@ -41,6 +41,14 @@ class CampaignPolicy
     }
 
     /**
+     * Determine whether the user can update campaign details.
+     */
+    public function updateDetails(User $user, Campaign $campaign): bool
+    {
+        return $campaign->isGm($user);
+    }
+
+    /**
      * Determine whether the user can delete items or the campaign.
      */
     public function delete(User $user, Campaign $campaign): bool

@@ -108,7 +108,7 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         style="display: none;">
+         x-cloak>
         <div @click.away="joinModalOpen = false" class="glass-panel p-6 sm:p-8 rounded-2xl max-w-md w-full relative">
             <button @click="joinModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
