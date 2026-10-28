@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.3] - 2026-10-28
+
+- feat(map): allow editing pin details and scope wiki page links to campaign (1815506)
+- chore(changelog): update changelog for version 0.0.2 (c14f5eb)
+
 ## [0.0.2] - 2026-10-28
 
 - feat(ui): display application version badge in navigation (9f705c8)
