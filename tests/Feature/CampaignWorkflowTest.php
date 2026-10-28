@@ -499,4 +499,28 @@ class CampaignWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('href="'.route('wiki.show', [$campaign, $target]).'"', false);
     }
+
+    public function test_deleting_a_map_removes_its_pins_from_the_campaign(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Mappe']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $map = CampaignMap::create(['campaign_id' => $campaign->id, 'created_by' => $gm->id, 'title' => 'Regno', 'image_path' => 'https://example.com/a.png', 'is_default' => true]);
+        $otherMap = CampaignMap::create(['campaign_id' => $campaign->id, 'created_by' => $gm->id, 'title' => 'Isola', 'image_path' => 'https://example.com/b.png']);
+        MapPin::create(['campaign_id' => $campaign->id, 'campaign_map_id' => $map->id, 'title' => 'Torre', 'x' => 10, 'y' => 10]);
+        $kept = MapPin::create(['campaign_id' => $campaign->id, 'campaign_map_id' => $otherMap->id, 'title' => 'Faro', 'x' => 20, 'y' => 20]);
+        // Pin orphaned by a map deleted before pins were removed with it
+        $orphan = MapPin::create(['campaign_id' => $campaign->id, 'campaign_map_id' => $otherMap->id, 'title' => 'Orfano', 'x' => 5, 'y' => 5]);
+
+        $this->actingAs($gm)->delete(route('maps.destroy', [$campaign, $map]))->assertRedirect();
+
+        $this->assertSoftDeleted('map_pins', ['title' => 'Torre']);
+        $this->assertNotSoftDeleted('map_pins', ['id' => $kept->id]);
+
+        $otherMap->delete();
+        $this->assertSame([], $campaign->fresh()->mapPins()->whereHas('campaignMap')->pluck('id')->all());
+
+        $this->actingAs($gm)->get(route('campaigns.show', $campaign))->assertOk()->assertDontSee('Orfano');
+    }
 }
