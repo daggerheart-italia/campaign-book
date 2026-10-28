@@ -86,7 +86,7 @@
             <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
                     class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Riduci zoom" title="Riduci zoom">−</button>
-            <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="zoomLevel + '%'"></span>
+            <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="(Math.round(zoomLevel * 10) / 10) + '%'"></span>
             <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
                     class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Aumenta zoom" title="Aumenta zoom">+</button>
@@ -123,16 +123,21 @@
 
     <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-slate-300 flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-        <span>Trascina per spostare la mappa • Tasto destro o doppio clic per inserire un pin • Trascina un pin per riposizionarlo</span>
+        <span>Trascina per spostare la mappa • Pizzica per zoomare su mobile, Ctrl + rotella su desktop • Tasto destro o doppio clic per inserire un pin • Trascina un pin per riposizionarlo</span>
     </div>
 
     <!-- Interactive Map Stage (Custom Image with Pins) -->
     <div class="glass-panel p-2 sm:p-3 rounded-2xl relative">
         <div x-ref="mapViewport"
              @mousedown="startPan($event)"
+             @wheel="handleMapWheel($event)"
+             @touchstart="startMapTouch($event)"
+             @touchmove.prevent="moveMapTouch($event)"
+             @touchend="endMapTouch($event)"
+             @touchcancel="endMapTouch($event)"
              :class="isPanning ? 'cursor-grabbing' : 'cursor-grab'"
-             class="flex h-[70vh] min-h-80 max-h-[800px] w-full overflow-auto rounded-xl border border-white/10 bg-[#070a12] scrollbar-thin select-none">
-            <div class="relative m-auto shrink-0 transition-[width,height] duration-150"
+             class="flex h-[70vh] min-h-80 max-h-[800px] w-full overflow-auto rounded-xl border border-white/10 bg-[#070a12] scrollbar-thin select-none touch-none">
+            <div class="relative m-auto shrink-0 transition-none"
                  :style="mapCanvasStyle">
 
                 <!-- Map Image -->
@@ -473,6 +478,11 @@ function customImageMap(config) {
         mapFitHeight: 0,
         isPanning: false,
         lastPanAt: 0,
+        mapTouchMode: null,
+        mapTouchStart: null,
+        pinchStartDistance: 0,
+        pinchStartZoom: 100,
+        isPinchZooming: false,
         mapError: '',
         savingPinLock: false,
         createModalOpen: false,
@@ -554,6 +564,124 @@ function customImageMap(config) {
 
         zoomIn() {
             this.zoomLevel = Math.min(300, this.zoomLevel + 25);
+        },
+
+        setZoomAt(zoomLevel, clientX, clientY) {
+            const viewport = this.$refs.mapViewport;
+            const image = this.$refs.mapImage;
+            if (!image?.naturalWidth || !image?.naturalHeight) {
+                return;
+            }
+            const viewportRect = viewport.getBoundingClientRect();
+            const imageRect = image.getBoundingClientRect();
+            if (!imageRect.width || !imageRect.height) {
+                return;
+            }
+            const nextZoom = Math.round(Math.max(50, Math.min(300, zoomLevel)) * 10) / 10;
+            const imagePointX = Math.max(0, Math.min(1, (clientX - imageRect.left) / imageRect.width));
+            const imagePointY = Math.max(0, Math.min(1, (clientY - imageRect.top) / imageRect.height));
+
+            this.zoomLevel = nextZoom;
+            this.$nextTick(() => {
+                const zoom = nextZoom / 100;
+                const imageWidth = this.mapFitWidth * zoom;
+                const imageHeight = this.mapFitHeight * zoom;
+                const imageLeft = Math.max(0, (viewport.clientWidth - imageWidth) / 2);
+                const imageTop = Math.max(0, (viewport.clientHeight - imageHeight) / 2);
+                const viewportX = clientX - viewportRect.left;
+                const viewportY = clientY - viewportRect.top;
+
+                viewport.scrollLeft = Math.max(0, imageLeft + imagePointX * imageWidth - viewportX);
+                viewport.scrollTop = Math.max(0, imageTop + imagePointY * imageHeight - viewportY);
+            });
+        },
+
+        handleMapWheel(event) {
+            if (!event.ctrlKey) {
+                return;
+            }
+
+            event.preventDefault();
+            this.setZoomAt(this.zoomLevel * Math.exp(-event.deltaY * 0.002), event.clientX, event.clientY);
+        },
+
+        startMapTouch(event) {
+            if (event.touches.length >= 2) {
+                const [firstTouch, secondTouch] = event.touches;
+                this.mapTouchMode = 'pinch';
+                this.isPinchZooming = true;
+                this.pinchStartDistance = Math.hypot(
+                    secondTouch.clientX - firstTouch.clientX,
+                    secondTouch.clientY - firstTouch.clientY
+                );
+                this.pinchStartZoom = this.zoomLevel;
+                this.isPanning = false;
+                return;
+            }
+
+            if (event.target.closest('[data-map-pin]')) {
+                return;
+            }
+
+            const touch = event.touches[0];
+            const viewport = this.$refs.mapViewport;
+            this.mapTouchMode = 'pan';
+            this.mapTouchStart = {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                scrollLeft: viewport.scrollLeft,
+                scrollTop: viewport.scrollTop,
+            };
+            this.isPanning = true;
+        },
+
+        moveMapTouch(event) {
+            if (event.touches.length >= 2) {
+                const [firstTouch, secondTouch] = event.touches;
+                const distance = Math.hypot(
+                    secondTouch.clientX - firstTouch.clientX,
+                    secondTouch.clientY - firstTouch.clientY
+                );
+
+                if (this.mapTouchMode !== 'pinch') {
+                    this.mapTouchMode = 'pinch';
+                    this.isPinchZooming = true;
+                    this.pinchStartDistance = distance;
+                    this.pinchStartZoom = this.zoomLevel;
+                }
+
+                if (this.pinchStartDistance > 0) {
+                    this.setZoomAt(
+                        this.pinchStartZoom * distance / this.pinchStartDistance,
+                        (firstTouch.clientX + secondTouch.clientX) / 2,
+                        (firstTouch.clientY + secondTouch.clientY) / 2
+                    );
+                }
+
+                return;
+            }
+
+            if (this.mapTouchMode !== 'pan' || !this.mapTouchStart || event.touches.length !== 1) {
+                return;
+            }
+
+            const touch = event.touches[0];
+            const viewport = this.$refs.mapViewport;
+            viewport.scrollLeft = this.mapTouchStart.scrollLeft - (touch.clientX - this.mapTouchStart.clientX);
+            viewport.scrollTop = this.mapTouchStart.scrollTop - (touch.clientY - this.mapTouchStart.clientY);
+        },
+
+        endMapTouch(event) {
+            if (event.touches.length < 2) {
+                this.isPinchZooming = false;
+                this.pinchStartDistance = 0;
+            }
+
+            if (event.touches.length === 0 || this.mapTouchMode === 'pinch') {
+                this.mapTouchMode = null;
+                this.mapTouchStart = null;
+                this.isPanning = false;
+            }
         },
 
         zoomOut() {
@@ -953,7 +1081,7 @@ function customImageMap(config) {
 
         // Drag and Drop (Touch for mobile)
         startTouchDrag(event, pin) {
-            if (pin.locked) return;
+            if (pin.locked || event.touches.length > 1) return;
             this.draggingPin = pin;
             this.isDragging = false;
             this.dragOrigin = { x: pin.x, y: pin.y };
@@ -963,6 +1091,7 @@ function customImageMap(config) {
 
             const onTouchMove = (moveEvent) => {
                 moveEvent.preventDefault();
+                if (this.isPinchZooming) return;
                 this.isDragging = true;
                 const touch = moveEvent.touches[0];
                 const rect = mapImg.getBoundingClientRect();

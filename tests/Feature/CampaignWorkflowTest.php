@@ -495,6 +495,26 @@ class CampaignWorkflowTest extends TestCase
         $this->assertNull($pin->fresh()->wiki_page_id);
     }
 
+    public function test_campaign_map_supports_pinch_and_control_wheel_zoom(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Mappa Interattiva',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $response = $this->actingAs($gm)->get(route('campaigns.show', $campaign));
+
+        $response->assertOk()
+            ->assertSee('@wheel="handleMapWheel($event)"', false)
+            ->assertSee('@touchstart="startMapTouch($event)"', false)
+            ->assertSee('@touchmove.prevent="moveMapTouch($event)"', false)
+            ->assertSee('this.pinchStartZoom', false)
+            ->assertSee('setZoomAt(', false)
+            ->assertSee('Ctrl + rotella su desktop');
+    }
+
     public function test_custom_map_image_upload_and_pin_placement(): void
     {
         Storage::fake('public');
