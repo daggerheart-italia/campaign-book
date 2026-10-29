@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.1] - 2026-10-29
+
+- refactor(ui): reorganize campaign header actions and edit button placement (4ac4f6b)
+- chore(changelog): update changelog for version 0.1.0 (c279373)
+
 ## [0.1.0] - 2026-10-29
 
 - feat(sync): add versioned collaborative sync and wiki edit locks (6c17464)
