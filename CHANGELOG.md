@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.0] - 2026-10-29
+
+- feat(sync): add versioned collaborative sync and wiki edit locks (6c17464)
+- plan(wiki): implement atomic edit locks and live updates for collaborative editing (1673793)
+- chore(changelog): update changelog for version 0.0.9 (2b9a703)
+
 ## [0.0.9] - 2026-10-28
 
 - feat(maps): add pinch-to-zoom and ctrl+wheel zoom on campaign map (38afb02)
