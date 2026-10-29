@@ -8,9 +8,11 @@ use App\Models\MapPin;
 use App\Models\SessionNote;
 use App\Models\WikiPage;
 use App\Models\WikiPageRevision;
+use App\Services\CampaignSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 
@@ -100,7 +102,7 @@ class CampaignController extends Controller
     /**
      * Display the specified campaign workspace with tabs.
      */
-    public function show(Campaign $campaign)
+    public function show(Campaign $campaign, CampaignSyncService $sync)
     {
         $this->authorize('view', $campaign);
 
@@ -148,6 +150,20 @@ class CampaignController extends Controller
             ->filter()
             ->sortBy(fn (string $category): string => mb_strtolower($category))
             ->values();
+        $notesSyncCursor = $sync->createCursor($campaign);
+        $pinsSyncCursor = $sync->createCursor($campaign);
+        $initialNotes = $campaign->sessionNotes->map(fn (SessionNote $note): array => [
+            'id' => $note->id,
+            'title' => $note->title,
+            'session_date' => $note->session_date?->toDateString(),
+            'session_date_label' => $note->session_date?->format('d/m/Y') ?? $note->created_at->format('d/m/Y'),
+            'is_pinned' => $note->is_pinned,
+            'content' => $note->content,
+            'content_html' => $campaign->renderMarkdown($note->content),
+            'author_name' => $note->user?->name ?? 'Autore sconosciuto',
+            'created_at' => $note->created_at?->toIso8601String(),
+            'sync_version' => $note->sync_version,
+        ])->all();
 
         return view('campaigns.show', compact(
             'campaign',
@@ -160,7 +176,10 @@ class CampaignController extends Controller
             'categories',
             'wikiPages',
             'wikiPageItems',
-            'wikiPageTree'
+            'wikiPageTree',
+            'notesSyncCursor',
+            'pinsSyncCursor',
+            'initialNotes'
         ));
     }
 
@@ -275,10 +294,17 @@ class CampaignController extends Controller
     {
         $this->authorize('manageTrash', $campaign);
 
-        WikiPage::onlyTrashed()->where('campaign_id', $campaign->id)->forceDelete();
-        MapPin::onlyTrashed()->where('campaign_id', $campaign->id)->forceDelete();
-        SessionNote::onlyTrashed()->where('campaign_id', $campaign->id)->forceDelete();
-        CampaignMap::onlyTrashed()->where('campaign_id', $campaign->id)->forceDelete();
+        DB::transaction(function () use ($campaign): void {
+            WikiPage::onlyTrashed()->where('campaign_id', $campaign->id)->forceDelete();
+            MapPin::onlyTrashed()->where('campaign_id', $campaign->id)->forceDelete();
+            SessionNote::onlyTrashed()->where('campaign_id', $campaign->id)->forceDelete();
+            CampaignMap::onlyTrashed()->where('campaign_id', $campaign->id)->forceDelete();
+
+            DB::table('campaign_sync_events')->where('campaign_id', $campaign->id)->delete();
+            DB::table('campaigns')->where('id', $campaign->id)->update([
+                'sync_generation' => DB::raw('sync_generation + 1'),
+            ]);
+        });
 
         return back()->with('success', 'Cestino svuotato definitivamente.');
     }

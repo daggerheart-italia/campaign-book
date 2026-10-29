@@ -24,6 +24,14 @@ class Campaign extends Model
         'invite_code_gm',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'sync_version' => 'integer',
+            'sync_generation' => 'integer',
+        ];
+    }
+
     protected static function booted()
     {
         static::creating(function ($campaign) {

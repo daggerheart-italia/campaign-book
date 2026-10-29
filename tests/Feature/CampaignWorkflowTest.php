@@ -7,6 +7,7 @@ use App\Models\CampaignMap;
 use App\Models\MapPin;
 use App\Models\User;
 use App\Models\WikiPage;
+use App\Services\CampaignSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -202,12 +203,13 @@ class CampaignWorkflowTest extends TestCase
         $this->assertNotNull($wiki);
         $this->assertEquals(1, $wiki->revisions()->count());
 
-        // GM updates wiki page
+        $gmLock = $this->acquireWikiLock($campaign, $wiki, $gm);
         $this->actingAs($gm)->put(route('wiki.update', [$campaign, $wiki]), [
             'title' => 'Spada della Speranza Rinforzata',
             'category' => 'Oggetti & Reliquie',
             'content' => 'Una spada magica con lama fiammeggiante.',
             'summary' => 'Aggiunto effetto fiammeggiante',
+            ...$gmLock,
         ]);
 
         $wiki->refresh();
@@ -216,7 +218,31 @@ class CampaignWorkflowTest extends TestCase
 
         // Rollback to first revision
         $firstRevision = $wiki->revisions()->oldest()->first();
-        $this->actingAs($player)->post(route('wiki.restoreRevision', [$campaign, $wiki, $firstRevision]));
+        $this->actingAs($player)
+            ->post(route('wiki.restoreRevision', [$campaign, $wiki, $firstRevision]))
+            ->assertRedirect(route('wiki.edit', [
+                'campaign' => $campaign,
+                'wiki' => $wiki,
+                'revision' => $firstRevision->id,
+            ]));
+        $this->actingAs($player)
+            ->get(route('wiki.edit', [
+                'campaign' => $campaign,
+                'wiki' => $wiki,
+                'revision' => $firstRevision->id,
+            ]))
+            ->assertOk()
+            ->assertSee('Stai preparando il ripristino');
+
+        $playerLock = $this->acquireWikiLock($campaign, $wiki, $player);
+        $this->actingAs($player)->put(route('wiki.update', [$campaign, $wiki]), [
+            'title' => $firstRevision->title,
+            'category' => $firstRevision->category,
+            'content' => $firstRevision->content,
+            'summary' => '',
+            'restore_revision_id' => $firstRevision->id,
+            ...$playerLock,
+        ]);
 
         $wiki->refresh();
         $this->assertEquals('Spada della Speranza', $wiki->title);
@@ -253,12 +279,14 @@ class CampaignWorkflowTest extends TestCase
             'parent_id' => $parent->id,
         ]);
 
+        $wikiLock = $this->acquireWikiLock($campaign, $child, $gm);
         $this->actingAs($gm)->put(route('wiki.update', [$campaign, $child]), [
             'title' => $child->title,
             'category' => $child->category,
             'parent_id' => $otherParent->id,
             'content' => $child->content,
             'summary' => '',
+            ...$wikiLock,
         ])->assertRedirect(route('wiki.show', [$campaign, $child]));
 
         $this->assertDatabaseHas('wiki_pages', [
@@ -310,6 +338,329 @@ class CampaignWorkflowTest extends TestCase
             'id' => $page->id,
             'parent_id' => null,
         ]);
+    }
+
+    public function test_wiki_lock_transfers_the_turn_to_the_next_user_and_rejects_stale_saves(): void
+    {
+        $gm = User::factory()->create();
+        $player = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Turni Wiki']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $campaign->users()->attach($player->id, ['role' => 'player']);
+        $wiki = $campaign->wikiPages()->create([
+            'title' => 'Pagina condivisa',
+            'category' => 'Lore & Storia',
+            'content' => 'Versione iniziale.',
+        ]);
+        $this->actingAs($gm)
+            ->put(route('wiki.update', [$campaign, $wiki]), [
+                'title' => 'Aggiornamento senza lock',
+                'category' => 'Lore & Storia',
+                'content' => 'Non deve essere salvato.',
+            ])
+            ->assertSessionHasErrors(['tab_id', 'lock_token']);
+        $gmLock = $this->acquireWikiLock($campaign, $wiki, $gm);
+        $playerTab = (string) Str::uuid();
+
+        $this->actingAs($player)
+            ->postJson(route('wiki.edit.lock', [$campaign, $wiki]), ['tab_id' => $playerTab])
+            ->assertOk()
+            ->assertJsonPath('status', 'occupied');
+        $this->actingAs($player)
+            ->postJson(route('wiki.edit.queue.join', [$campaign, $wiki]), ['tab_id' => $playerTab])
+            ->assertOk();
+
+        $this->actingAs($gm)
+            ->postJson(route('wiki.edit.release', [$campaign, $wiki]), $gmLock)
+            ->assertOk();
+        $this->actingAs($player)
+            ->getJson(route('wiki.edit.state', [
+                'campaign' => $campaign,
+                'wiki' => $wiki,
+                'tab_id' => $playerTab,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('offer.available', true);
+
+        $playerLock = $this->actingAs($player)
+            ->postJson(route('wiki.edit.queue.accept', [$campaign, $wiki]), ['tab_id' => $playerTab])
+            ->assertOk()
+            ->assertJsonPath('status', 'acquired')
+            ->json();
+
+        $this->actingAs($gm)
+            ->put(route('wiki.update', [$campaign, $wiki]), [
+                'title' => 'Aggiornamento obsoleto',
+                'category' => 'Lore & Storia',
+                'content' => 'Non deve essere salvato.',
+                ...$gmLock,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('lock');
+
+        $this->assertDatabaseHas('wiki_pages', [
+            'id' => $wiki->id,
+            'content' => 'Versione iniziale.',
+        ]);
+
+        $this->actingAs($player)
+            ->put(route('wiki.update', [$campaign, $wiki]), [
+                'title' => 'Versione aggiornata',
+                'category' => 'Lore & Storia',
+                'content' => 'Salvata dal prossimo turno.',
+                'tab_id' => $playerTab,
+                'lock_token' => $playerLock['lock_token'],
+            ])
+            ->assertRedirect(route('wiki.show', [$campaign, $wiki]));
+
+        $this->assertDatabaseHas('wiki_pages', [
+            'id' => $wiki->id,
+            'title' => 'Versione aggiornata',
+            'content' => 'Salvata dal prossimo turno.',
+        ]);
+    }
+
+    public function test_expired_queue_offer_is_skipped_for_the_next_user(): void
+    {
+        $gm = User::factory()->create();
+        $firstPlayer = User::factory()->create();
+        $secondPlayer = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Scadenza coda']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $campaign->users()->attach($firstPlayer->id, ['role' => 'player']);
+        $campaign->users()->attach($secondPlayer->id, ['role' => 'player']);
+        $wiki = $campaign->wikiPages()->create([
+            'title' => 'Turno con scadenza',
+            'category' => 'Lore & Storia',
+            'content' => 'Contenuto.',
+        ]);
+        $gmLock = $this->acquireWikiLock($campaign, $wiki, $gm);
+        $firstTab = (string) Str::uuid();
+        $secondTab = (string) Str::uuid();
+
+        $this->actingAs($firstPlayer)->postJson(route('wiki.edit.queue.join', [$campaign, $wiki]), [
+            'tab_id' => $firstTab,
+        ])->assertOk();
+        $this->actingAs($secondPlayer)->postJson(route('wiki.edit.queue.join', [$campaign, $wiki]), [
+            'tab_id' => $secondTab,
+        ])->assertOk();
+        $this->actingAs($gm)->postJson(route('wiki.edit.release', [$campaign, $wiki]), $gmLock)->assertOk();
+
+        $this->travel(46)->seconds();
+        $this->actingAs($secondPlayer)
+            ->postJson(route('wiki.edit.queue.advance', [$campaign, $wiki]))
+            ->assertOk();
+        $this->actingAs($secondPlayer)
+            ->getJson(route('wiki.edit.state', [
+                'campaign' => $campaign,
+                'wiki' => $wiki,
+                'tab_id' => $secondTab,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('offer.available', true);
+        $this->actingAs($firstPlayer)
+            ->getJson(route('wiki.edit.state', [
+                'campaign' => $campaign,
+                'wiki' => $wiki,
+                'tab_id' => $firstTab,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('offer', null);
+    }
+
+    public function test_note_sync_returns_incremental_changes_and_soft_delete_tombstones(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Sync note']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $cursor = app(CampaignSyncService::class)->createCursor($campaign->fresh());
+        $this->actingAs($gm)
+            ->getJson(route('notes.sync', ['campaign' => $campaign, 'cursor' => 'not-a-cursor']))
+            ->assertUnprocessable();
+
+        $this->actingAs($gm)->post(route('notes.store', $campaign), [
+            'title' => 'Appunti della sessione',
+            'content' => 'La compagnia trova [[La Torre]].',
+            'session_date' => '2026-10-29',
+        ])->assertRedirect();
+
+        $note = $campaign->sessionNotes()->firstOrFail();
+        $changes = $this->actingAs($gm)
+            ->getJson(route('notes.sync', ['campaign' => $campaign, 'cursor' => $cursor]))
+            ->assertOk()
+            ->assertJsonPath('changes.0.id', $note->id)
+            ->assertJsonPath('changes.0.title', 'Appunti della sessione')
+            ->assertJsonPath('changes.0.updated_by.id', $gm->id)
+            ->assertJsonPath('changes.0.deleted', false);
+        $this->assertStringContainsString('La compagnia trova', $changes->json('changes.0.content_html'));
+        $this->assertDatabaseHas('session_notes', [
+            'id' => $note->id,
+            'updated_by' => $gm->id,
+            'sync_version' => 1,
+        ]);
+
+        $nextCursor = $changes->json('next_cursor');
+        $this->getJson(route('notes.sync', ['campaign' => $campaign, 'cursor' => $nextCursor]))
+            ->assertOk()
+            ->assertJsonCount(0, 'changes');
+
+        $this->actingAs($gm)->delete(route('notes.destroy', [$campaign, $note]))->assertRedirect();
+        $this->getJson(route('notes.sync', ['campaign' => $campaign, 'cursor' => $nextCursor]))
+            ->assertOk()
+            ->assertJsonPath('changes.0.id', $note->id)
+            ->assertJsonPath('changes.0.deleted', true);
+    }
+
+    public function test_note_snapshot_pages_legacy_rows_before_issuing_a_delta_cursor(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Snapshot note']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        for ($index = 1; $index <= CampaignSyncService::PAGE_SIZE + 1; $index++) {
+            $campaign->sessionNotes()->create([
+                'user_id' => $gm->id,
+                'title' => 'Nota '.$index,
+                'content' => 'Contenuto.',
+            ]);
+        }
+
+        $firstPage = $this->actingAs($gm)
+            ->getJson(route('notes.snapshot', $campaign))
+            ->assertOk()
+            ->assertJsonCount(CampaignSyncService::PAGE_SIZE, 'items')
+            ->assertJsonPath('has_more', true)
+            ->assertJsonPath('delta_cursor', null);
+
+        $this->getJson(route('notes.snapshot', [
+            'campaign' => $campaign,
+            'cursor' => $firstPage->json('next_cursor'),
+        ]))
+            ->assertOk()
+            ->assertJsonCount(1, 'items')
+            ->assertJsonPath('has_more', false)
+            ->assertJsonStructure(['delta_cursor']);
+    }
+
+    public function test_pin_sync_includes_a_pin_moved_out_of_the_selected_map(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Sync mappa']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $firstMap = CampaignMap::create([
+            'campaign_id' => $campaign->id,
+            'created_by' => $gm->id,
+            'title' => 'Prima mappa',
+            'image_path' => 'maps/first.png',
+        ]);
+        $secondMap = CampaignMap::create([
+            'campaign_id' => $campaign->id,
+            'created_by' => $gm->id,
+            'title' => 'Seconda mappa',
+            'image_path' => 'maps/second.png',
+        ]);
+        $sync = app(CampaignSyncService::class);
+        $firstMapCursor = $sync->createCursor($campaign->fresh(), $firstMap->id);
+        $secondMapCursor = $sync->createCursor($campaign->fresh(), $secondMap->id);
+
+        $pin = $this->actingAs($gm)
+            ->postJson(route('pins.store', $campaign), [
+                'title' => 'La torre',
+                'campaign_map_id' => $firstMap->id,
+                'x' => 42,
+                'y' => 57,
+            ])
+            ->assertOk()
+            ->json('pin');
+        $firstMapChanges = $this->getJson(route('pins.sync', [
+            'campaign' => $campaign,
+            'cursor' => $firstMapCursor,
+            'map_id' => $firstMap->id,
+        ]))->assertOk()->assertJsonPath('changes.0.id', $pin['id']);
+        $this->getJson(route('pins.sync', [
+            'campaign' => $campaign,
+            'cursor' => $secondMapCursor,
+            'map_id' => $secondMap->id,
+        ]))->assertOk()->assertJsonCount(0, 'changes');
+
+        $this->actingAs($gm)->putJson(route('pins.update', [$campaign, $pin['id']]), [
+            'campaign_map_id' => $secondMap->id,
+        ])->assertOk();
+
+        $this->getJson(route('pins.sync', [
+            'campaign' => $campaign,
+            'cursor' => $firstMapChanges->json('next_cursor'),
+            'map_id' => $firstMap->id,
+        ]))->assertOk()
+            ->assertJsonPath('changes.0.campaign_map_id', $secondMap->id)
+            ->assertJsonPath('changes.0.deleted', false);
+        $this->getJson(route('pins.sync', [
+            'campaign' => $campaign,
+            'cursor' => $secondMapCursor,
+            'map_id' => $secondMap->id,
+        ]))->assertOk()
+            ->assertJsonPath('changes.0.campaign_map_id', $secondMap->id);
+    }
+
+    public function test_map_removal_emits_pin_tombstones_and_empty_trash_invalidates_sync_cursors(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create(['owner_id' => $gm->id, 'name' => 'Purge sync']);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $map = CampaignMap::create([
+            'campaign_id' => $campaign->id,
+            'created_by' => $gm->id,
+            'title' => 'Mappa da rimuovere',
+            'image_path' => 'maps/to-delete.png',
+            'is_default' => true,
+        ]);
+        $pin = $this->actingAs($gm)
+            ->postJson(route('pins.store', $campaign), [
+                'title' => 'Segnaposto',
+                'campaign_map_id' => $map->id,
+                'x' => 50,
+                'y' => 50,
+            ])
+            ->assertOk()
+            ->json('pin');
+        $cursor = app(CampaignSyncService::class)->createCursor($campaign->fresh());
+
+        $this->actingAs($gm)
+            ->delete(route('maps.destroy', [$campaign, $map]))
+            ->assertRedirect();
+        $this->getJson(route('pins.sync', ['campaign' => $campaign, 'cursor' => $cursor]))
+            ->assertOk()
+            ->assertJsonPath('changes.0.id', $pin['id'])
+            ->assertJsonPath('changes.0.deleted', true);
+
+        $this->actingAs($gm)
+            ->post(route('campaigns.emptyTrash', $campaign))
+            ->assertRedirect();
+        $this->getJson(route('pins.sync', ['campaign' => $campaign, 'cursor' => $cursor]))
+            ->assertOk()
+            ->assertJsonPath('reset_required', true)
+            ->assertJsonPath('next_cursor', null);
+        $this->getJson(route('pins.snapshot', $campaign))
+            ->assertOk()
+            ->assertJsonCount(0, 'items')
+            ->assertJsonPath('has_more', false)
+            ->assertJsonPath('reset_required', false);
+    }
+
+    /**
+     * @return array{tab_id: string, lock_token: string}
+     */
+    private function acquireWikiLock(Campaign $campaign, WikiPage $wiki, User $user): array
+    {
+        $tabId = (string) Str::uuid();
+        $response = $this->actingAs($user)
+            ->postJson(route('wiki.edit.lock', [$campaign, $wiki]), ['tab_id' => $tabId])
+            ->assertOk()
+            ->assertJsonPath('status', 'acquired');
+
+        return [
+            'tab_id' => $tabId,
+            'lock_token' => $response->json('lock_token'),
+        ];
     }
 
     public function test_wiki_pages_are_sorted_by_category_and_title_in_a_collapsible_tree(): void

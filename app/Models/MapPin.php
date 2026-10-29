@@ -23,14 +23,19 @@ class MapPin extends Model
         'color',
         'icon',
         'locked',
+        'updated_by',
+        'sync_version',
     ];
 
     protected function casts(): array
     {
         return [
+            'campaign_map_id' => 'integer',
+            'wiki_page_id' => 'integer',
             'x' => 'float',
             'y' => 'float',
             'locked' => 'boolean',
+            'sync_version' => 'integer',
         ];
     }
 
@@ -52,5 +57,10 @@ class MapPin extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function editor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

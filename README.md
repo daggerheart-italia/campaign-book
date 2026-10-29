@@ -13,6 +13,9 @@ Applicazione web collaborativa per gestire la conoscenza condivisa e le note di 
 ### Wiki
 - Pagine in **Markdown** organizzate per categoria (Personaggi & PNG, Luoghi & Città, Fazioni & Gilde, Oggetti & Reliquie, Lore & Storia, Mostri & Minacce, Altro).
 - **Cronologia delle revisioni** con ripristino di una versione precedente e compattazione delle revisioni.
+- **Modifica esclusiva con coda FIFO**: una sola sessione può modificare una pagina alla volta; gli altri utenti possono accodarsi e ricevono il turno tramite un'offerta da accettare.
+- Il lock è mantenuto con heartbeat, è riconosciuto tra schede dello stesso browser e può essere forzato dal GM quando necessario. Il turno scade automaticamente se non viene rinnovato.
+- Il ripristino di una revisione riapre la pagina nell'editor, così il contenuto può essere verificato o modificato prima del salvataggio.
 - Eliminazione "morbida" con ripristino dal cestino.
 - Creazione di una pagina direttamente da un segnaposto della mappa.
 - **Esportazione** della campagna in Markdown.
@@ -30,6 +33,13 @@ Applicazione web collaborativa per gestire la conoscenza condivisa e le note di 
 ### Note di sessione
 - Note in Markdown per sessione, con possibilità di fissarle in alto.
 - Eliminazione con ripristino dal cestino.
+- Aggiornamento incrementale tra gli utenti della campagna, senza ricaricare la pagina e senza sovrascrivere una bozza o una modale aperta.
+
+### Sincronizzazione collaborativa
+- Le modifiche a note e segnaposto vengono distribuite tramite eventi incrementali versionati per campagna.
+- I segnaposto spostati sulla mappa vengono aggiornati senza interrompere un trascinamento locale.
+- Dopo lo svuotamento del cestino viene avviata una nuova generazione di sincronizzazione; i client possono quindi riallinearsi tramite snapshot paginati.
+- I cursori di sincronizzazione sono cifrati e includono la generazione e la versione elaborate dal client.
 
 ### Cestino
 - Pagine wiki, segnaposto e note eliminati finiscono nel cestino e possono essere ripristinati o svuotati definitivamente dal GM.

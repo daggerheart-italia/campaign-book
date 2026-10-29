@@ -6,6 +6,7 @@ use App\Http\Controllers\CampaignMapController;
 use App\Http\Controllers\MapPinController;
 use App\Http\Controllers\SessionNoteController;
 use App\Http\Controllers\WikiController;
+use App\Http\Controllers\WikiEditLockController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -56,6 +57,16 @@ Route::middleware('auth')->group(function () {
     // Wiki nested routes
     Route::get('/campaigns/{campaign}/wiki/create', [WikiController::class, 'create'])->name('wiki.create');
     Route::post('/campaigns/{campaign}/wiki', [WikiController::class, 'store'])->name('wiki.store');
+    Route::get('/campaigns/{campaign}/wiki/{wiki}/sync', [WikiController::class, 'sync'])->middleware('throttle:30,1')->name('wiki.sync');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/lock', [WikiEditLockController::class, 'acquire'])->middleware('throttle:30,1')->name('wiki.edit.lock');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/heartbeat', [WikiEditLockController::class, 'heartbeat'])->middleware('throttle:30,1')->name('wiki.edit.heartbeat');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/release', [WikiEditLockController::class, 'release'])->name('wiki.edit.release');
+    Route::get('/campaigns/{campaign}/wiki/{wiki}/edit/state', [WikiEditLockController::class, 'state'])->middleware('throttle:30,1')->name('wiki.edit.state');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/join', [WikiEditLockController::class, 'joinQueue'])->name('wiki.edit.queue.join');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/leave', [WikiEditLockController::class, 'leaveQueue'])->name('wiki.edit.queue.leave');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/accept', [WikiEditLockController::class, 'acceptOffer'])->name('wiki.edit.queue.accept');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/advance', [WikiEditLockController::class, 'advance'])->middleware('throttle:15,1')->name('wiki.edit.queue.advance');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/force-release', [WikiEditLockController::class, 'forceRelease'])->name('wiki.edit.forceRelease');
     Route::get('/campaigns/{campaign}/wiki/{wiki}', [WikiController::class, 'show'])->name('wiki.show');
     Route::get('/campaigns/{campaign}/wiki/{wiki}/edit', [WikiController::class, 'edit'])->name('wiki.edit');
     Route::put('/campaigns/{campaign}/wiki/{wiki}', [WikiController::class, 'update'])->name('wiki.update');
@@ -66,12 +77,16 @@ Route::middleware('auth')->group(function () {
 
     // Map Pins
     Route::get('/campaigns/{campaign}/pins', [MapPinController::class, 'index'])->name('pins.index');
+    Route::get('/campaigns/{campaign}/pins/sync', [MapPinController::class, 'sync'])->middleware('throttle:30,1')->name('pins.sync');
+    Route::get('/campaigns/{campaign}/pins/snapshot', [MapPinController::class, 'snapshot'])->middleware('throttle:120,1')->name('pins.snapshot');
     Route::post('/campaigns/{campaign}/pins', [MapPinController::class, 'store'])->name('pins.store');
     Route::put('/campaigns/{campaign}/pins/{pin}', [MapPinController::class, 'update'])->name('pins.update');
     Route::delete('/campaigns/{campaign}/pins/{pin}', [MapPinController::class, 'destroy'])->name('pins.destroy');
     Route::post('/campaigns/{campaign}/pins/{pin}/restore', [MapPinController::class, 'restore'])->name('pins.restore');
 
     // Session Notes
+    Route::get('/campaigns/{campaign}/notes/sync', [SessionNoteController::class, 'sync'])->middleware('throttle:30,1')->name('notes.sync');
+    Route::get('/campaigns/{campaign}/notes/snapshot', [SessionNoteController::class, 'snapshot'])->middleware('throttle:120,1')->name('notes.snapshot');
     Route::post('/campaigns/{campaign}/notes', [SessionNoteController::class, 'store'])->name('notes.store');
     Route::put('/campaigns/{campaign}/notes/{note}', [SessionNoteController::class, 'update'])->name('notes.update');
     Route::post('/campaigns/{campaign}/notes/{note}/pin', [SessionNoteController::class, 'togglePin'])->name('notes.togglePin');
