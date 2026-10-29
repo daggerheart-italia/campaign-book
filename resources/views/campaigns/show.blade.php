@@ -34,9 +34,17 @@
                     </span>
                 </div>
 
-                <h1 class="font-['Cinzel'] text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wide">
-                    {{ $campaign->name }}
-                </h1>
+                <div class="flex items-center justify-between gap-3">
+                    <h1 class="font-['Cinzel'] text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wide">
+                        {{ $campaign->name }}
+                    </h1>
+
+                    @if($isGm)
+                        <a href="{{ route('campaigns.edit', $campaign) }}" class="btn-secondary !p-2 shrink-0" title="Modifica" aria-label="Modifica">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </a>
+                    @endif
+                </div>
 
                 @if($campaign->description)
                     <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-3xl leading-relaxed">
@@ -46,23 +54,19 @@
             </div>
 
             <!-- Header Quick Actions -->
-            <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-                @if($isGm)
-                    <a href="{{ route('campaigns.edit', $campaign) }}" class="btn-secondary text-xs py-2 px-3" title="Modifica nome e descrizione della campagna">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                        <span>Modifica</span>
+            <div class="flex w-max flex-col items-stretch gap-2.5 shrink-0">
+                <div>
+                    <a href="{{ route('campaigns.export', $campaign) }}" class="btn-secondary w-full justify-center whitespace-nowrap text-xs py-2 px-3" title="Esporta l'intero compendio in formato Markdown">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        <span>Esporta Markdown</span>
                     </a>
-                @endif
-
-                <a href="{{ route('campaigns.export', $campaign) }}" class="btn-secondary text-xs py-2 px-3" title="Esporta l'intero compendio in formato Markdown">
-                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    <span>Esporta Markdown</span>
-                </a>
-
-                <button @click="setTab('members')" class="btn-secondary text-xs py-2 px-3" title="Codici e link di invito">
-                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
-                    <span>Invita</span>
-                </button>
+                </div>
+                <div>
+                    <button @click="setTab('members')" class="btn-secondary w-full justify-center whitespace-nowrap text-xs py-2 px-3" title="Codici e link di invito">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                        <span>Invita</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
