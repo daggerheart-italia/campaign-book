@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Campaign;
 use App\Models\SessionNote;
+use App\Services\CampaignSyncService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SessionNoteController extends Controller
 {
-    /**
-     * Store a new session note.
-     */
-    public function store(Request $request, Campaign $campaign)
+    public function store(Request $request, Campaign $campaign, CampaignSyncService $sync): RedirectResponse
     {
         $this->authorize('update', $campaign);
 
@@ -23,23 +24,28 @@ class SessionNoteController extends Controller
             'is_pinned' => 'nullable|boolean',
         ]);
 
-        $campaign->sessionNotes()->create([
-            'user_id' => Auth::id(),
-            'title' => $validated['title'] ?: ('Sessione del ' . ($validated['session_date'] ?? now()->format('d/m/Y'))),
-            'content' => $validated['content'],
-            'session_date' => $validated['session_date'] ?? now(),
-            'is_pinned' => $request->boolean('is_pinned'),
-        ]);
+        DB::transaction(function () use ($request, $campaign, $validated, $sync): void {
+            $note = $campaign->sessionNotes()->create([
+                'user_id' => Auth::id(),
+                'title' => ($validated['title'] ?? null) ?: ('Sessione del '.($validated['session_date'] ?? now()->format('d/m/Y'))),
+                'content' => $validated['content'],
+                'session_date' => $validated['session_date'] ?? now(),
+                'is_pinned' => $request->boolean('is_pinned'),
+            ]);
+            $sync->record($campaign, $note, $request->user());
+        });
 
         return back()->with('success', 'Nota di sessione salvata!');
     }
 
-    /**
-     * Update session note.
-     */
-    public function update(Request $request, Campaign $campaign, SessionNote $note)
-    {
+    public function update(
+        Request $request,
+        Campaign $campaign,
+        SessionNote $note,
+        CampaignSyncService $sync
+    ): RedirectResponse {
         $this->authorize('update', $campaign);
+        abort_unless($note->campaign_id === $campaign->id, 404);
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -48,52 +54,93 @@ class SessionNoteController extends Controller
             'is_pinned' => 'nullable|boolean',
         ]);
 
-        $note->update([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
-            'session_date' => $validated['session_date'],
-            'is_pinned' => $request->boolean('is_pinned'),
-        ]);
+        DB::transaction(function () use ($request, $campaign, $note, $validated, $sync): void {
+            $note->update([
+                'title' => $validated['title'],
+                'content' => $validated['content'],
+                'session_date' => array_key_exists('session_date', $validated)
+                    ? $validated['session_date']
+                    : $note->session_date,
+                'is_pinned' => $request->boolean('is_pinned'),
+            ]);
+            $sync->record($campaign, $note, $request->user());
+        });
 
         return back()->with('success', 'Nota aggiornata.');
     }
 
-    /**
-     * Toggle pinned status.
-     */
-    public function togglePin(Campaign $campaign, SessionNote $note)
-    {
+    public function togglePin(
+        Request $request,
+        Campaign $campaign,
+        SessionNote $note,
+        CampaignSyncService $sync
+    ): RedirectResponse {
         $this->authorize('update', $campaign);
+        abort_unless($note->campaign_id === $campaign->id, 404);
 
-        $note->update([
-            'is_pinned' => !$note->is_pinned,
-        ]);
+        DB::transaction(function () use ($request, $campaign, $note, $sync): void {
+            $note->update(['is_pinned' => ! $note->is_pinned]);
+            $sync->record($campaign, $note, $request->user());
+        });
 
         return back()->with('success', $note->is_pinned ? 'Nota fissata in alto.' : 'Nota non più fissata.');
     }
 
-    /**
-     * Delete session note (move to trash).
-     */
-    public function destroy(Campaign $campaign, SessionNote $note)
-    {
+    public function destroy(
+        Request $request,
+        Campaign $campaign,
+        SessionNote $note,
+        CampaignSyncService $sync
+    ): RedirectResponse|JsonResponse {
         $this->authorize('update', $campaign);
+        abort_unless($note->campaign_id === $campaign->id, 404);
 
-        $note->delete();
+        DB::transaction(function () use ($request, $campaign, $note, $sync): void {
+            $note->delete();
+            $sync->record($campaign, $note, $request->user(), deleted: true);
+        });
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Nota di sessione spostata nel cestino.']);
+        }
 
         return back()->with('success', 'Nota di sessione spostata nel cestino.');
     }
 
-    /**
-     * Restore session note from trash (GM only).
-     */
-    public function restore(Campaign $campaign, $noteId)
-    {
+    public function restore(
+        Request $request,
+        Campaign $campaign,
+        int $noteId,
+        CampaignSyncService $sync
+    ): RedirectResponse {
         $this->authorize('restore', $campaign);
-
         $note = SessionNote::onlyTrashed()->where('campaign_id', $campaign->id)->findOrFail($noteId);
-        $note->restore();
+
+        DB::transaction(function () use ($request, $campaign, $note, $sync): void {
+            $note->restore();
+            $sync->record($campaign, $note, $request->user());
+        });
 
         return back()->with('success', 'Nota ripristinata dal cestino.');
+    }
+
+    public function sync(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
+    {
+        $this->authorize('view', $campaign);
+        $validated = $request->validate([
+            'cursor' => ['required', 'string', 'max:4096'],
+        ]);
+
+        return response()->json($sync->changes($campaign, $validated['cursor'], 'note'));
+    }
+
+    public function snapshot(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
+    {
+        $this->authorize('view', $campaign);
+        $validated = $request->validate([
+            'cursor' => ['nullable', 'string', 'max:4096'],
+        ]);
+
+        return response()->json($sync->snapshot($campaign, 'note', $validated['cursor'] ?? null));
     }
 }

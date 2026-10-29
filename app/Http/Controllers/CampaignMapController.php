@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Campaign;
 use App\Models\CampaignMap;
+use App\Models\MapPin;
+use App\Services\CampaignSyncService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -143,6 +147,7 @@ class CampaignMapController extends Controller
     public function setDefault(Campaign $campaign, CampaignMap $map)
     {
         $this->authorize('update', $campaign);
+        abort_unless($map->campaign_id === $campaign->id, 404);
 
         $campaign->maps()->update(['is_default' => false]);
         $map->update(['is_default' => true]);
@@ -153,12 +158,23 @@ class CampaignMapController extends Controller
     /**
      * Delete a map image (soft delete).
      */
-    public function destroy(Campaign $campaign, CampaignMap $map)
-    {
+    public function destroy(
+        Request $request,
+        Campaign $campaign,
+        CampaignMap $map,
+        CampaignSyncService $sync
+    ): RedirectResponse {
         $this->authorize('update', $campaign);
+        abort_unless($map->campaign_id === $campaign->id, 404);
 
-        $map->pins()->delete();
-        $map->delete();
+        DB::transaction(function () use ($request, $campaign, $map, $sync): void {
+            $map->pins()->get()->each(function (MapPin $pin) use ($request, $campaign, $sync): void {
+                $previousMapId = $pin->campaign_map_id;
+                $pin->delete();
+                $sync->record($campaign, $pin, $request->user(), deleted: true, previousMapId: $previousMapId);
+            });
+            $map->delete();
+        });
 
         // If default was deleted, set next map as default
         if ($map->is_default) {

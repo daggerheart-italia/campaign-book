@@ -21,7 +21,11 @@
         'wiki_page_id' => $p->wiki_page_id,
         'wiki_page_title' => $p->wikiPage ? $p->wikiPage->title : null,
         'wiki_page_url' => $p->wikiPage ? route('wiki.show', [$campaign, $p->wikiPage]) : null,
+        'sync_version' => $p->sync_version,
     ])) }},
+    pinsSyncUrl: '{{ route('pins.sync', $campaign) }}',
+    pinsSnapshotUrl: '{{ route('pins.snapshot', $campaign) }}',
+    pinsSyncCursor: {{ Js::from($pinsSyncCursor) }},
     storePinUrl: '{{ route('pins.store', $campaign) }}',
     updatePinBaseUrl: '{{ url("/campaigns/{$campaign->id}/pins") }}',
     storeMapUrl: '{{ route('maps.store', $campaign) }}',
@@ -30,6 +34,10 @@
     mapMaxBytes: {{ \App\Http\Controllers\CampaignMapController::MAX_IMAGE_BYTES }},
     csrfToken: '{{ csrf_token() }}'
 })" class="space-y-4">
+    <p x-show="syncError" x-text="syncError" role="status" class="text-xs text-rose-300" x-cloak></p>
+    <button x-show="pinSyncResetRequired" type="button" class="btn-secondary text-xs py-2 px-3" @click="reloadPinSnapshot()" x-cloak>
+        Ricarica la snapshot dei segnaposto
+    </button>
 
     <!-- Top Map Selector & Upload Actions -->
     <div class="glass-panel p-3.5 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
@@ -502,6 +510,13 @@ function customImageMap(config) {
         draggingPin: null,
         isDragging: false,
         dragOrigin: null,
+        pinsSyncCursor: config.pinsSyncCursor,
+        pendingPinChanges: [],
+        savingPinIds: new Set(),
+        syncingPins: false,
+        resettingPins: false,
+        syncError: '',
+        pinSyncResetRequired: false,
 
         init() {
             this.$nextTick(() => {
@@ -509,6 +524,108 @@ function customImageMap(config) {
                 this.mapResizeObserver.observe(this.$refs.mapViewport);
                 this.fitMap();
             });
+            this.pinSyncTimer = window.setInterval(() => this.syncPinChanges(), 8000);
+        },
+
+        destroy() {
+            window.clearInterval(this.pinSyncTimer);
+            this.mapResizeObserver?.disconnect();
+        },
+
+        async syncPinChanges() {
+            if (this.syncingPins || this.resettingPins || this.pinSyncResetRequired) return;
+            this.syncingPins = true;
+            try {
+                let hasMore = true;
+                let pagesProcessed = 0;
+                while (hasMore && pagesProcessed < 5) {
+                    pagesProcessed++;
+                    const response = await fetch(`${config.pinsSyncUrl}?cursor=${encodeURIComponent(this.pinsSyncCursor)}`, {
+                        headers: { 'Accept': 'application/json' },
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || `Sincronizzazione mappa non riuscita (${response.status}).`);
+                    if (data.reset_required) {
+                        this.pinSyncResetRequired = true;
+                        throw new Error('I segnaposto sono stati reimpostati. Ricarica la campagna per aggiornare la mappa.');
+                    }
+                    data.changes.forEach(change => this.applyPinChange(change));
+                    this.pinsSyncCursor = data.next_cursor;
+                    hasMore = data.has_more;
+                }
+                this.syncError = '';
+            } catch (error) {
+                this.syncError = error.message;
+            } finally {
+                this.syncingPins = false;
+            }
+        },
+
+        async reloadPinSnapshot() {
+            if (this.resettingPins) return;
+            if (this.draggingPin || this.savingPinIds.size > 0) {
+                this.syncError = 'Termina lo spostamento del segnaposto prima di ricaricare la snapshot.';
+                return;
+            }
+            this.resettingPins = true;
+            try {
+                let cursor = null;
+                let hasMore = true;
+                let items = [];
+                let deltaCursor = null;
+                while (hasMore) {
+                    const url = new URL(config.pinsSnapshotUrl, window.location.origin);
+                    if (cursor) url.searchParams.set('cursor', cursor);
+                    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || `Snapshot mappa non riuscita (${response.status}).`);
+                    if (data.reset_required) throw new Error('La campagna è stata reimpostata durante la snapshot. Riprova.');
+                    items = items.concat(data.items);
+                    cursor = data.next_cursor;
+                    hasMore = data.has_more;
+                    deltaCursor = data.delta_cursor;
+                }
+                this.pins = items;
+                this.pinsSyncCursor = deltaCursor;
+                this.pendingPinChanges = [];
+                this.pinSyncResetRequired = false;
+                this.syncError = '';
+                const selectedPin = this.pins.find(pin => pin.id === this.selectedPin.id);
+                if (selectedPin) this.selectedPin = { ...selectedPin };
+                else if (this.detailsModalOpen) this.detailsModalOpen = false;
+            } catch (error) {
+                this.syncError = error.message;
+                this.pinSyncResetRequired = true;
+            } finally {
+                this.resettingPins = false;
+            }
+        },
+
+        applyPinChange(change) {
+            if (this.draggingPin?.id === change.id || this.savingPinIds.has(change.id)) {
+                this.pendingPinChanges.push(change);
+                return;
+            }
+            const index = this.pins.findIndex(pin => pin.id === change.id);
+            if (index !== -1 && Number(this.pins[index].sync_version || 0) >= Number(change.sync_version || 0)) {
+                return;
+            }
+            if (change.deleted) {
+                if (index !== -1) this.pins.splice(index, 1);
+                if (this.selectedPin.id === change.id) this.detailsModalOpen = false;
+                return;
+            }
+            if (index === -1) this.pins.push(change);
+            else Object.assign(this.pins[index], change);
+            if (this.selectedPin.id === change.id && !this.editingPin) {
+                this.selectedPin = { ...change };
+            }
+        },
+
+        applyPendingPinChanges(pinId) {
+            const pending = this.pendingPinChanges.filter(change => change.id === pinId);
+            this.pendingPinChanges = this.pendingPinChanges.filter(change => change.id !== pinId);
+            pending.forEach(change => this.applyPinChange(change));
         },
 
         get mapCanvasStyle() {
@@ -805,6 +922,7 @@ function customImageMap(config) {
                 pin.wiki_page_id = data.pin.wiki_page_id;
                 pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
                 pin.wiki_page_url = data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page_id}` : null;
+                pin.sync_version = data.pin.sync_version;
                 this.selectedPin = { ...pin };
                 this.editingPin = false;
             } catch (error) {
@@ -911,6 +1029,7 @@ function customImageMap(config) {
 
                 const data = await response.json();
                 pin.color = data.pin.color;
+                pin.sync_version = data.pin.sync_version;
                 this.selectedPin = { ...this.selectedPin, color: pin.color };
             } catch (error) {
                 this.mapError = error.message;
@@ -940,6 +1059,7 @@ function customImageMap(config) {
 
                 const data = await response.json();
                 pin.locked = data.pin.locked;
+                pin.sync_version = data.pin.sync_version;
                 this.selectedPin = { ...pin };
             } catch (error) {
                 this.mapError = error.message;
@@ -984,7 +1104,8 @@ function customImageMap(config) {
                         locked: data.pin.locked,
                         wiki_page_id: data.pin.wiki_page_id,
                         wiki_page_title: data.pin.wiki_page ? data.pin.wiki_page.title : null,
-                        wiki_page_url: data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page.id}` : null
+                        wiki_page_url: data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page.id}` : null,
+                        sync_version: data.pin.sync_version,
                     };
                     this.pins.push(newPin);
                     this.createModalOpen = false;
@@ -1015,6 +1136,7 @@ function customImageMap(config) {
                     pin.wiki_page_id = parseInt(wikiId);
                     pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
                     pin.wiki_page_url = `/campaigns/${config.campaignId}/wiki/${wikiId}`;
+                    pin.sync_version = data.pin.sync_version;
                     this.selectedPin = { ...pin };
                 }
             } catch (err) {
@@ -1118,6 +1240,7 @@ function customImageMap(config) {
         },
 
         async savePinCoordinates(pin, originalPosition) {
+            this.savingPinIds.add(pin.id);
             try {
                 const response = await fetch(`${config.updatePinBaseUrl}/${pin.id}`, {
                     method: 'PUT',
@@ -1135,6 +1258,8 @@ function customImageMap(config) {
                     const data = await response.json();
                     throw new Error(data.message || `Impossibile salvare la posizione del segnaposto (${response.status}).`);
                 }
+                const data = await response.json();
+                Object.assign(pin, data.pin);
             } catch (error) {
                 pin.x = originalPosition.x;
                 pin.y = originalPosition.y;
@@ -1142,6 +1267,9 @@ function customImageMap(config) {
                 this.detailsModalOpen = true;
                 this.selectedPin = pin;
                 console.error(error);
+            } finally {
+                this.savingPinIds.delete(pin.id);
+                this.applyPendingPinChanges(pin.id);
             }
         }
     }

@@ -5,13 +5,14 @@
 @section('content')
 <div x-data="{ 
     tab: (new URLSearchParams(window.location.search)).get('tab') || 'wiki',
+    notesCount: {{ $campaign->sessionNotes->count() }},
     setTab(newTab) {
         this.tab = newTab;
         const url = new URL(window.location);
         url.searchParams.set('tab', newTab);
         window.history.replaceState({}, '', url);
     }
-}" class="space-y-6">
+}" @notes-count-updated.window="notesCount = $event.detail" class="space-y-6">
 
     <!-- Workspace Banner & Header -->
     <div class="glass-panel p-5 sm:p-7 rounded-2xl relative overflow-hidden">
@@ -89,7 +90,7 @@
                 class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             <span>Note</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300">{{ $campaign->sessionNotes->count() }}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="notesCount"></span>
         </button>
 
         <button @click="setTab('members')" 

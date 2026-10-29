@@ -18,6 +18,8 @@ class SessionNote extends Model
         'content',
         'session_date',
         'is_pinned',
+        'updated_by',
+        'sync_version',
     ];
 
     protected function casts(): array
@@ -25,6 +27,7 @@ class SessionNote extends Model
         return [
             'session_date' => 'date',
             'is_pinned' => 'boolean',
+            'sync_version' => 'integer',
         ];
     }
 
@@ -36,5 +39,10 @@ class SessionNote extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function editor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

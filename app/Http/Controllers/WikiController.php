@@ -5,10 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Campaign;
 use App\Models\WikiPage;
 use App\Models\WikiPageRevision;
+use App\Services\CampaignSyncService;
+use App\Services\WikiEditLockService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class WikiController extends Controller
 {
@@ -47,7 +52,7 @@ class WikiController extends Controller
     /**
      * Store a new wiki page (and link to pin if pin_id is provided).
      */
-    public function store(Request $request, Campaign $campaign)
+    public function store(Request $request, Campaign $campaign, CampaignSyncService $sync)
     {
         $this->authorize('update', $campaign);
 
@@ -56,35 +61,41 @@ class WikiController extends Controller
             'category' => 'nullable|string|max:100',
             'parent_id' => ['nullable', 'integer', Rule::in($this->availableParentPages($campaign)->modelKeys())],
             'content' => 'required|string',
-            'pin_id' => 'nullable|exists:map_pins,id',
+            'pin_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('map_pins', 'id')->where('campaign_id', $campaign->id)->whereNull('deleted_at'),
+            ],
         ]);
 
-        $wiki = $campaign->wikiPages()->create([
-            'title' => $data['title'],
-            'category' => $data['category'] ?: 'Generale',
-            'parent_id' => $data['parent_id'] ?? null,
-            'content' => $data['content'],
-            'created_by' => Auth::id(),
-            'updated_by' => Auth::id(),
-        ]);
+        $wiki = DB::transaction(function () use ($campaign, $data, $sync): WikiPage {
+            $wiki = $campaign->wikiPages()->create([
+                'title' => $data['title'],
+                'category' => ($data['category'] ?? null) ?: 'Generale',
+                'parent_id' => $data['parent_id'] ?? null,
+                'content' => $data['content'],
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
+            ]);
 
-        // Create initial revision
-        WikiPageRevision::create([
-            'wiki_page_id' => $wiki->id,
-            'user_id' => Auth::id(),
-            'title' => $wiki->title,
-            'category' => $wiki->category,
-            'content' => $wiki->content,
-            'summary' => 'Creazione iniziale',
-        ]);
+            WikiPageRevision::create([
+                'wiki_page_id' => $wiki->id,
+                'user_id' => Auth::id(),
+                'title' => $wiki->title,
+                'category' => $wiki->category,
+                'content' => $wiki->content,
+                'summary' => 'Creazione iniziale',
+            ]);
 
-        // If created from a map pin, link the pin to this wiki page!
-        if (! empty($data['pin_id'])) {
-            $pin = $campaign->mapPins()->find($data['pin_id']);
-            if ($pin) {
+            if (! empty($data['pin_id'])) {
+                $pin = $campaign->mapPins()->findOrFail($data['pin_id']);
+                $previousMapId = $pin->campaign_map_id;
                 $pin->update(['wiki_page_id' => $wiki->id]);
+                $sync->record($campaign, $pin, Auth::user(), previousMapId: $previousMapId);
             }
-        }
+
+            return $wiki;
+        });
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -105,6 +116,7 @@ class WikiController extends Controller
     public function show(Campaign $campaign, WikiPage $wiki)
     {
         $this->authorize('view', $campaign);
+        abort_unless($wiki->campaign_id === $campaign->id, 404);
 
         $wiki->load([
             'creator',
@@ -125,22 +137,33 @@ class WikiController extends Controller
     /**
      * Show edit form.
      */
-    public function edit(Campaign $campaign, WikiPage $wiki)
+    public function edit(Request $request, Campaign $campaign, WikiPage $wiki)
     {
         $this->authorize('update', $campaign);
+        abort_unless($wiki->campaign_id === $campaign->id, 404);
 
         $defaultCategories = ['Personaggi & PNG', 'Luoghi & Città', 'Fazioni & Gilde', 'Oggetti & Reliquie', 'Lore & Storia', 'Mostri & Minacce', 'Altro'];
         $parentPages = $this->availableParentPages($campaign, $wiki);
+        $restoreRevision = null;
+        if ($request->filled('revision')) {
+            $restoreRevision = $wiki->revisions()->whereKey($request->integer('revision'))->firstOrFail();
+        }
+        $categoryOptions = collect($defaultCategories)
+            ->push($wiki->category, $restoreRevision?->category)
+            ->filter()
+            ->unique()
+            ->values();
 
-        return view('wiki.edit', compact('campaign', 'wiki', 'defaultCategories', 'parentPages'));
+        return view('wiki.edit', compact('campaign', 'wiki', 'defaultCategories', 'categoryOptions', 'parentPages', 'restoreRevision'));
     }
 
     /**
      * Update a wiki page and record revision.
      */
-    public function update(Request $request, Campaign $campaign, WikiPage $wiki)
+    public function update(Request $request, Campaign $campaign, WikiPage $wiki, WikiEditLockService $locks)
     {
         $this->authorize('update', $campaign);
+        abort_unless($wiki->campaign_id === $campaign->id, 404);
 
         $data = $request->validate([
             'title' => 'required|string|max:255',
@@ -148,25 +171,53 @@ class WikiController extends Controller
             'parent_id' => ['nullable', 'integer', Rule::in($this->availableParentPages($campaign, $wiki)->modelKeys())],
             'content' => 'required|string',
             'summary' => 'nullable|string|max:255',
+            'tab_id' => ['required', 'uuid'],
+            'lock_token' => ['required', 'string', 'size:64'],
+            'restore_revision_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('wiki_page_revisions', 'id')->where('wiki_page_id', $wiki->id),
+            ],
         ]);
 
-        $wiki->update([
-            'title' => $data['title'],
-            'category' => $data['category'] ?: 'Generale',
-            'parent_id' => array_key_exists('parent_id', $data) ? $data['parent_id'] : $wiki->parent_id,
-            'content' => $data['content'],
-            'updated_by' => Auth::id(),
-        ]);
+        try {
+            $locks->saveWithLock(
+                $wiki,
+                $request->user(),
+                $data['tab_id'],
+                $data['lock_token'],
+                function () use ($wiki, $data): void {
+                    DB::transaction(function () use ($wiki, $data): void {
+                        $wiki->update([
+                            'title' => $data['title'],
+                            'category' => ($data['category'] ?? null) ?: 'Generale',
+                            'parent_id' => array_key_exists('parent_id', $data) ? $data['parent_id'] : $wiki->parent_id,
+                            'content' => $data['content'],
+                            'updated_by' => Auth::id(),
+                        ]);
 
-        // Record new revision
-        WikiPageRevision::create([
-            'wiki_page_id' => $wiki->id,
-            'user_id' => Auth::id(),
-            'title' => $wiki->title,
-            'category' => $wiki->category,
-            'content' => $wiki->content,
-            'summary' => $data['summary'] ?: 'Modifica contenuto',
-        ]);
+                        WikiPageRevision::create([
+                            'wiki_page_id' => $wiki->id,
+                            'user_id' => Auth::id(),
+                            'title' => $wiki->title,
+                            'category' => $wiki->category,
+                            'content' => $wiki->content,
+                            'summary' => ($data['summary'] ?? null) ?: (
+                                isset($data['restore_revision_id'])
+                                    ? 'Ripristino revisione'
+                                    : 'Modifica contenuto'
+                            ),
+                        ]);
+                    });
+                }
+            );
+        } catch (HttpException $exception) {
+            if ($exception->getStatusCode() !== 409) {
+                throw $exception;
+            }
+
+            return back()->withInput()->withErrors(['lock' => $exception->getMessage()]);
+        }
 
         return redirect()->route('wiki.show', [$campaign, $wiki])
             ->with('success', 'Pagina Wiki aggiornata con una nuova revisione!');
@@ -178,6 +229,7 @@ class WikiController extends Controller
     public function destroy(Campaign $campaign, WikiPage $wiki)
     {
         $this->authorize('update', $campaign);
+        abort_unless($wiki->campaign_id === $campaign->id, 404);
 
         $wiki->delete();
 
@@ -204,6 +256,7 @@ class WikiController extends Controller
     public function revisions(Campaign $campaign, WikiPage $wiki)
     {
         $this->authorize('view', $campaign);
+        abort_unless($wiki->campaign_id === $campaign->id, 404);
 
         $wiki->load(['revisions.user']);
 
@@ -213,29 +266,31 @@ class WikiController extends Controller
     /**
      * Rollback to a specific revision.
      */
-    public function restoreRevision(Request $request, Campaign $campaign, WikiPage $wiki, WikiPageRevision $revision)
+    public function restoreRevision(Campaign $campaign, WikiPage $wiki, WikiPageRevision $revision)
     {
         $this->authorize('update', $campaign);
+        abort_unless($wiki->campaign_id === $campaign->id, 404);
+        abort_unless($revision->wiki_page_id === $wiki->id, 404);
 
-        $wiki->update([
-            'title' => $revision->title,
-            'category' => $revision->category,
-            'content' => $revision->content,
-            'updated_by' => Auth::id(),
+        return redirect()->route('wiki.edit', [
+            'campaign' => $campaign,
+            'wiki' => $wiki,
+            'revision' => $revision->id,
         ]);
+    }
 
-        // Create a new revision noting the rollback
-        WikiPageRevision::create([
-            'wiki_page_id' => $wiki->id,
-            'user_id' => Auth::id(),
-            'title' => $wiki->title,
-            'category' => $wiki->category,
-            'content' => $wiki->content,
-            'summary' => 'Ripristino alla revisione del '.$revision->created_at->format('d/m/Y H:i'),
+    public function sync(Campaign $campaign, WikiPage $wiki): JsonResponse
+    {
+        $this->authorize('view', $campaign);
+        abort_unless($wiki->campaign_id === $campaign->id, 404);
+        $wiki->loadMissing('editor');
+
+        return response()->json([
+            'updated_at' => $wiki->updated_at?->toIso8601String(),
+            'updated_by' => $wiki->editor
+                ? ['id' => $wiki->editor->id, 'name' => $wiki->editor->name]
+                : null,
         ]);
-
-        return redirect()->route('wiki.show', [$campaign, $wiki])
-            ->with('success', 'Pagina ripristinata alla revisione selezionata.');
     }
 
     private function availableParentPages(Campaign $campaign, ?WikiPage $wiki = null): Collection

@@ -3,7 +3,17 @@
 @section('title', $wiki->title . ' - ' . $campaign->name)
 
 @section('content')
-<div class="max-w-4xl mx-auto my-4 sm:my-8 space-y-6">
+<div class="max-w-4xl mx-auto my-4 sm:my-8 space-y-6"
+     x-data="wikiPageSync({{ Js::from([
+        'url' => route('wiki.sync', [$campaign, $wiki]),
+        'updatedAt' => $wiki->updated_at?->toIso8601String(),
+        'updatedBy' => $wiki->editor?->name,
+     ]) }})"
+     x-init="init()">
+    <div x-show="hasUpdate" class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100" role="status" x-cloak>
+        <p><strong x-text="updatedBy || 'Un membro della campagna'"></strong> ha aggiornato questa scheda.</p>
+        <button type="button" class="mt-2 text-xs font-semibold underline" @click="window.location.reload()">Ricarica la versione più recente</button>
+    </div>
 
     <!-- Breadcrumb navigation -->
     <div class="flex items-center gap-2 text-xs text-slate-400">
@@ -129,4 +139,33 @@
     </div>
 
 </div>
+
+<script>
+function wikiPageSync(config) {
+    return {
+        lastUpdatedAt: config.updatedAt,
+        updatedBy: config.updatedBy,
+        hasUpdate: false,
+        init() {
+            this.syncTimer = window.setInterval(() => this.checkForUpdates(), 10000);
+        },
+        destroy() {
+            window.clearInterval(this.syncTimer);
+        },
+        async checkForUpdates() {
+            try {
+                const response = await fetch(config.url, { headers: { 'Accept': 'application/json' } });
+                if (!response.ok) throw new Error(`Sincronizzazione Wiki non riuscita (${response.status}).`);
+                const data = await response.json();
+                if (data.updated_at && data.updated_at !== this.lastUpdatedAt) {
+                    this.updatedBy = data.updated_by?.name || 'Un membro della campagna';
+                    this.hasUpdate = true;
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+    };
+}
+</script>
 @endsection
