@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.2] - 2026-10-30
+
+- feat(pwa): add PWA support with manifest, service worker, and icons (3cbf045)
+- style(ui): remove w-max constraint from campaign header quick actions container (d2ebd80)
+- chore(changelog): add changelog entries for version 0.1.1 (43d59b7)
+
 ## [0.1.1] - 2026-10-29
 
 - refactor(ui): reorganize campaign header actions and edit button placement (4ac4f6b)
