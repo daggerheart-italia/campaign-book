@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5] - 2026-11-01
+
+- feat(campaigns): hide member emails from non-game-masters (e1e2b18)
+- fix(wiki): restrict revision history to game masters (99d03f3)
+- feat(sharing): suggest alternative public slugs on validation failure (6745f33)
+- chore(changelog): update entries for version 0.1.4 (1aedbef)
+
 ## [0.1.4] - 2026-11-01
 
 - feat(notes): add client-side search filtering to session notes (b522d66)

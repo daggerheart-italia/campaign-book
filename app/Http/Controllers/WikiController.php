@@ -255,7 +255,7 @@ class WikiController extends Controller
      */
     public function revisions(Campaign $campaign, WikiPage $wiki)
     {
-        $this->authorize('view', $campaign);
+        $this->authorize('manageTrash', $campaign);
         abort_unless($wiki->campaign_id === $campaign->id, 404);
 
         $wiki->load(['revisions.user']);
@@ -268,7 +268,7 @@ class WikiController extends Controller
      */
     public function restoreRevision(Campaign $campaign, WikiPage $wiki, WikiPageRevision $revision)
     {
-        $this->authorize('update', $campaign);
+        $this->authorize('manageTrash', $campaign);
         abort_unless($wiki->campaign_id === $campaign->id, 404);
         abort_unless($revision->wiki_page_id === $wiki->id, 404);
 

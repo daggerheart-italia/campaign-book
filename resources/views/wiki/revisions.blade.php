@@ -23,7 +23,7 @@
                 <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <span>Cronologia Revisioni</span>
             </h1>
-            <p class="text-xs text-slate-400 mt-1">Consulta ogni singola versione salvata e ripristina qualsiasi punto della storia se necessario.</p>
+            <p class="text-xs text-slate-400 mt-1">Solo i master possono visualizzare e ripristinare le revisioni.</p>
         </div>
 
         <a href="{{ route('wiki.show', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-3 self-start sm:self-auto">

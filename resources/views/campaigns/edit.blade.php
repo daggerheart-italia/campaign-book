@@ -67,6 +67,18 @@
                 @error('public_slug')
                     <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
                 @enderror
+                @if(session('public_slug_suggestions'))
+                    <div class="mt-2">
+                        <p class="text-xs text-slate-400 mb-1.5">Alternative plausibili:</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach(session('public_slug_suggestions') as $suggestion)
+                                <button type="button" onclick="document.getElementById('public_slug').value='{{ $suggestion }}'; this.closest('form').submit();" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-600/60 transition-colors">
+                                    {{ $suggestion }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
 
             @if($campaign->isPublic())
