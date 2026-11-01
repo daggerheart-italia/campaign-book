@@ -132,6 +132,43 @@ class CampaignWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_player_cannot_see_campaign_invite_links_or_codes(): void
+    {
+        $gm = User::factory()->create();
+        $player = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Campagna',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+        $campaign->users()->attach($player->id, ['role' => 'player']);
+
+        $this->actingAs($player)
+            ->get(route('campaigns.show', $campaign))
+            ->assertOk()
+            ->assertSee('Partecipanti alla Campagna')
+            ->assertDontSee('Invita')
+            ->assertDontSee($campaign->invite_code_player)
+            ->assertDontSee($campaign->invite_code_gm);
+    }
+
+    public function test_game_master_can_see_campaign_invite_links_and_codes(): void
+    {
+        $gm = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Campagna',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $this->actingAs($gm)
+            ->get(route('campaigns.show', $campaign))
+            ->assertOk()
+            ->assertSee('Invita')
+            ->assertSee($campaign->invite_code_player)
+            ->assertSee($campaign->invite_code_gm);
+    }
+
     public function test_campaign_details_require_a_name_and_limit_description_length(): void
     {
         $gm = User::factory()->create();

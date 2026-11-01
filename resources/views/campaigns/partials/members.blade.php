@@ -14,6 +14,7 @@
         <span x-text="'Copiato negli appunti: ' + copyFeedback"></span>
     </div>
 
+    @if($isGm)
     <!-- Invites Section -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Player Invite -->
@@ -66,6 +67,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Members Roster -->
     <div class="glass-panel p-5 rounded-2xl">
