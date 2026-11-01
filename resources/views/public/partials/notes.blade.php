@@ -13,7 +13,7 @@
 }" class="space-y-4">
     <div class="glass-panel p-4 rounded-xl relative">
         <svg class="w-4 h-4 text-slate-400 absolute left-7 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" x-model="search" placeholder="Cerca tra le note di sessione..." class="input-premium !pl-10 text-xs sm:text-sm py-2">
+        <input type="text" x-model="search" @keydown.escape="search = ''" placeholder="Cerca tra le note di sessione..." class="input-premium !pl-10 text-xs sm:text-sm py-2">
     </div>
 
     <template x-for="note in visibleNotes" :key="note.id">
