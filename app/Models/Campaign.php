@@ -22,6 +22,7 @@ class Campaign extends Model
         'banner_url',
         'invite_code_player',
         'invite_code_gm',
+        'public_slug',
     ];
 
     protected function casts(): array
@@ -68,7 +69,7 @@ class Campaign extends Model
      * Render Markdown to safe HTML, resolving [[Page title]] and
      * [[Page title|label]] into links to this campaign's wiki pages.
      */
-    public function renderMarkdown(?string $markdown): string
+    public function renderMarkdown(?string $markdown, bool $public = false): string
     {
         $html = Str::markdown($markdown ?? '', [
             'html_input' => 'strip',
@@ -95,7 +96,7 @@ class Campaign extends Model
 
             $segments[$index] = preg_replace_callback(
                 '/\[\[([^\[\]|]+?)(?:\|([^\[\]]+?))?\]\]/',
-                function (array $match) use ($pagesByTitle): string {
+                function (array $match) use ($pagesByTitle, $public): string {
                     $typedTitle = trim($match[1]);
                     $label = isset($match[2]) && trim($match[2]) !== '' ? trim($match[2]) : $typedTitle;
                     $page = $pagesByTitle->get(mb_strtolower(html_entity_decode($typedTitle, ENT_QUOTES)));
@@ -104,13 +105,22 @@ class Campaign extends Model
                         return '<span class="wikilink-missing" title="Pagina non trovata">'.$label.'</span>';
                     }
 
-                    return '<a href="'.e(route('wiki.show', [$this, $page])).'" class="wikilink">'.$label.'</a>';
+                    $url = $public
+                        ? route('public.wiki', [$this->public_slug, $page])
+                        : route('wiki.show', [$this, $page]);
+
+                    return '<a href="'.e($url).'" class="wikilink">'.$label.'</a>';
                 },
                 $segment
             );
         }
 
         return implode('', $segments);
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->public_slug !== null && $this->public_slug !== '';
     }
 
     public function mapPins(): HasMany

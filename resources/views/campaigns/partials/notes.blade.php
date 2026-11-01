@@ -66,8 +66,18 @@
             <button @click="composerOpen = true" class="btn-primary text-xs py-2 px-3"><span>Scrivi la prima Nota</span></button>
         </div>
     </template>
+    <div class="glass-panel p-4 rounded-xl relative" x-show="notes.length > 0">
+        <svg class="w-4 h-4 text-slate-400 absolute left-7 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" x-model="search" @keydown.escape="search = ''" placeholder="Cerca tra le note di sessione..."
+               class="input-premium !pl-10 text-xs sm:text-sm py-2">
+        <button type="button" x-show="search" @click="search = ''" class="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs" aria-label="Cancella ricerca">✕</button>
+    </div>
+    <div x-show="notes.length > 0 && visibleNotes.length === 0" class="glass-panel p-8 rounded-xl text-center max-w-md mx-auto border-dashed border-white/20" x-cloak>
+        <h4 class="font-['Cinzel'] font-bold text-white text-base mb-1">Nessuna nota trovata</h4>
+        <p class="text-xs text-slate-400">Nessuna nota corrisponde alla ricerca.</p>
+    </div>
     <div class="space-y-4" x-show="notes.length > 0">
-        <template x-for="note in notes" :key="note.id">
+        <template x-for="note in visibleNotes" :key="note.id">
             <div class="glass-panel p-4 sm:p-5 rounded-2xl relative transition-all"
                  :class="note.is_pinned ? 'border-amber-500/40 shadow-lg shadow-amber-500/5' : ''">
                 <div class="flex items-start justify-between gap-3 mb-2.5">
@@ -155,6 +165,7 @@ function campaignNotesSync(config) {
         campaignId: config.campaignId,
         cursor: config.cursor,
         notes: config.initialNotes,
+        search: '',
         composerOpen: false,
         editModalOpen: false,
         editingNote: {},
@@ -162,6 +173,13 @@ function campaignNotesSync(config) {
         resetRequired: false,
         syncing: false,
         resetting: false,
+        get visibleNotes() {
+            const term = this.search.trim().toLocaleLowerCase();
+            if (!term) return this.notes;
+
+            return this.notes.filter(note => [note.title, note.content, note.author_name]
+                .some(value => (value || '').toLocaleLowerCase().includes(term)));
+        },
         init() {
             this.syncTimer = window.setInterval(() => this.syncChanges(), 8000);
         },

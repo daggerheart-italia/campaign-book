@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4] - 2026-11-01
+
+- feat(notes): add client-side search filtering to session notes (b522d66)
+- refactor(public): convert campaign page to tabbed wiki, map, and notes views (5e40568)
+- feat(sharing): add public read-only campaign sharing via slug (21cdf21)
+- chore(changelog): update entries for version 0.1.3 (dc39c59)
+
 ## [0.1.3] - 2026-11-01
 
 - fix(campaigns): hide invite links and codes from non-GM players (6f31ed6)

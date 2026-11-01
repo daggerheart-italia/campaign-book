@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\CampaignMapController;
 use App\Http\Controllers\MapPinController;
+use App\Http\Controllers\PublicCampaignController;
 use App\Http\Controllers\SessionNoteController;
 use App\Http\Controllers\WikiController;
 use App\Http\Controllers\WikiEditLockController;
@@ -11,6 +12,12 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', [AuthController::class, 'landing'])->name('landing');
+
+// Public read-only campaign sharing
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/share/{slug}', [PublicCampaignController::class, 'show'])->name('public.show');
+    Route::get('/share/{slug}/wiki/{wiki}', [PublicCampaignController::class, 'wiki'])->name('public.wiki');
+});
 
 // Guest authentication
 Route::middleware('guest')->group(function () {
@@ -36,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/campaigns/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');
     Route::get('/campaigns/{campaign}/edit', [CampaignController::class, 'edit'])->name('campaigns.edit');
     Route::put('/campaigns/{campaign}', [CampaignController::class, 'update'])->name('campaigns.update');
+    Route::put('/campaigns/{campaign}/sharing', [CampaignController::class, 'updateSharing'])->name('campaigns.updateSharing');
     Route::get('/campaigns/{campaign}/export', [CampaignController::class, 'export'])->name('campaigns.export');
 
     // Invites & Joining
