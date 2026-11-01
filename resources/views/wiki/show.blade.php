@@ -52,10 +52,12 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center gap-2 shrink-0">
-                <a href="{{ route('wiki.revisions', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-3" title="Visualizza revisioni storiche">
-                    <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span>Revisioni ({{ $wiki->revisions->count() }})</span>
-                </a>
+                @if($campaign->isGm(auth()->user()))
+                    <a href="{{ route('wiki.revisions', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-3" title="Visualizza revisioni storiche">
+                        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Revisioni ({{ $wiki->revisions->count() }})</span>
+                    </a>
+                @endif
 
                 <a href="{{ route('wiki.edit', [$campaign, $wiki]) }}" class="btn-primary text-xs py-2 px-4">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
