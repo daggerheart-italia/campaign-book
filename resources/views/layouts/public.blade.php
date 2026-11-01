@@ -16,16 +16,17 @@
 </head>
 <body class="min-h-screen flex flex-col bg-[#090c15] text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-200">
     <header class="border-b border-white/[0.08]">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
             <a href="{{ route('public.show', $campaign->public_slug) }}" class="font-['Cinzel'] font-bold text-amber-400 truncate">{{ $campaign->name }}</a>
             <span class="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-500/15 text-slate-300 border border-slate-500/30">Sola lettura</span>
         </div>
     </header>
 
-    <main class="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-6 py-6">
+    <main class="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 py-6">
         @yield('content')
     </main>
 
     <footer class="py-4 text-center text-xs text-slate-500">Campaign Book · Daggerheart Italia</footer>
+    @stack('scripts')
 </body>
 </html>

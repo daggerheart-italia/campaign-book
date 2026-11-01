@@ -7,6 +7,8 @@
     <div class="flex items-center gap-2 text-xs text-slate-400">
         <a href="{{ route('public.show', $campaign->public_slug) }}" class="hover:text-white transition-colors">{{ $campaign->name }}</a>
         <span>/</span>
+        <a href="{{ route('public.show', ['slug' => $campaign->public_slug, 'tab' => 'wiki']) }}" class="hover:text-white transition-colors">Wiki</a>
+        <span>/</span>
         <span class="text-amber-400 font-medium truncate">{{ $wiki->title }}</span>
     </div>
 

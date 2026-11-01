@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Campaign;
+use App\Models\CampaignMap;
+use App\Models\MapPin;
 use App\Models\User;
 use App\Models\WikiPage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -91,5 +93,21 @@ class PublicCampaignShareTest extends TestCase
 
         $campaign->update(['public_slug' => null]);
         $this->get('/share/saga')->assertNotFound();
+    }
+
+    public function test_public_map_shows_only_pins_of_existing_maps_and_hides_notes_authors(): void
+    {
+        [$gm, $campaign] = $this->campaignWithGm(['public_slug' => 'saga']);
+        $map = CampaignMap::create(['campaign_id' => $campaign->id, 'title' => 'Regno', 'image_path' => 'https://example.com/a.png']);
+        $deletedMap = CampaignMap::create(['campaign_id' => $campaign->id, 'title' => 'Vecchia', 'image_path' => 'https://example.com/b.png']);
+        MapPin::create(['campaign_id' => $campaign->id, 'campaign_map_id' => $map->id, 'title' => 'Torre Visibile', 'created_by' => $gm->id]);
+        MapPin::create(['campaign_id' => $campaign->id, 'campaign_map_id' => $deletedMap->id, 'title' => 'Pin Orfano', 'created_by' => $gm->id]);
+        $deletedMap->delete();
+
+        $this->get(route('public.show', 'saga'))
+            ->assertOk()
+            ->assertSee('Torre Visibile')
+            ->assertDontSee('Pin Orfano')
+            ->assertDontSee('Vecchia');
     }
 }
