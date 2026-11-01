@@ -48,5 +48,35 @@
             </div>
         </form>
     </div>
+
+    <div class="glass-panel p-6 sm:p-8 rounded-2xl mt-6">
+        <h2 class="font-['Cinzel'] text-xl font-bold text-white mb-1.5">Condivisione pubblica</h2>
+        <p class="text-sm text-slate-400 mb-4">Chiunque abbia il link potrà consultare wiki, mappe e note di sessione in sola lettura, senza account. Lascia vuoto per disattivare.</p>
+
+        <form method="POST" action="{{ route('campaigns.updateSharing', $campaign) }}" class="space-y-4">
+            @csrf
+            @method('PUT')
+
+            <div>
+                <label for="public_slug" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Link pubblico</label>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 shrink-0">{{ url('/share') }}/</span>
+                    <input type="text" id="public_slug" name="public_slug" value="{{ old('public_slug', $campaign->public_slug) }}"
+                           maxlength="60" placeholder="la-mia-campagna" class="input-premium" />
+                </div>
+                @error('public_slug')
+                    <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
+                @enderror
+            </div>
+
+            @if($campaign->isPublic())
+                <p class="text-xs text-slate-400">Link attivo: <a href="{{ route('public.show', $campaign->public_slug) }}" target="_blank" rel="noopener" class="text-amber-300 hover:text-amber-200 break-all">{{ route('public.show', $campaign->public_slug) }}</a></p>
+            @endif
+
+            <div class="flex justify-end">
+                <button type="submit" class="btn-primary text-sm">Salva link</button>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection

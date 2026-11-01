@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CampaignController extends Controller
 {
@@ -97,6 +98,35 @@ class CampaignController extends Controller
 
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campagna aggiornata con successo.');
+    }
+
+    /**
+     * Set or clear the public read-only link slug.
+     */
+    public function updateSharing(Request $request, Campaign $campaign)
+    {
+        $this->authorize('updateDetails', $campaign);
+
+        $request->merge(['public_slug' => Str::lower(trim((string) $request->input('public_slug'))) ?: null]);
+
+        $validated = $request->validate([
+            'public_slug' => [
+                'nullable',
+                'string',
+                'min:3',
+                'max:60',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::unique('campaigns', 'public_slug')->ignore($campaign->id),
+            ],
+        ], [
+            'public_slug.regex' => 'Il link può contenere solo lettere minuscole, numeri e trattini.',
+            'public_slug.unique' => 'Questo link è già in uso, scegline un altro.',
+        ]);
+
+        $campaign->update(['public_slug' => $validated['public_slug']]);
+
+        return redirect()->route('campaigns.edit', $campaign)
+            ->with('success', $campaign->isPublic() ? 'Link pubblico attivato.' : 'Link pubblico disattivato.');
     }
 
     /**
