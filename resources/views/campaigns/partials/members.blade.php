@@ -94,7 +94,9 @@
                                     <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Creatore</span>
                                 @endif
                             </div>
-                            <div class="text-xs text-slate-400">{{ $member->email }}</div>
+                            @if($isGm)
+                                <div class="text-xs text-slate-400">{{ $member->email }}</div>
+                            @endif
                         </div>
                     </div>
 
