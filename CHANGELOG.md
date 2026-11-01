@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.3] - 2026-11-01
+
+- fix(campaigns): hide invite links and codes from non-GM players (6f31ed6)
+- chore(changelog): add entries for version 0.1.2 (96c6d65)
+
 ## [0.1.2] - 2026-10-30
 
 - feat(pwa): add PWA support with manifest, service worker, and icons (3cbf045)
