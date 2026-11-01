@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CampaignController extends Controller
 {
@@ -109,24 +110,92 @@ class CampaignController extends Controller
 
         $request->merge(['public_slug' => Str::lower(trim((string) $request->input('public_slug'))) ?: null]);
 
-        $validated = $request->validate([
-            'public_slug' => [
-                'nullable',
-                'string',
-                'min:3',
-                'max:60',
-                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
-                Rule::unique('campaigns', 'public_slug')->ignore($campaign->id),
-            ],
-        ], [
-            'public_slug.regex' => 'Il link può contenere solo lettere minuscole, numeri e trattini.',
-            'public_slug.unique' => 'Questo link è già in uso, scegline un altro.',
-        ]);
+        $baseSlug = $request->input('public_slug');
+
+        try {
+            $validated = $request->validate([
+                'public_slug' => [
+                    'nullable',
+                    'string',
+                    'min:3',
+                    'max:60',
+                    'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                    Rule::unique('campaigns', 'public_slug')->ignore($campaign->id),
+                ],
+            ], [
+                'public_slug.regex' => 'Il link può contenere solo lettere minuscole, numeri e trattini.',
+                'public_slug.unique' => 'Questo link è già in uso, scegline un altro.',
+            ]);
+        } catch (ValidationException $e) {
+            $errors = $e->errors();
+
+            if (isset($errors['public_slug'])) {
+                $suggestions = [];
+                $fallbackBase = $baseSlug && $baseSlug !== '' ? $baseSlug : Str::slug($campaign->name);
+
+                if ($fallbackBase !== '') {
+                    $suggestions = $this->suggestPublicSlugs($fallbackBase, $campaign->id, 3);
+                }
+
+                if (! empty($suggestions)) {
+                    return back()
+                        ->withErrors($errors)
+                        ->withInput()
+                        ->with('public_slug_suggestions', $suggestions);
+                }
+            }
+
+            throw $e;
+        }
 
         $campaign->update(['public_slug' => $validated['public_slug']]);
 
         return redirect()->route('campaigns.edit', $campaign)
             ->with('success', $campaign->isPublic() ? 'Link pubblico attivato.' : 'Link pubblico disattivato.');
+    }
+
+    /**
+     * Generate plausible alternative public slugs.
+     */
+    private function suggestPublicSlugs(string $base, int $campaignId, int $count = 3): array
+    {
+        $base = Str::lower(trim($base));
+        $base = preg_replace('/[^a-z0-9-]+/', '-', $base);
+        $base = trim($base, '-');
+
+        if ($base === '' || strlen($base) < 3) {
+            $base = 'campagna';
+        }
+
+        $suggestions = [];
+        $attempts = 0;
+
+        for ($i = 2; $i <= 20 && count($suggestions) < $count && $attempts < 50; $i++, $attempts++) {
+            $candidate = $base.'-'.$i;
+
+            if (strlen($candidate) > 60) {
+                $candidate = substr($base, 0, max(3, 60 - strlen((string) $i) - 1)).'-'.$i;
+            }
+
+            if (Campaign::where('public_slug', $candidate)->where('id', '!=', $campaignId)->doesntExist()) {
+                $suggestions[] = $candidate;
+            }
+        }
+
+        while (count($suggestions) < $count && $attempts < 100) {
+            $candidate = $base.'-'.Str::lower(Str::random(4));
+            $attempts++;
+
+            if (strlen($candidate) > 60) {
+                $candidate = substr($base, 0, max(3, 60 - 5)).'-'.Str::lower(Str::random(4));
+            }
+
+            if (Campaign::where('public_slug', $candidate)->where('id', '!=', $campaignId)->doesntExist()) {
+                $suggestions[] = $candidate;
+            }
+        }
+
+        return array_values(array_unique($suggestions));
     }
 
     /**
