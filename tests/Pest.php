@@ -1,6 +1,9 @@
 <?php
 
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /*
@@ -17,6 +20,21 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature', 'Browser');
+
+// Il server dei browser test gira nello stesso processo e riusa l'app: senza
+// questo reset sessione e utente autenticato "trapelano" da un browser all'altro.
+pest()->beforeEach(function () {
+    config(['session.driver' => 'file']);
+
+    Event::listen(RequestHandled::class, function () {
+        Auth::forgetGuards();
+        app('session')->forgetDrivers();
+        app()->forgetInstance('session.store');
+    });
+})->in('Browser');
+
+// Il sync delta fa polling ogni 5s: le asserzioni devono attendere più di un ciclo
+pest()->browser()->timeout(15_000);
 
 /*
 |--------------------------------------------------------------------------
