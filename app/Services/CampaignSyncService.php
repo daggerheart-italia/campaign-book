@@ -6,10 +6,12 @@ use App\Models\Campaign;
 use App\Models\MapPin;
 use App\Models\SessionNote;
 use App\Models\User;
+use App\Models\WikiPage;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CampaignSyncService
 {
@@ -38,11 +40,12 @@ class CampaignSyncService
         $entityType = match (true) {
             $entity instanceof SessionNote => 'note',
             $entity instanceof MapPin => 'pin',
+            $entity instanceof WikiPage => 'wiki',
             default => throw new \InvalidArgumentException('Unsupported campaign sync entity.'),
         };
 
-        $payload = $entity instanceof SessionNote
-            ? [
+        $payload = match (true) {
+            $entity instanceof SessionNote => [
                 'id' => $entity->getKey(),
                 'title' => $entity->title,
                 'session_date' => $entity->session_date?->toDateString(),
@@ -55,11 +58,30 @@ class CampaignSyncService
                 'updated_at' => $entity->updated_at?->toIso8601String(),
                 'updated_by' => $user
                     ? ['id' => $user->id, 'name' => $user->name]
-                    : ($pin->editor ? ['id' => $pin->editor->id, 'name' => $pin->editor->name] : null),
+                    : ($entity->user ? ['id' => $entity->user->id, 'name' => $entity->user->name] : null),
                 'sync_version' => $version,
                 'deleted' => $deleted,
-            ]
-            : $this->pinPayload($campaign, $entity, $user, $version, $deleted);
+            ],
+            $entity instanceof MapPin => $this->pinPayload($campaign, $entity, $user, $version, $deleted),
+            $entity instanceof WikiPage => [
+                'id' => $entity->getKey(),
+                'title' => $entity->title,
+                'slug' => $entity->slug,
+                'category' => $entity->category ?: 'Generale',
+                'parent_id' => $entity->parent_id,
+                'content' => $entity->content,
+                'excerpt' => Str::limit(strip_tags($campaign->renderMarkdown($entity->content, false)), 120),
+                'created_at' => $entity->created_at?->toIso8601String(),
+                'updated_at' => $entity->updated_at?->toIso8601String(),
+                'updated_by' => $user ? ['id' => $user->id, 'name' => $user->name] : ($entity->editor ? ['id' => $entity->editor->id, 'name' => $entity->editor->name] : null),
+                'url' => route('wiki.show', [$campaign, $entity]),
+                'edit_url' => route('wiki.edit', [$campaign, $entity]),
+                'revisions_url' => route('wiki.revisions', [$campaign, $entity]),
+                'sync_version' => $version,
+                'deleted' => $deleted,
+            ],
+            default => throw new \InvalidArgumentException('Unsupported campaign sync entity.'),
+        };
 
         DB::table('campaign_sync_events')->insert([
             'campaign_id' => $campaign->getKey(),

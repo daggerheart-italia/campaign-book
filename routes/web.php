@@ -95,6 +95,8 @@ Route::middleware('auth')->group(function () {
     // Session Notes
     Route::get('/campaigns/{campaign}/notes/sync', [SessionNoteController::class, 'sync'])->middleware('throttle:30,1')->name('notes.sync');
     Route::get('/campaigns/{campaign}/notes/snapshot', [SessionNoteController::class, 'snapshot'])->middleware('throttle:120,1')->name('notes.snapshot');
+    Route::get('/campaigns/{campaign}/wiki/sync', [WikiController::class, 'syncList'])->middleware('throttle:30,1')->name('wiki.list.sync');
+    Route::get('/campaigns/{campaign}/wiki/snapshot', [WikiController::class, 'snapshotList'])->middleware('throttle:120,1')->name('wiki.list.snapshot');
     Route::post('/campaigns/{campaign}/notes', [SessionNoteController::class, 'store'])->name('notes.store');
     Route::put('/campaigns/{campaign}/notes/{note}', [SessionNoteController::class, 'update'])->name('notes.update');
     Route::post('/campaigns/{campaign}/notes/{note}/pin', [SessionNoteController::class, 'togglePin'])->name('notes.togglePin');

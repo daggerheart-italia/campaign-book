@@ -251,6 +251,8 @@ class CampaignController extends Controller
             ->values();
         $notesSyncCursor = $sync->createCursor($campaign);
         $pinsSyncCursor = $sync->createCursor($campaign);
+        $wikiSyncCursor = $sync->createCursor($campaign);
+        $wikiSnapshotCursor = null;
         $initialNotes = $campaign->sessionNotes->map(fn (SessionNote $note): array => [
             'id' => $note->id,
             'title' => $note->title,
@@ -278,6 +280,8 @@ class CampaignController extends Controller
             'wikiPageTree',
             'notesSyncCursor',
             'pinsSyncCursor',
+            'wikiSyncCursor',
+            'wikiSnapshotCursor',
             'initialNotes'
         ));
     }

@@ -4,8 +4,21 @@
     pages: {{ Js::from($wikiPageItems) }},
     pageById: {},
     navigationStack: [],
+    wikiSyncCursor: @js($wikiSyncCursor ?? null),
+    wikiSnapshotCursor: @js($wikiSnapshotCursor ?? null),
+    syncUrl: @js(route('wiki.list.sync', $campaign)),
+    snapshotUrl: @js(route('wiki.list.snapshot', $campaign)),
+    syncError: '',
+    syncTimer: null,
+    syncing: false,
     init() {
         this.pageById = Object.fromEntries(this.pages.map(page => [page.id, page]));
+        if (this.wikiSyncCursor) {
+            this.syncTimer = window.setInterval(() => this.syncChanges(), 10000);
+        }
+    },
+    destroy() {
+        if (this.syncTimer) window.clearInterval(this.syncTimer);
     },
     get filteredPages() {
         return this.pages.filter(page => this.matchesPage(page));
@@ -15,6 +28,82 @@
         const currentPage = this.pageById[currentPageId];
 
         return currentPage ? currentPage.children_ids.map(pageId => this.pageById[pageId]) : [];
+    },
+    async syncChanges() {
+        if (this.syncing || !this.wikiSyncCursor) return;
+        this.syncing = true;
+        try {
+            let hasMore = true;
+            let pagesProcessed = 0;
+            while (hasMore && pagesProcessed < 5) {
+                pagesProcessed++;
+                const response = await fetch(`${this.syncUrl}?cursor=${encodeURIComponent(this.wikiSyncCursor)}`, {
+                    headers: { 'Accept': 'application/json' },
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || `Sincronizzazione wiki non riuscita (${response.status}).`);
+                if (data.reset_required) {
+                    throw new Error('Sincronizzazione wiki reimpostata. Ricarica la pagina per aggiornare.');
+                }
+                for (const change of data.changes) {
+                    this.applyChange(change);
+                }
+                this.wikiSyncCursor = data.next_cursor;
+                hasMore = data.has_more;
+            }
+            this.syncError = '';
+            window.dispatchEvent(new CustomEvent('wiki-count-updated', { detail: this.pages.length }));
+        } catch (error) {
+            this.syncError = error.message;
+        } finally {
+            this.syncing = false;
+        }
+    },
+    applyChange(change) {
+        const index = this.pages.findIndex(page => page.id === change.id);
+        if (change.deleted) {
+            if (index !== -1) {
+                this.pages.splice(index, 1);
+                delete this.pageById[change.id];
+            }
+            this.rebuildPageById();
+            return;
+        }
+        const page = {
+            id: change.id,
+            children_ids: change.children_ids || (index !== -1 ? this.pages[index].children_ids : []),
+            title: change.title,
+            category: change.category || 'Generale',
+            excerpt: change.excerpt || '',
+            updated_at: change.updated_at ? this.formatUpdated(change.updated_at) : (index !== -1 ? this.pages[index].updated_at : 'adesso'),
+            url: change.url,
+            edit_url: change.edit_url,
+            revisions_url: change.revisions_url,
+        };
+        if (index === -1) {
+            this.pages.push(page);
+        } else {
+            this.pages.splice(index, 1, { ...this.pages[index], ...page });
+        }
+        this.rebuildPageById();
+    },
+    rebuildPageById() {
+        this.pageById = Object.fromEntries(this.pages.map(page => [page.id, page]));
+    },
+    formatUpdated(value) {
+        try {
+            const date = new Date(value);
+            const diffMs = Date.now() - date.getTime();
+            const minutes = Math.floor(diffMs / 60000);
+            if (minutes < 1) return 'adesso';
+            if (minutes < 60) return `${minutes} min fa`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h fa`;
+            const days = Math.floor(hours / 24);
+            return `${days}g fa`;
+        } catch (e) {
+            return 'adesso';
+        }
     },
     hasActiveFilter() {
         return this.search.trim() !== '' || this.selectedCategory !== 'all';
@@ -136,7 +225,9 @@
             <template x-for="page in filteredPages" :key="page.id">
                 <div class="relative isolate">
                     @include('campaigns.partials.wiki-page-card-content')
-                </div>
+</div>
+
+<p x-show="syncError" x-text="syncError" class="text-xs text-rose-300" x-cloak></p>
             </template>
         </div>
     </template>
