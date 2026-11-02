@@ -23,9 +23,6 @@
         'wiki_page_url' => $p->wikiPage ? route('wiki.show', [$campaign, $p->wikiPage]) : null,
         'sync_version' => $p->sync_version,
     ])) }},
-    pinsSyncUrl: '{{ route('pins.sync', $campaign) }}',
-    pinsSnapshotUrl: '{{ route('pins.snapshot', $campaign) }}',
-    pinsSyncCursor: {{ Js::from($pinsSyncCursor) }},
     storePinUrl: '{{ route('pins.store', $campaign) }}',
     updatePinBaseUrl: '{{ url("/campaigns/{$campaign->id}/pins") }}',
     storeMapUrl: '{{ route('maps.store', $campaign) }}',
@@ -34,10 +31,6 @@
     mapMaxBytes: {{ \App\Http\Controllers\CampaignMapController::MAX_IMAGE_BYTES }},
     csrfToken: '{{ csrf_token() }}'
 })" class="space-y-4">
-    <p x-show="syncError" x-text="syncError" role="status" class="text-xs text-rose-300" x-cloak></p>
-    <button x-show="pinSyncResetRequired" type="button" class="btn-secondary text-xs py-2 px-3" @click="reloadPinSnapshot()" x-cloak>
-        Ricarica la snapshot dei segnaposto
-    </button>
 
     <!-- Top Map Selector & Upload Actions -->
     <div class="glass-panel p-3.5 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
@@ -510,13 +503,8 @@ function customImageMap(config) {
         draggingPin: null,
         isDragging: false,
         dragOrigin: null,
-        pinsSyncCursor: config.pinsSyncCursor,
         pendingPinChanges: [],
         savingPinIds: new Set(),
-        syncingPins: false,
-        resettingPins: false,
-        syncError: '',
-        pinSyncResetRequired: false,
 
         init() {
             this.$nextTick(() => {
@@ -524,81 +512,21 @@ function customImageMap(config) {
                 this.mapResizeObserver.observe(this.$refs.mapViewport);
                 this.fitMap();
             });
-            this.pinSyncTimer = window.setInterval(() => this.syncPinChanges(), 8000);
+            window.campaignSyncManager?.registerEntity('pin', {
+                applyChange: (change) => this.applyPinChange(change),
+                onStatsUpdate: () => {},
+                onReset: (items) => {
+                    this.pins = items;
+                    this.pendingPinChanges = [];
+                    const selectedPin = this.pins.find(pin => pin.id === this.selectedPin?.id);
+                    if (selectedPin) this.selectedPin = { ...selectedPin };
+                    else if (this.detailsModalOpen) this.detailsModalOpen = false;
+                },
+            });
         },
 
         destroy() {
-            window.clearInterval(this.pinSyncTimer);
             this.mapResizeObserver?.disconnect();
-        },
-
-        async syncPinChanges() {
-            if (this.syncingPins || this.resettingPins || this.pinSyncResetRequired) return;
-            this.syncingPins = true;
-            try {
-                let hasMore = true;
-                let pagesProcessed = 0;
-                while (hasMore && pagesProcessed < 5) {
-                    pagesProcessed++;
-                    const response = await fetch(`${config.pinsSyncUrl}?cursor=${encodeURIComponent(this.pinsSyncCursor)}`, {
-                        headers: { 'Accept': 'application/json' },
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || `Sincronizzazione mappa non riuscita (${response.status}).`);
-                    if (data.reset_required) {
-                        this.pinSyncResetRequired = true;
-                        throw new Error('I segnaposto sono stati reimpostati. Ricarica la campagna per aggiornare la mappa.');
-                    }
-                    data.changes.forEach(change => this.applyPinChange(change));
-                    this.pinsSyncCursor = data.next_cursor;
-                    hasMore = data.has_more;
-                }
-                this.syncError = '';
-            } catch (error) {
-                this.syncError = error.message;
-            } finally {
-                this.syncingPins = false;
-            }
-        },
-
-        async reloadPinSnapshot() {
-            if (this.resettingPins) return;
-            if (this.draggingPin || this.savingPinIds.size > 0) {
-                this.syncError = 'Termina lo spostamento del segnaposto prima di ricaricare la snapshot.';
-                return;
-            }
-            this.resettingPins = true;
-            try {
-                let cursor = null;
-                let hasMore = true;
-                let items = [];
-                let deltaCursor = null;
-                while (hasMore) {
-                    const url = new URL(config.pinsSnapshotUrl, window.location.origin);
-                    if (cursor) url.searchParams.set('cursor', cursor);
-                    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || `Snapshot mappa non riuscita (${response.status}).`);
-                    if (data.reset_required) throw new Error('La campagna è stata reimpostata durante la snapshot. Riprova.');
-                    items = items.concat(data.items);
-                    cursor = data.next_cursor;
-                    hasMore = data.has_more;
-                    deltaCursor = data.delta_cursor;
-                }
-                this.pins = items;
-                this.pinsSyncCursor = deltaCursor;
-                this.pendingPinChanges = [];
-                this.pinSyncResetRequired = false;
-                this.syncError = '';
-                const selectedPin = this.pins.find(pin => pin.id === this.selectedPin.id);
-                if (selectedPin) this.selectedPin = { ...selectedPin };
-                else if (this.detailsModalOpen) this.detailsModalOpen = false;
-            } catch (error) {
-                this.syncError = error.message;
-                this.pinSyncResetRequired = true;
-            } finally {
-                this.resettingPins = false;
-            }
         },
 
         applyPinChange(change) {

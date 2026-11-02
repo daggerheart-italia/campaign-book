@@ -286,6 +286,31 @@ class CampaignController extends Controller
         ));
     }
 
+    /**
+     * Unified sync/delta endpoint for a single campaign entity type.
+     */
+    public function syncDelta(Request $request, Campaign $campaign, CampaignSyncService $sync)
+    {
+        $this->authorize('view', $campaign);
+
+        $validated = $request->validate([
+            'entity_type' => ['required', Rule::in(['note', 'pin', 'wiki'])],
+            'cursor' => ['nullable', 'string', 'max:4096'],
+            'map_id' => ['nullable', 'integer', Rule::exists('campaign_maps', 'id')->where('campaign_id', $campaign->id)],
+        ]);
+
+        if ($validated['entity_type'] === 'pin' && ! isset($validated['map_id'])) {
+            $validated['map_id'] = null;
+        }
+
+        return response()->json($sync->syncDelta(
+            $campaign,
+            $validated['entity_type'],
+            $validated['cursor'] ?? null,
+            $validated['map_id'] ?? null
+        ));
+    }
+
     private function buildWikiPageTree(Collection $pages): array
     {
         $pagesById = $pages->keyBy('id');

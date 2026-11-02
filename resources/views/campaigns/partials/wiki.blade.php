@@ -6,7 +6,7 @@
     navigationStack: [],
     wikiSyncCursor: @js($wikiSyncCursor ?? null),
     wikiSnapshotCursor: @js($wikiSnapshotCursor ?? null),
-    syncUrl: @js(route('wiki.list.sync', $campaign)),
+    syncUrl: @js(route('campaigns.syncDelta', $campaign)),
     snapshotUrl: @js(route('wiki.list.snapshot', $campaign)),
     syncError: '',
     syncTimer: null,
@@ -16,6 +16,14 @@
         if (this.wikiSyncCursor) {
             this.syncTimer = window.setInterval(() => this.syncChanges(), 10000);
         }
+        window.campaignSyncManager?.registerEntity('wiki', {
+            applyChange: (change) => this.applyChange(change),
+            onStatsUpdate: () => {},
+            onReset: (items) => {
+                this.pages = items;
+                this.rebuildPageById();
+            },
+        });
     },
     destroy() {
         if (this.syncTimer) window.clearInterval(this.syncTimer);
@@ -37,7 +45,8 @@
             let pagesProcessed = 0;
             while (hasMore && pagesProcessed < 5) {
                 pagesProcessed++;
-                const response = await fetch(`${this.syncUrl}?cursor=${encodeURIComponent(this.wikiSyncCursor)}`, {
+                const url = `${this.syncUrl}?entity_type=wiki&cursor=${encodeURIComponent(this.wikiSyncCursor)}`;
+                const response = await fetch(url, {
                     headers: { 'Accept': 'application/json' },
                 });
                 const data = await response.json();

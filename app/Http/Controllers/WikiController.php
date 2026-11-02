@@ -189,7 +189,7 @@ class WikiController extends Controller
                 $data['tab_id'],
                 $data['lock_token'],
                 function () use ($campaign, $wiki, $data, $sync): void {
-                    DB::transaction(function () use ($wiki, $data, $sync): void {
+                    DB::transaction(function () use ($wiki, $data): void {
                         $wiki->update([
                             'title' => $data['title'],
                             'category' => ($data['category'] ?? null) ?: 'Generale',
@@ -305,16 +305,6 @@ class WikiController extends Controller
                 ? ['id' => $wiki->editor->id, 'name' => $wiki->editor->name]
                 : null,
         ]);
-    }
-
-    public function syncList(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
-    {
-        $this->authorize('view', $campaign);
-        $validated = $request->validate([
-            'cursor' => ['required', 'string', 'max:4096'],
-        ]);
-
-        return response()->json($sync->changes($campaign, $validated['cursor'], 'wiki'));
     }
 
     public function snapshotList(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse

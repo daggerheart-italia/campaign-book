@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/campaigns/create', [CampaignController::class, 'create'])->name('campaigns.create');
     Route::post('/campaigns', [CampaignController::class, 'store'])->name('campaigns.store');
     Route::get('/campaigns/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');
+    Route::get('/campaigns/{campaign}/sync/delta', [CampaignController::class, 'syncDelta'])->middleware('throttle:30,1')->name('campaigns.syncDelta');
     Route::get('/campaigns/{campaign}/edit', [CampaignController::class, 'edit'])->name('campaigns.edit');
     Route::put('/campaigns/{campaign}', [CampaignController::class, 'update'])->name('campaigns.update');
     Route::put('/campaigns/{campaign}/sharing', [CampaignController::class, 'updateSharing'])->name('campaigns.updateSharing');
@@ -85,7 +86,6 @@ Route::middleware('auth')->group(function () {
 
     // Map Pins
     Route::get('/campaigns/{campaign}/pins', [MapPinController::class, 'index'])->name('pins.index');
-    Route::get('/campaigns/{campaign}/pins/sync', [MapPinController::class, 'sync'])->middleware('throttle:30,1')->name('pins.sync');
     Route::get('/campaigns/{campaign}/pins/snapshot', [MapPinController::class, 'snapshot'])->middleware('throttle:120,1')->name('pins.snapshot');
     Route::post('/campaigns/{campaign}/pins', [MapPinController::class, 'store'])->name('pins.store');
     Route::put('/campaigns/{campaign}/pins/{pin}', [MapPinController::class, 'update'])->name('pins.update');
@@ -93,9 +93,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/campaigns/{campaign}/pins/{pin}/restore', [MapPinController::class, 'restore'])->name('pins.restore');
 
     // Session Notes
-    Route::get('/campaigns/{campaign}/notes/sync', [SessionNoteController::class, 'sync'])->middleware('throttle:30,1')->name('notes.sync');
     Route::get('/campaigns/{campaign}/notes/snapshot', [SessionNoteController::class, 'snapshot'])->middleware('throttle:120,1')->name('notes.snapshot');
-    Route::get('/campaigns/{campaign}/wiki/sync', [WikiController::class, 'syncList'])->middleware('throttle:30,1')->name('wiki.list.sync');
     Route::get('/campaigns/{campaign}/wiki/snapshot', [WikiController::class, 'snapshotList'])->middleware('throttle:120,1')->name('wiki.list.snapshot');
     Route::post('/campaigns/{campaign}/notes', [SessionNoteController::class, 'store'])->name('notes.store');
     Route::put('/campaigns/{campaign}/notes/{note}', [SessionNoteController::class, 'update'])->name('notes.update');

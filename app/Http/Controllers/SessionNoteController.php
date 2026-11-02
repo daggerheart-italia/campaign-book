@@ -124,16 +124,6 @@ class SessionNoteController extends Controller
         return back()->with('success', 'Nota ripristinata dal cestino.');
     }
 
-    public function sync(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
-    {
-        $this->authorize('view', $campaign);
-        $validated = $request->validate([
-            'cursor' => ['required', 'string', 'max:4096'],
-        ]);
-
-        return response()->json($sync->changes($campaign, $validated['cursor'], 'note'));
-    }
-
     public function snapshot(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
     {
         $this->authorize('view', $campaign);

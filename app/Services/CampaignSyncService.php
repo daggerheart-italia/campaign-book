@@ -134,7 +134,7 @@ class CampaignSyncService
         ?string $cursor = null,
         ?int $mapId = null
     ): array {
-        if (! in_array($entityType, ['note', 'pin'], true)) {
+        if (! in_array($entityType, ['note', 'pin', 'wiki'], true)) {
             abort(422, 'Il tipo di snapshot non è valido.');
         }
 
@@ -153,9 +153,12 @@ class CampaignSyncService
             return ['items' => [], 'next_cursor' => null, 'delta_cursor' => null, 'has_more' => false, 'reset_required' => true];
         }
 
-        $query = $entityType === 'note'
-            ? $campaign->sessionNotes()->with(['user', 'editor'])
-            : $campaign->mapPins()->with(['wikiPage', 'editor']);
+        $query = match ($entityType) {
+            'note' => $campaign->sessionNotes()->with(['user', 'editor']),
+            'pin' => $campaign->mapPins()->with(['wikiPage', 'editor']),
+            'wiki' => $campaign->wikiPages()->with(['editor']),
+            default => abort(422, 'Il tipo di snapshot non è valido.'),
+        };
         $query->where('sync_version', '<=', $snapshotVersion)
             ->where('id', '>', $lastId)
             ->orderBy('id');
@@ -199,6 +202,30 @@ class CampaignSyncService
                     $entity->sync_version,
                     false
                 );
+            }
+
+            if ($entity instanceof WikiPage) {
+                $entity->loadMissing(['editor']);
+
+                return [
+                    'id' => $entity->getKey(),
+                    'title' => $entity->title,
+                    'slug' => $entity->slug,
+                    'category' => $entity->category ?: 'Generale',
+                    'parent_id' => $entity->parent_id,
+                    'content' => $entity->content,
+                    'excerpt' => \Illuminate\Support\Str::limit(strip_tags($campaign->renderMarkdown($entity->content, false)), 120),
+                    'created_at' => $entity->created_at?->toIso8601String(),
+                    'updated_at' => $entity->updated_at?->toIso8601String(),
+                    'updated_by' => $entity->editor
+                        ? ['id' => $entity->editor->id, 'name' => $entity->editor->name]
+                        : null,
+                    'url' => route('wiki.show', [$campaign, $entity]),
+                    'edit_url' => route('wiki.edit', [$campaign, $entity]),
+                    'revisions_url' => route('wiki.revisions', [$campaign, $entity]),
+                    'sync_version' => $entity->sync_version,
+                    'deleted' => false,
+                ];
             }
 
             throw new \InvalidArgumentException('Unsupported campaign sync snapshot entity.');
@@ -272,6 +299,63 @@ class CampaignSyncService
             ),
             'has_more' => $hasMore,
             'reset_required' => false,
+        ];
+    }
+
+    /**
+     * Unified delta endpoint for a single entity type. Returns changes plus
+     * aggregated campaign_stats (active, non-soft-deleted counts only).
+     *
+     * @return array{changes: list<array<string, mixed>>, next_cursor: string|null, has_more: bool, reset_required: bool, campaign_stats: array<string, mixed>}
+     */
+    public function syncDelta(Campaign $campaign, string $entityType, ?string $cursor = null, ?int $mapId = null): array
+    {
+        if (! in_array($entityType, ['note', 'pin', 'wiki'], true)) {
+            abort(422, 'Il tipo di entità non è valido.');
+        }
+
+        if ($cursor === null) {
+            return [
+                'changes' => [],
+                'next_cursor' => $this->createCursor($campaign, $mapId),
+                'has_more' => false,
+                'reset_required' => false,
+                'campaign_stats' => $this->campaignStats($campaign),
+            ];
+        }
+
+        $result = $this->changes($campaign, $cursor, $entityType, $mapId);
+
+        return [
+            'changes' => $result['changes'],
+            'next_cursor' => $result['next_cursor'],
+            'has_more' => $result['has_more'],
+            'reset_required' => $result['reset_required'],
+            'campaign_stats' => $this->campaignStats($campaign),
+        ];
+    }
+
+    /**
+     * @return array{
+     *   sync_version: int,
+     *   sync_generation: int,
+     *   wiki_count: int,
+     *   notes_count: int,
+     *   maps_count: int,
+     *   users_count: int,
+     *   updated_at: string|null
+     * }
+     */
+    public function campaignStats(Campaign $campaign): array
+    {
+        return [
+            'sync_version' => (int) $campaign->sync_version,
+            'sync_generation' => (int) $campaign->sync_generation,
+            'wiki_count' => (int) $campaign->wikiPages()->whereNull('deleted_at')->count(),
+            'notes_count' => (int) $campaign->sessionNotes()->whereNull('deleted_at')->count(),
+            'maps_count' => (int) $campaign->maps()->whereNull('deleted_at')->count(),
+            'users_count' => (int) $campaign->users()->count(),
+            'updated_at' => $campaign->updated_at?->toIso8601String(),
         ];
     }
 

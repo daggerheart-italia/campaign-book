@@ -1,12 +1,63 @@
 <div class="space-y-6"
-     x-data="campaignNotesSync({{ Js::from([
-        'campaignId' => $campaign->id,
-        'syncUrl' => route('notes.sync', $campaign),
-        'snapshotUrl' => route('notes.snapshot', $campaign),
-        'cursor' => $notesSyncCursor,
-        'initialNotes' => $initialNotes,
-     ]) }})"
-     x-init="init()">
+x-data="{
+            campaignId: {{ $campaign->id }},
+            search: '',
+            composerOpen: false,
+            editModalOpen: false,
+            editingNote: {},
+            applyChange(change) {
+                if (change.deleted) {
+                    this.notes = this.notes.filter(n => n.id !== change.id);
+                    if (this.editingNote.id === change.id) {
+                        this.editModalOpen = false;
+                    }
+                    return;
+                }
+                const existingIndex = this.notes.findIndex(n => n.id === change.id);
+                if (existingIndex !== -1) {
+                    this.notes.splice(existingIndex, 1, change);
+                } else {
+                    this.notes.unshift(change);
+                }
+                this.sortNotes();
+            },
+            sortNotes() {
+                this.notes.sort((a, b) => new Date(b.session_date || b.created_at) - new Date(a.session_date || a.created_at));
+            },
+            init() {
+                try {
+                    const raw = this.$el.getAttribute('data-initial-notes');
+                    this.notes = raw ? JSON.parse(raw) : [];
+                } catch (e) {
+                    this.notes = [];
+                }
+                this.sortNotes();
+                window.campaignSyncManager?.registerEntity('note', {
+                 applyChange: (change) => this.applyChange(change),
+                 onStatsUpdate: (stats) => {
+                     if (stats && typeof stats.notes_count !== 'undefined') {
+                         const root = this.$el.closest('[x-data]');
+                         if (root && root._x_dataStack) {
+                             root._x_dataStack[0].stats.notes_count = stats.notes_count;
+                         } else {
+                             window.dispatchEvent(new CustomEvent('campaign-stats-updated', { detail: stats }));
+                         }
+                     }
+                 },
+                 onReset: (items) => {
+                     this.notes = items;
+                     this.sortNotes();
+                 },
+             });
+         },
+         get visibleNotes() {
+             const term = this.search.trim().toLocaleLowerCase();
+             if (!term) return this.notes;
+             return this.notes.filter(note => [note.title, note.content, note.author_name]
+                 .some(value => (value || '').toLocaleLowerCase().includes(term)));
+         },
+      }"
+      data-initial-notes='@json($initialNotes)'>
     <div class="glass-panel p-4 sm:p-5 rounded-2xl">
         <div class="flex items-center justify-between cursor-pointer" @click="composerOpen = !composerOpen">
             <div class="flex items-center gap-2.5">
@@ -53,11 +104,6 @@
             </form>
         </div>
     </div>
-
-    <p x-show="syncError" x-text="syncError" role="status" class="text-xs text-rose-300" x-cloak></p>
-    <button x-show="resetRequired" type="button" class="btn-secondary text-xs py-2 px-3" @click="reloadSnapshot()" x-cloak>
-        Ricarica la snapshot delle note
-    </button>
 
     <template x-if="notes.length === 0">
         <div class="glass-panel p-8 rounded-xl text-center max-w-md mx-auto my-6 border-dashed border-white/20">
@@ -221,118 +267,6 @@ function noteComposerAutosave(config) {
         },
         clearDraft() {
             try { localStorage.removeItem(this.autosaveKey); } catch (e) {}
-        },
-    };
-}
-
-function campaignNotesSync(config) {
-    return {
-        campaignId: config.campaignId,
-        cursor: config.cursor,
-        notes: config.initialNotes,
-        search: '',
-        composerOpen: false,
-        editModalOpen: false,
-        editingNote: {},
-        syncError: '',
-        resetRequired: false,
-        syncing: false,
-        resetting: false,
-        get visibleNotes() {
-            const term = this.search.trim().toLocaleLowerCase();
-            if (!term) return this.notes;
-
-            return this.notes.filter(note => [note.title, note.content, note.author_name]
-                .some(value => (value || '').toLocaleLowerCase().includes(term)));
-        },
-        init() {
-            this.syncTimer = window.setInterval(() => this.syncChanges(), 8000);
-        },
-        destroy() {
-            window.clearInterval(this.syncTimer);
-        },
-        async syncChanges() {
-            if (this.syncing || this.resetting || this.resetRequired) return;
-            this.syncing = true;
-            try {
-                let hasMore = true;
-                let pagesProcessed = 0;
-                while (hasMore && pagesProcessed < 5) {
-                    pagesProcessed++;
-                    const response = await fetch(`${config.syncUrl}?cursor=${encodeURIComponent(this.cursor)}`, {
-                        headers: { 'Accept': 'application/json' },
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || `Sincronizzazione non riuscita (${response.status}).`);
-                    if (data.reset_required) {
-                        this.resetRequired = true;
-                        throw new Error('Le note sono state reimpostate. Carica una nuova snapshot per aggiornare la vista.');
-                    }
-                    for (const change of data.changes) this.applyChange(change);
-                    this.cursor = data.next_cursor;
-                    hasMore = data.has_more;
-                }
-                this.sortNotes();
-                window.dispatchEvent(new CustomEvent('notes-count-updated', { detail: this.notes.length }));
-                this.syncError = '';
-            } catch (error) {
-                this.syncError = error.message;
-            } finally {
-                this.syncing = false;
-            }
-        },
-        async reloadSnapshot() {
-            if (this.resetting) return;
-            this.resetting = true;
-            try {
-                let cursor = null;
-                let hasMore = true;
-                let items = [];
-                let deltaCursor = null;
-                while (hasMore) {
-                    const url = new URL(config.snapshotUrl, window.location.origin);
-                    if (cursor) url.searchParams.set('cursor', cursor);
-                    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || `Snapshot non riuscita (${response.status}).`);
-                    if (data.reset_required) throw new Error('La campagna è stata reimpostata durante la snapshot. Riprova.');
-                    items = items.concat(data.items);
-                    cursor = data.next_cursor;
-                    hasMore = data.has_more;
-                    deltaCursor = data.delta_cursor;
-                }
-                this.notes = items;
-                this.cursor = deltaCursor;
-                this.resetRequired = false;
-                this.syncError = '';
-                this.sortNotes();
-                window.dispatchEvent(new CustomEvent('notes-count-updated', { detail: this.notes.length }));
-            } catch (error) {
-                this.syncError = error.message;
-                this.resetRequired = true;
-            } finally {
-                this.resetting = false;
-            }
-        },
-        applyChange(change) {
-            const index = this.notes.findIndex(note => note.id === change.id);
-            if (change.deleted) {
-                if (index !== -1) this.notes.splice(index, 1);
-                return;
-            }
-            const note = {
-                ...change,
-                session_date_label: change.session_date_label,
-                author_name: change.author_name || 'Autore sconosciuto',
-            };
-            if (index === -1) this.notes.push(note);
-            else this.notes.splice(index, 1, { ...this.notes[index], ...note });
-        },
-        sortNotes() {
-            this.notes.sort((left, right) => {
-                if (left.is_pinned !== right.is_pinned) return left.is_pinned ? -1 : 1;
-                return (right.created_at || '').localeCompare(left.created_at || '');
-            });
         },
     };
 }
