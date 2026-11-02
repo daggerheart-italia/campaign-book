@@ -84,7 +84,7 @@
             <p class="mt-2 text-xs text-amber-300" x-show="!canEdit && hasDraft" x-cloak>Il testo presente nell’editor non viene cancellato. Riacquisisci il turno prima di salvarlo.</p>
         </section>
 
-        <form method="POST" action="{{ route('wiki.update', [$campaign, $wiki]) }}" class="space-y-5">
+        <form method="POST" action="{{ route('wiki.update', [$campaign, $wiki]) }}" class="space-y-5" @submit="clearDraft()">
             @csrf
             @method('PUT')
             <input type="hidden" name="tab_id" x-model="tabId">
@@ -141,12 +141,17 @@
                        class="input-premium text-xs" placeholder="es. Aggiunto segreto sulla stirpe elfica o modificati punti ferita" />
             </div>
 
-            <div class="pt-4 border-t border-white/[0.08] flex items-center justify-end gap-3">
-                <a href="{{ route('wiki.show', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-4">Annulla</a>
-                <button type="submit" class="btn-primary text-xs py-2 px-5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span>Salva Nuova Revisione</span>
-                </button>
+            <div class="pt-4 border-t border-white/[0.08] flex items-center justify-between gap-3">
+                <div class="text-xs text-slate-400">
+                    <span x-text="autosaveStatus"></span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('wiki.show', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-4">Annulla</a>
+                    <button type="submit" class="btn-primary text-xs py-2 px-5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Salva Nuova Revisione</span>
+                    </button>
+                </div>
             </div>
             </fieldset>
         </form>
@@ -168,16 +173,27 @@ function wikiEditLock(config) {
         statusMessage: 'Verifica del turno di modifica…',
         polling: false,
         hasDraft: false,
+        autosaveKey: '',
+        autosaveStatus: 'Nessun salvataggio automatico locale',
         init() {
             const storageKey = `wiki-edit-tab:${config.campaignId}:${config.wikiId}`;
             this.tabId = sessionStorage.getItem(storageKey) || crypto.randomUUID();
             sessionStorage.setItem(storageKey, this.tabId);
+            this.autosaveKey = `wiki-autosave:${config.campaignId}:${config.wikiId}:${this.tabId}`;
             this.hasDraft = Boolean(document.querySelector('[name="content"]'));
+            this.restoreAutosave();
+            this.startAutosave();
             this.acquire();
             this.pollTimer = window.setInterval(() => this.refreshState(), 10000);
             this.heartbeatTimer = window.setInterval(() => this.heartbeat(), 30000);
             this.releaseOnExit = () => this.release(true);
             window.addEventListener('pagehide', this.releaseOnExit);
+        },
+        destroy() {
+            window.clearInterval(this.pollTimer);
+            window.clearInterval(this.heartbeatTimer);
+            window.removeEventListener('pagehide', this.releaseOnExit);
+            if (this.autosaveTimer) window.clearInterval(this.autosaveTimer);
         },
         destroy() {
             window.clearInterval(this.pollTimer);
@@ -319,6 +335,67 @@ function wikiEditLock(config) {
             } catch (error) {
                 if (!keepalive) this.errorMessage = error.message;
             }
+        },
+        startAutosave() {
+            this.autosaveTimer = window.setInterval(() => this.saveDraft(), 30000);
+        },
+        saveDraft() {
+            try {
+                const form = document.querySelector('form[action*="wiki.update"]');
+                if (!form) return;
+                const data = new FormData(form);
+                const payload = {};
+                for (const [key, value] of data.entries()) {
+                    if (payload[key]) {
+                        if (!Array.isArray(payload[key])) payload[key] = [payload[key]];
+                        payload[key].push(value);
+                    } else {
+                        payload[key] = value;
+                    }
+                }
+                payload._saved_at = new Date().toISOString();
+                localStorage.setItem(this.autosaveKey, JSON.stringify(payload));
+                const time = new Date().toLocaleTimeString('it-IT');
+                this.autosaveStatus = `Bozza salvata automaticamente alle ${time}`;
+            } catch (e) {
+                this.autosaveStatus = 'Salvataggio automatico locale non riuscito';
+            }
+        },
+        restoreAutosave() {
+            try {
+                const raw = localStorage.getItem(this.autosaveKey);
+                if (!raw) return;
+                const payload = JSON.parse(raw);
+                if (!payload || !payload.content) return;
+                const form = document.querySelector('form[action*="wiki.update"]');
+                if (!form) return;
+                if (window.confirm('È stata trovata una bozza locale non salvata per questa pagina. Vuoi ripristinarla?')) {
+                    if (payload.title) form.querySelector('[name="title"]').value = payload.title;
+                    if (payload.category) {
+                        const select = form.querySelector('[name="category"]');
+                        if (select) select.value = payload.category;
+                    }
+                    if (payload.parent_id) {
+                        const select = form.querySelector('[name="parent_id"]');
+                        if (select) select.value = payload.parent_id;
+                    }
+                    if (payload.summary) form.querySelector('[name="summary"]').value = payload.summary;
+                    const contentField = form.querySelector('[name="content"]');
+                    if (contentField) {
+                        contentField.value = payload.content;
+                        contentField.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    this.autosaveStatus = 'Bozza locale ripristinata';
+                }
+            } catch (e) {
+                // ignore
+            }
+        },
+            clearDraft() {
+                try {
+                    localStorage.removeItem(this.autosaveKey);
+                } catch (e) {}
+            },
         },
     };
 }

@@ -24,27 +24,30 @@
         </div>
 
         <div x-show="composerOpen" x-transition class="mt-4 pt-4 border-t border-white/[0.08]" x-cloak>
-            <form method="POST" action="{{ route('notes.store', $campaign) }}" class="space-y-3">
+            <form method="POST" action="{{ route('notes.store', $campaign) }}" class="space-y-3" x-data="noteComposerAutosave({ campaignId: {{ $campaign->id }} })" x-init="init()" @submit="clearDraft()">
                 @csrf
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Titolo Nota</label>
-                        <input type="text" name="title" class="input-premium text-xs" placeholder="es. Sessione 4 - La Caverna dei Sussurri">
+                        <input type="text" name="title" class="input-premium text-xs" placeholder="es. Sessione 4 - La Caverna dei Sussurri" x-model="title" @input="scheduleSave()">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Data della Sessione</label>
-                        <input type="date" name="session_date" value="{{ date('Y-m-d') }}" class="input-premium text-xs">
+                        <input type="date" name="session_date" value="{{ date('Y-m-d') }}" class="input-premium text-xs" x-model="sessionDate" @change="scheduleSave()">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Contenuto *</label>
-                    <x-markdown-editor :campaign="$campaign" min-height="8rem" placeholder="Cosa è accaduto? Digita [[ per collegare una pagina della wiki." />
+                    <x-markdown-editor :campaign="$campaign" min-height="8rem" placeholder="Cosa è accaduto? Digita [[ per collegare una pagina della wiki." x-model="content" @input="scheduleSave()" />
                 </div>
                 <div class="flex items-center justify-between pt-1">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" name="is_pinned" value="1" class="w-4 h-4 rounded bg-slate-900 border-white/20 text-amber-500 focus:ring-amber-500/20">
-                        <span class="text-xs text-slate-300">Fissa in evidenza in cima</span>
-                    </label>
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="is_pinned" value="1" class="w-4 h-4 rounded bg-slate-900 border-white/20 text-amber-500 focus:ring-amber-500/20" x-model="isPinned" @change="scheduleSave()">
+                            <span class="text-xs text-slate-300">Fissa in evidenza in cima</span>
+                        </label>
+                        <span class="text-xs text-slate-400" x-text="autosaveStatus"></span>
+                    </div>
                     <button type="submit" class="btn-primary text-xs py-2 px-4"><span>Salva Nota</span></button>
                 </div>
             </form>
@@ -129,7 +132,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
             <h3 class="font-['Cinzel'] text-lg font-bold text-white mb-4">Modifica Nota di Sessione</h3>
-            <form :action="`/campaigns/${campaignId}/notes/${editingNote.id}`" method="POST" class="space-y-3">
+            <form :action="`/campaigns/${campaignId}/notes/${editingNote.id}`" method="POST" class="space-y-3" x-data="{ lastSaved: '' }" @submit="lastSaved = 'Salvataggio...'">
                 @csrf
                 @method('PUT')
                 <div>
@@ -150,6 +153,7 @@
                         <span class="text-xs text-slate-300">Fissa in evidenza</span>
                     </label>
                     <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400" x-text="lastSaved"></span>
                         <button type="button" @click="editModalOpen = false" class="btn-secondary text-xs py-2 px-3">Annulla</button>
                         <button type="submit" class="btn-primary text-xs py-2 px-4">Aggiorna Nota</button>
                     </div>
@@ -160,6 +164,67 @@
 </div>
 
 <script>
+function noteComposerAutosave(config) {
+    return {
+        autosaveKey: `note-composer-autosave:${config.campaignId}`,
+        title: '',
+        sessionDate: new Date().toISOString().slice(0,10),
+        content: '',
+        isPinned: false,
+        autosaveStatus: 'Nessun salvataggio automatico locale',
+        timer: null,
+        init() {
+            this.restoreDraft();
+            this.autosaveTimer = window.setInterval(() => this.saveDraft(), 15000);
+        },
+        destroy() {
+            if (this.autosaveTimer) window.clearInterval(this.autosaveTimer);
+            if (this.timer) window.clearTimeout(this.timer);
+        },
+        scheduleSave() {
+            if (this.timer) window.clearTimeout(this.timer);
+            this.timer = window.setTimeout(() => this.saveDraft(), 800);
+        },
+        saveDraft() {
+            try {
+                const payload = {
+                    title: this.title,
+                    session_date: this.sessionDate,
+                    content: this.content,
+                    is_pinned: this.isPinned,
+                    saved_at: new Date().toISOString(),
+                };
+                localStorage.setItem(this.autosaveKey, JSON.stringify(payload));
+                const time = new Date().toLocaleTimeString('it-IT');
+                this.autosaveStatus = `Bozza salvata automaticamente alle ${time}`;
+            } catch (e) {
+                this.autosaveStatus = 'Salvataggio automatico locale non riuscito';
+            }
+        },
+        restoreDraft() {
+            try {
+                const raw = localStorage.getItem(this.autosaveKey);
+                if (!raw) return;
+                const payload = JSON.parse(raw);
+                if (!payload) return;
+                if ((payload.title && payload.title.trim() !== '') || (payload.content && payload.content.trim() !== '')) {
+                    if (window.confirm('È stata trovata una bozza locale non salvata per una nuova nota di sessione. Vuoi ripristinarla?')) {
+                        this.title = payload.title || '';
+                        this.sessionDate = payload.session_date || new Date().toISOString().slice(0,10);
+                        this.content = payload.content || '';
+                        this.isPinned = !!payload.is_pinned;
+                        this.autosaveStatus = 'Bozza locale ripristinata';
+                    }
+                }
+            } catch (e) {
+            }
+        },
+        clearDraft() {
+            try { localStorage.removeItem(this.autosaveKey); } catch (e) {}
+        },
+    };
+}
+
 function campaignNotesSync(config) {
     return {
         campaignId: config.campaignId,
