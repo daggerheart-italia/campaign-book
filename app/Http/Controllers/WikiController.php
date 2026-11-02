@@ -188,7 +188,7 @@ class WikiController extends Controller
                 $request->user(),
                 $data['tab_id'],
                 $data['lock_token'],
-                function () use ($wiki, $data, $sync): void {
+                function () use ($campaign, $wiki, $data, $sync): void {
                     DB::transaction(function () use ($wiki, $data, $sync): void {
                         $wiki->update([
                             'title' => $data['title'],
@@ -212,7 +212,7 @@ class WikiController extends Controller
                         ]);
                     });
 
-                    DB::afterCommit(function () use ($wiki, $sync): void {
+                    DB::afterCommit(function () use ($campaign, $wiki, $sync): void {
                         $sync->record($campaign, $wiki->fresh(), Auth::user());
                     });
                 }
@@ -282,7 +282,7 @@ class WikiController extends Controller
      */
     public function restoreRevision(Campaign $campaign, WikiPage $wiki, WikiPageRevision $revision)
     {
-        $this->authorize('manageTrash', $campaign);
+        $this->authorize('update', $campaign);
         abort_unless($wiki->campaign_id === $campaign->id, 404);
         abort_unless($revision->wiki_page_id === $wiki->id, 404);
 
