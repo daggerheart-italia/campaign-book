@@ -367,7 +367,7 @@ class CampaignController extends Controller
         if (! Auth::check()) {
             session()->put('url.intended', route('campaigns.joinByCode', $code));
 
-            return redirect()->route('register');
+            return redirect()->route('login');
         }
 
         $user = Auth::user();
