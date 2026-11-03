@@ -228,20 +228,18 @@ class CampaignController extends Controller
             ->sortBy(fn (WikiPage $page): string => mb_strtolower(($page->category ?: 'Generale')."\0".$page->title))
             ->values();
         $wikiPageTree = $this->buildWikiPageTree($wikiPages);
-        $wikiChildrenByParent = $wikiPages->groupBy('parent_id');
         $wikiPageItems = $wikiPages->map(fn (WikiPage $page): array => [
             'id' => $page->id,
-            'children_ids' => $wikiChildrenByParent
-                ->get($page->id, collect())
-                ->pluck('id')
-                ->all(),
+            'parent_id' => $page->parent_id,
             'title' => $page->title,
+            'slug' => $page->slug,
             'category' => $page->category ?: 'Generale',
             'excerpt' => Str::limit(strip_tags($page->content), 120),
-            'updated_at' => $page->updated_at->diffForHumans(),
+            'updated_at' => $page->updated_at?->toIso8601String(),
             'url' => route('wiki.show', [$campaign, $page]),
             'edit_url' => route('wiki.edit', [$campaign, $page]),
             'revisions_url' => route('wiki.revisions', [$campaign, $page]),
+            'sync_version' => $page->sync_version,
         ])->all();
 
         $categories = $wikiPages->pluck('category')
@@ -251,6 +249,9 @@ class CampaignController extends Controller
             ->values();
         $notesSyncCursor = $sync->createCursor($campaign);
         $pinsSyncCursor = $sync->createCursor($campaign);
+        $wikiSyncCursor = $sync->createCursor($campaign);
+        $mapsSyncCursor = $sync->createCursor($campaign);
+        $wikiSnapshotCursor = null;
         $initialNotes = $campaign->sessionNotes->map(fn (SessionNote $note): array => [
             'id' => $note->id,
             'title' => $note->title,
@@ -278,7 +279,35 @@ class CampaignController extends Controller
             'wikiPageTree',
             'notesSyncCursor',
             'pinsSyncCursor',
+            'wikiSyncCursor',
+            'mapsSyncCursor',
+            'wikiSnapshotCursor',
             'initialNotes'
+        ));
+    }
+
+    /**
+     * Unified sync/delta endpoint for a single campaign entity type.
+     */
+    public function syncDelta(Request $request, Campaign $campaign, CampaignSyncService $sync)
+    {
+        $this->authorize('view', $campaign);
+
+        $validated = $request->validate([
+            'entity_type' => ['required', Rule::in(['note', 'pin', 'wiki', 'map'])],
+            'cursor' => ['nullable', 'string', 'max:4096'],
+            'map_id' => ['nullable', 'integer', Rule::exists('campaign_maps', 'id')->where('campaign_id', $campaign->id)],
+        ]);
+
+        if ($validated['entity_type'] === 'pin' && ! isset($validated['map_id'])) {
+            $validated['map_id'] = null;
+        }
+
+        return response()->json($sync->syncDelta(
+            $campaign,
+            $validated['entity_type'],
+            $validated['cursor'] ?? null,
+            $validated['map_id'] ?? null
         ));
     }
 

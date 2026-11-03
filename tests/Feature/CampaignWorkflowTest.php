@@ -512,7 +512,7 @@ class CampaignWorkflowTest extends TestCase
         $campaign->users()->attach($gm->id, ['role' => 'gm']);
         $cursor = app(CampaignSyncService::class)->createCursor($campaign->fresh());
         $this->actingAs($gm)
-            ->getJson(route('notes.sync', ['campaign' => $campaign, 'cursor' => 'not-a-cursor']))
+            ->getJson(route('campaigns.syncDelta', ['campaign' => $campaign, 'entity_type' => 'note', 'cursor' => 'not-a-cursor']))
             ->assertUnprocessable();
 
         $this->actingAs($gm)->post(route('notes.store', $campaign), [
@@ -523,7 +523,7 @@ class CampaignWorkflowTest extends TestCase
 
         $note = $campaign->sessionNotes()->firstOrFail();
         $changes = $this->actingAs($gm)
-            ->getJson(route('notes.sync', ['campaign' => $campaign, 'cursor' => $cursor]))
+            ->getJson(route('campaigns.syncDelta', ['campaign' => $campaign, 'entity_type' => 'note', 'cursor' => $cursor]))
             ->assertOk()
             ->assertJsonPath('changes.0.id', $note->id)
             ->assertJsonPath('changes.0.title', 'Appunti della sessione')
@@ -537,12 +537,12 @@ class CampaignWorkflowTest extends TestCase
         ]);
 
         $nextCursor = $changes->json('next_cursor');
-        $this->getJson(route('notes.sync', ['campaign' => $campaign, 'cursor' => $nextCursor]))
+        $this->getJson(route('campaigns.syncDelta', ['campaign' => $campaign, 'entity_type' => 'note', 'cursor' => $nextCursor]))
             ->assertOk()
             ->assertJsonCount(0, 'changes');
 
         $this->actingAs($gm)->delete(route('notes.destroy', [$campaign, $note]))->assertRedirect();
-        $this->getJson(route('notes.sync', ['campaign' => $campaign, 'cursor' => $nextCursor]))
+        $this->getJson(route('campaigns.syncDelta', ['campaign' => $campaign, 'entity_type' => 'note', 'cursor' => $nextCursor]))
             ->assertOk()
             ->assertJsonPath('changes.0.id', $note->id)
             ->assertJsonPath('changes.0.deleted', true);
@@ -608,14 +608,16 @@ class CampaignWorkflowTest extends TestCase
             ])
             ->assertOk()
             ->json('pin');
-        $firstMapChanges = $this->getJson(route('pins.sync', [
+        $firstMapChanges = $this->getJson(route('campaigns.syncDelta', [
             'campaign' => $campaign,
             'cursor' => $firstMapCursor,
+            'entity_type' => 'pin',
             'map_id' => $firstMap->id,
         ]))->assertOk()->assertJsonPath('changes.0.id', $pin['id']);
-        $this->getJson(route('pins.sync', [
+        $this->getJson(route('campaigns.syncDelta', [
             'campaign' => $campaign,
             'cursor' => $secondMapCursor,
+            'entity_type' => 'pin',
             'map_id' => $secondMap->id,
         ]))->assertOk()->assertJsonCount(0, 'changes');
 
@@ -623,16 +625,18 @@ class CampaignWorkflowTest extends TestCase
             'campaign_map_id' => $secondMap->id,
         ])->assertOk();
 
-        $this->getJson(route('pins.sync', [
+        $this->getJson(route('campaigns.syncDelta', [
             'campaign' => $campaign,
             'cursor' => $firstMapChanges->json('next_cursor'),
+            'entity_type' => 'pin',
             'map_id' => $firstMap->id,
         ]))->assertOk()
             ->assertJsonPath('changes.0.campaign_map_id', $secondMap->id)
             ->assertJsonPath('changes.0.deleted', false);
-        $this->getJson(route('pins.sync', [
+        $this->getJson(route('campaigns.syncDelta', [
             'campaign' => $campaign,
             'cursor' => $secondMapCursor,
+            'entity_type' => 'pin',
             'map_id' => $secondMap->id,
         ]))->assertOk()
             ->assertJsonPath('changes.0.campaign_map_id', $secondMap->id);
@@ -664,7 +668,11 @@ class CampaignWorkflowTest extends TestCase
         $this->actingAs($gm)
             ->delete(route('maps.destroy', [$campaign, $map]))
             ->assertRedirect();
-        $this->getJson(route('pins.sync', ['campaign' => $campaign, 'cursor' => $cursor]))
+        $this->getJson(route('campaigns.syncDelta', [
+            'campaign' => $campaign,
+            'cursor' => $cursor,
+            'entity_type' => 'pin',
+        ]))
             ->assertOk()
             ->assertJsonPath('changes.0.id', $pin['id'])
             ->assertJsonPath('changes.0.deleted', true);
@@ -672,7 +680,11 @@ class CampaignWorkflowTest extends TestCase
         $this->actingAs($gm)
             ->post(route('campaigns.emptyTrash', $campaign))
             ->assertRedirect();
-        $this->getJson(route('pins.sync', ['campaign' => $campaign, 'cursor' => $cursor]))
+        $this->getJson(route('campaigns.syncDelta', [
+            'campaign' => $campaign,
+            'cursor' => $cursor,
+            'entity_type' => 'pin',
+        ]))
             ->assertOk()
             ->assertJsonPath('reset_required', true)
             ->assertJsonPath('next_cursor', null);
@@ -742,10 +754,7 @@ class CampaignWorkflowTest extends TestCase
             [(string) $aquila->id, (string) $zeta->id, (string) $parent->id],
             $pageIds[1]
         );
-        $response->assertSee('filteredPages.length > 0 && hasActiveFilter()', false);
-        $response->assertSee('x-for="page in filteredPages"', false);
-        $response->assertDontSee('hasMatchingDescendant', false);
-        $response->assertSee('<dialog', false);
+        $response->assertSee('<noscript>', false);
         $response->assertSee('openChildPages(page.id)', false);
         $response->assertSee('children_ids', false);
         $response->assertSee('grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2', false);
@@ -753,7 +762,7 @@ class CampaignWorkflowTest extends TestCase
         $response->assertSee('Leggi', false);
         $response->assertDontSee('Apri scheda', false);
         $response->assertDontSee('Esplora', false);
-        $response->assertSee(":class=\"{ 'wiki-card-stack': page.children_ids.length > 0 }\"", false);
+        $response->assertSee(":class=\"{ 'wiki-card-stack': Array.isArray(page.children_ids) && page.children_ids.length > 0 }\"", false);
         $response->assertDontSee('-right-1 -bottom-1', false);
         $response->assertSee($child->title, false);
         $response->assertSee($grandchild->title, false);

@@ -1,5 +1,5 @@
-<div class="relative isolate space-y-3">
-    <article :class="{ 'wiki-card-stack': page.children_ids.length > 0 }"
+<div class="relative isolate space-y-3" data-wiki-page-id="" x-bind:data-wiki-page-id="page ? page.id : ''">
+    <article :class="{ 'wiki-card-stack': Array.isArray(page.children_ids) && page.children_ids.length > 0 }"
              class="glass-panel glass-panel-hover p-4 rounded-xl flex flex-col justify-between relative group">
         <div>
             <div class="flex items-center justify-between gap-2 mb-2">
@@ -17,7 +17,7 @@
                     <span>Leggi</span>
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
-                <button x-show="page.children_ids.length > 0" type="button" @click="openChildPages(page.id)" aria-haspopup="dialog"
+                <button x-show="Array.isArray(page.children_ids) && page.children_ids.length > 0" type="button" @click="openChildPages(page.id)" aria-haspopup="dialog"
                         class="inline-flex min-h-11 items-center gap-1 text-amber-300 hover:text-amber-200"
                         aria-label="Visualizza le sottopagine">
                     <span>Sottopagine</span>

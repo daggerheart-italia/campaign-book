@@ -94,6 +94,8 @@ class WikiController extends Controller
                 $sync->record($campaign, $pin, Auth::user(), previousMapId: $previousMapId);
             }
 
+            $sync->record($campaign, $wiki, Auth::user());
+
             return $wiki;
         });
 
@@ -160,7 +162,7 @@ class WikiController extends Controller
     /**
      * Update a wiki page and record revision.
      */
-    public function update(Request $request, Campaign $campaign, WikiPage $wiki, WikiEditLockService $locks)
+    public function update(Request $request, Campaign $campaign, WikiPage $wiki, WikiEditLockService $locks, CampaignSyncService $sync)
     {
         $this->authorize('update', $campaign);
         abort_unless($wiki->campaign_id === $campaign->id, 404);
@@ -186,7 +188,7 @@ class WikiController extends Controller
                 $request->user(),
                 $data['tab_id'],
                 $data['lock_token'],
-                function () use ($wiki, $data): void {
+                function () use ($campaign, $wiki, $data, $sync): void {
                     DB::transaction(function () use ($wiki, $data): void {
                         $wiki->update([
                             'title' => $data['title'],
@@ -209,6 +211,10 @@ class WikiController extends Controller
                             ),
                         ]);
                     });
+
+                    DB::afterCommit(function () use ($campaign, $wiki, $sync): void {
+                        $sync->record($campaign, $wiki->fresh(), Auth::user());
+                    });
                 }
             );
         } catch (HttpException $exception) {
@@ -226,12 +232,17 @@ class WikiController extends Controller
     /**
      * Soft delete wiki page (moves to trash).
      */
-    public function destroy(Campaign $campaign, WikiPage $wiki)
+    public function destroy(Campaign $campaign, WikiPage $wiki, CampaignSyncService $sync)
     {
         $this->authorize('update', $campaign);
         abort_unless($wiki->campaign_id === $campaign->id, 404);
 
-        $wiki->delete();
+        $wiki = DB::transaction(function () use ($campaign, $wiki, $sync): WikiPage {
+            $wiki->delete();
+            $sync->record($campaign, $wiki, Auth::user(), deleted: true);
+
+            return $wiki;
+        });
 
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Pagina spostata nel cestino.');
@@ -240,12 +251,15 @@ class WikiController extends Controller
     /**
      * Restore from trash (GM only).
      */
-    public function restore(Campaign $campaign, $wikiId)
+    public function restore(Campaign $campaign, $wikiId, CampaignSyncService $sync)
     {
         $this->authorize('restore', $campaign);
 
         $wiki = WikiPage::onlyTrashed()->where('campaign_id', $campaign->id)->findOrFail($wikiId);
-        $wiki->restore();
+        DB::transaction(function () use ($campaign, $wiki, $sync): void {
+            $wiki->restore();
+            $sync->record($campaign, $wiki, Auth::user());
+        });
 
         return back()->with('success', 'Pagina ripristinata con successo.');
     }
@@ -268,7 +282,7 @@ class WikiController extends Controller
      */
     public function restoreRevision(Campaign $campaign, WikiPage $wiki, WikiPageRevision $revision)
     {
-        $this->authorize('manageTrash', $campaign);
+        $this->authorize('update', $campaign);
         abort_unless($wiki->campaign_id === $campaign->id, 404);
         abort_unless($revision->wiki_page_id === $wiki->id, 404);
 
@@ -291,6 +305,16 @@ class WikiController extends Controller
                 ? ['id' => $wiki->editor->id, 'name' => $wiki->editor->name]
                 : null,
         ]);
+    }
+
+    public function snapshotList(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
+    {
+        $this->authorize('view', $campaign);
+        $validated = $request->validate([
+            'cursor' => ['nullable', 'string', 'max:4096'],
+        ]);
+
+        return response()->json($sync->snapshot($campaign, 'wiki', $validated['cursor'] ?? null));
     }
 
     private function availableParentPages(Campaign $campaign, ?WikiPage $wiki = null): Collection

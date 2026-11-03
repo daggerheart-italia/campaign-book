@@ -5,14 +5,33 @@
 @section('content')
 <div x-data="{ 
     tab: (new URLSearchParams(window.location.search)).get('tab') || 'wiki',
-    notesCount: {{ $campaign->sessionNotes->count() }},
+    stats: {
+        wiki_count: {{ $campaign->wikiPages()->whereNull('deleted_at')->count() }},
+        notes_count: {{ $campaign->sessionNotes()->whereNull('deleted_at')->count() }},
+        maps_count: {{ $campaign->maps()->whereNull('deleted_at')->count() }},
+        users_count: {{ $campaign->users()->count() }},
+    },
     setTab(newTab) {
         this.tab = newTab;
         const url = new URL(window.location);
         url.searchParams.set('tab', newTab);
         window.history.replaceState({}, '', url);
+        window.campaignSyncSetActiveEntity?.(this.entityForTab(newTab));
+        if (newTab === 'map') {
+            setTimeout(() => {
+                if (window.campaignSyncManager && window.campaignSyncManager.entities && window.campaignSyncManager.entities['map']) {
+                    window.campaignSyncManager.syncMapsOnly?.();
+                }
+            }, 50);
+        }
+    },
+    entityForTab(tab) {
+        return { wiki: 'wiki', map: 'pin', notes: 'note' }[tab] || null;
+    },
+    init() {
+        window.campaignSyncSetActiveEntity?.(this.entityForTab(this.tab));
     }
-}" @notes-count-updated.window="notesCount = $event.detail" class="space-y-6">
+}" @campaign-stats-updated.window="stats = $event.detail" class="space-y-6">
 
     <!-- Workspace Banner & Header -->
     <div class="glass-panel p-5 sm:p-7 rounded-2xl relative overflow-hidden">
@@ -77,10 +96,10 @@
     <div class="glass-panel p-1.5 rounded-xl overflow-x-auto scrollbar-none flex items-center gap-1">
         <button @click="setTab('wiki')" 
                 :class="tab === 'wiki' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'"
-                class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
+                class="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all duration-200 whitespace-nowrap">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-            <span>Wiki</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300">{{ $campaign->wikiPages->count() }}</span>
+            <span>Wiki &amp; Grimorio</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="stats.wiki_count"></span>
         </button>
 
         <button @click="setTab('map')" 
@@ -88,7 +107,7 @@
                 class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
             <span>Mappa</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300">{{ $campaign->maps->count() }}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="stats.maps_count"></span>
         </button>
 
         <button @click="setTab('notes')" 
@@ -96,7 +115,7 @@
                 class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             <span>Note</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="notesCount"></span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="stats.notes_count"></span>
         </button>
 
         <button @click="setTab('members')" 
@@ -104,7 +123,7 @@
                 class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
             <span>Membri</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300">{{ $campaign->users->count() }}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="stats.users_count"></span>
         </button>
 
         @if($isGm)
@@ -145,6 +164,60 @@
             </div>
         @endif
     </div>
+
+    <script>
+        (function initCampaignSyncManager() {
+            if (!window.createCampaignSyncManager) {
+                setTimeout(initCampaignSyncManager, 50);
+                return;
+            }
+            @php
+                $initialTab = request()->query('tab', 'wiki');
+                $initialEntity = match ($initialTab) {
+                    'wiki' => 'wiki',
+                    'map' => 'pin',
+                    'notes' => 'note',
+                    default => null,
+                };
+            @endphp
+            window.campaignSyncManager = window.createCampaignSyncManager({
+                campaignId: {{ $campaign->id }},
+                syncDeltaUrl: '{{ route('campaigns.syncDelta', $campaign) }}',
+                snapshotUrls: {
+                    note: '{{ route('notes.snapshot', $campaign) }}',
+                    pin: '{{ route('pins.snapshot', $campaign) }}{{ $activeMap ? '?map_id=' . $activeMap->id : '' }}',
+                    wiki: '{{ route('wiki.list.snapshot', $campaign) }}',
+                    map: '{{ route('maps.snapshot', $campaign) }}',
+                },
+                initialCursors: {
+                    note: @js($notesSyncCursor ?? null),
+                    pin: @js($pinsSyncCursor ?? null),
+                    wiki: @js($wikiSyncCursor ?? null),
+                    map: @js($mapsSyncCursor ?? null),
+                },
+                initialActiveEntity: @js($initialEntity),
+                pollIntervalActiveMs: 5000,
+                pollIntervalInactiveMs: 60000,
+            });
+            window.campaignSyncManager.init();
+            // Ensure map list stays in sync globally
+            window.campaignSyncManager.registerEntity('map', {
+                applyChange: () => {},
+                onStatsUpdate: () => {},
+                onReset: () => {},
+            });
+            window.campaignSyncManager.start();
+            document.addEventListener('visibilitychange', () => {
+                window.campaignSyncManager?.handleVisibilityChange();
+            });
+
+            window.campaignSyncSetActiveEntity = function(entityType) {
+                if (window.campaignSyncManager) {
+                    window.campaignSyncManager.setActiveEntity(entityType);
+                }
+            };
+        })();
+    </script>
 
 </div>
 @endsection

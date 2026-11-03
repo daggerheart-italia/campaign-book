@@ -29,22 +29,6 @@ class MapPinController extends Controller
         return response()->json($query->get());
     }
 
-    public function sync(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
-    {
-        $this->authorize('view', $campaign);
-        $validated = $request->validate([
-            'cursor' => ['required', 'string', 'max:4096'],
-            'map_id' => ['nullable', 'integer', Rule::exists('campaign_maps', 'id')->where('campaign_id', $campaign->id)],
-        ]);
-
-        return response()->json($sync->changes(
-            $campaign,
-            $validated['cursor'],
-            'pin',
-            isset($validated['map_id']) ? (int) $validated['map_id'] : null
-        ));
-    }
-
     public function snapshot(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
     {
         $this->authorize('view', $campaign);

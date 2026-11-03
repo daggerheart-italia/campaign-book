@@ -4,8 +4,30 @@
     pages: {{ Js::from($wikiPageItems) }},
     pageById: {},
     navigationStack: [],
+    wikiSyncCursor: @js($wikiSyncCursor ?? null),
+    wikiSnapshotCursor: @js($wikiSnapshotCursor ?? null),
+    syncUrl: @js(route('campaigns.syncDelta', $campaign)),
+    snapshotUrl: @js(route('wiki.list.snapshot', $campaign)),
+    syncError: '',
+    syncTimer: null,
+    syncing: false,
     init() {
-        this.pageById = Object.fromEntries(this.pages.map(page => [page.id, page]));
+        this.pages = Array.isArray(this.pages) ? this.pages.map(page => ({...page})) : [];
+        this.rebuild();
+        if (this.wikiSyncCursor) {
+            this.syncTimer = window.setInterval(() => this.syncChanges(), 10000);
+        }
+        window.campaignSyncManager?.registerEntity('wiki', {
+            applyChange: (change) => this.applyChange(change),
+            onStatsUpdate: () => {},
+            onReset: (items) => {
+                this.pages = Array.isArray(items) ? items.map(page => ({...page})) : [];
+                this.rebuild();
+            },
+        });
+    },
+    destroy() {
+        if (this.syncTimer) window.clearInterval(this.syncTimer);
     },
     get filteredPages() {
         return this.pages.filter(page => this.matchesPage(page));
@@ -13,8 +35,104 @@
     get currentChildren() {
         const currentPageId = this.navigationStack[this.navigationStack.length - 1];
         const currentPage = this.pageById[currentPageId];
-
-        return currentPage ? currentPage.children_ids.map(pageId => this.pageById[pageId]) : [];
+        if (!currentPage) return [];
+        const childrenIds = Array.isArray(currentPage.children_ids) ? currentPage.children_ids : [];
+        return childrenIds.map(pageId => this.pageById[pageId]).filter(Boolean);
+    },
+    rebuild() {
+        this.pageById = {};
+        for (const p of this.pages || []) {
+            if (p && p.id) {
+                this.pageById[p.id] = p;
+            }
+        }
+        for (const p of this.pages || []) {
+            if (!p) continue;
+            p.children_ids = [];
+        }
+        for (const p of this.pages || []) {
+            if (!p) continue;
+            if (p.parent_id && this.pageById[p.parent_id]) {
+                const parent = this.pageById[p.parent_id];
+                if (!Array.isArray(parent.children_ids)) {
+                    parent.children_ids = [];
+                }
+                if (!parent.children_ids.includes(p.id)) {
+                    parent.children_ids.push(p.id);
+                }
+            }
+        }
+        for (const p of this.pages || []) {
+            if (p && Array.isArray(p.children_ids)) {
+                p.children_ids = p.children_ids.filter(id => this.pageById[id]);
+            }
+        }
+    },
+    async syncChanges() {
+        if (this.syncing || !this.wikiSyncCursor) return;
+        this.syncing = true;
+        try {
+            let hasMore = true;
+            let pagesProcessed = 0;
+            while (hasMore && pagesProcessed < 5) {
+                pagesProcessed++;
+                const url = `${this.syncUrl}?entity_type=wiki&cursor=${encodeURIComponent(this.wikiSyncCursor)}`;
+                const response = await fetch(url, {
+                    headers: { 'Accept': 'application/json' },
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || `Sincronizzazione wiki non riuscita (${response.status}).`);
+                if (data.reset_required) {
+                    throw new Error('Sincronizzazione wiki reimpostata. Ricarica la pagina per aggiornare.');
+                }
+                for (const change of data.changes) {
+                    this.applyChange(change);
+                }
+                this.wikiSyncCursor = data.next_cursor;
+                hasMore = data.has_more;
+            }
+            this.syncError = '';
+            window.dispatchEvent(new CustomEvent('wiki-count-updated', { detail: this.pages.length }));
+        } catch (error) {
+            this.syncError = error.message;
+        } finally {
+            this.syncing = false;
+        }
+    },
+    applyChange(change) {
+        if (!change || !change.id) return;
+        if (change.deleted) {
+            const index = (this.pages || []).findIndex(page => page && page.id === change.id);
+            if (index !== -1) {
+                this.pages.splice(index, 1);
+            }
+            this.rebuild();
+            return;
+        }
+        const index = (this.pages || []).findIndex(page => page && page.id === change.id);
+        const existing = index !== -1 ? this.pages[index] : {};
+        const merged = { ...existing, ...change };
+        if (index === -1) {
+            this.pages.push(merged);
+        } else {
+            this.pages.splice(index, 1, merged);
+        }
+        this.rebuild();
+    },
+    formatUpdated(value) {
+        try {
+            const date = new Date(value);
+            const diffMs = Date.now() - date.getTime();
+            const minutes = Math.floor(diffMs / 60000);
+            if (minutes < 1) return 'adesso';
+            if (minutes < 60) return `${minutes} min fa`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h fa`;
+            const days = Math.floor(hours / 24);
+            return `${days}g fa`;
+        } catch (e) {
+            return 'adesso';
+        }
     },
     hasActiveFilter() {
         return this.search.trim() !== '' || this.selectedCategory !== 'all';
@@ -122,11 +240,21 @@
     </dialog>
 
     <!-- Wiki Cards Tree -->
-    <template x-if="filteredPages.length > 0 && !hasActiveFilter()">
+    <noscript>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($wikiPageTree as $node)
                 @include('campaigns.partials.wiki-page-card', ['node' => $node])
             @endforeach
+        </div>
+    </noscript>
+
+    <template x-if="pages.length > 0 && !hasActiveFilter()">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="page in (pages.filter(p => p && (!p.parent_id || !pageById[p.parent_id])))" :key="page.id">
+                <div class="relative isolate">
+                    @include('campaigns.partials.wiki-page-card-content')
+                </div>
+            </template>
         </div>
     </template>
 
@@ -142,7 +270,7 @@
     </template>
 
     <!-- Empty State -->
-    <template x-if="filteredPages.length === 0">
+    <template x-if="(hasActiveFilter() ? filteredPages.length === 0 : pages.length === 0)">
         <div class="glass-panel p-8 rounded-xl text-center max-w-md mx-auto my-6 border-dashed border-white/20">
             <svg class="w-12 h-12 text-slate-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <h4 class="font-['Cinzel'] font-bold text-white text-base mb-1">Nessuna pagina trovata</h4>
