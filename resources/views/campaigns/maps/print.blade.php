@@ -10,25 +10,32 @@
         .toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
         .toolbar button { padding: 6px 12px; border: 1px solid #ccc; background: #f5f5f5; cursor: pointer; border-radius: 6px; }
         .map-wrap { position: relative; display: inline-block; width: 100%; }
-        .map-wrap img { width: 100%; height: auto; display: block; }
+        .map-wrap img { width: 100%; height: auto; display: block; margin: 0 auto; }
         .pin { position: absolute; transform: translate(-50%, -100%); width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; color: #fff; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
         .mode-bw .pin { background-color: #000 !important; }
         .mode-bw .legend .dot { background-color: #000 !important; }
         .legend { margin-top: 16px; }
         .legend { font-size: 14px; line-height: 1.6; }
         .legend h2 { font-size: 16px; margin: 8px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-        .legend ol { padding-left: 22px; margin: 0; }
-        .legend li { margin-bottom: 8px; }
+        .legend ol { padding-left: 22px; margin: 0; column-count: 2; column-gap: 24px; }
+        .legend li { margin-bottom: 8px; break-inside: avoid; page-break-inside: avoid; }
         .legend strong { font-weight: 700; }
-        .legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .mode-bw .legend .dot { display: none; }
         @media print {
             .toolbar { display: none; }
             body { padding: 0; }
+            .map-wrap, .map-wrap img { break-inside: avoid; page-break-inside: avoid; }
+            .map-wrap img { max-height: 95vh; width: auto; max-width: 100%; }
+            .page-one { break-inside: avoid; page-break-inside: avoid; }
+            @media print and (orientation: landscape) {
+                .page-one { page-break-after: always; break-after: page; }
+            }
         }
     </style>
 </head>
 <body>
-    <h1>{{ $map->title }}</h1>
+    <div class="page-one" style="break-inside: avoid; page-break-inside: avoid;">
     <div class="toolbar print:hidden">
         <button type="button" onclick="document.body.classList.toggle('mode-bw')">Colori / B/N</button>
         <button type="button" onclick="window.print()">Stampa</button>
@@ -41,15 +48,16 @@
             </div>
         @endforeach
     </div>
+    </div>
     <div class="legend">
-        <h2>Punti segnati</h2>
+        <h2>{{ $map->title }}: Punti di Interesse</h2>
         <ol>
             @foreach($pins as $i => $pin)
                 <li>
                     <span class="dot" style="background-color: {{ $pin->color ?: '#e11d48' }}"></span>
                     <strong>{{ $pin->title }}</strong>
                     @if($pin->description)
-                        — {{ $pin->description }}
+                        <div style="font-size:12px;color:#555;margin-left:14px;">{{ $pin->description }}</div>
                     @endif
                 </li>
             @endforeach
