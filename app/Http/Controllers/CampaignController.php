@@ -237,6 +237,8 @@ class CampaignController extends Controller
             'excerpt' => Str::limit(strip_tags($page->content), 120),
             'updated_at' => $page->updated_at?->toIso8601String(),
             'url' => route('wiki.show', [$campaign, $page]),
+            'edit_url' => route('wiki.edit', [$campaign, $page]),
+            'revisions_url' => route('wiki.revisions', [$campaign, $page]),
             'sync_version' => $page->sync_version,
         ])->all();
 

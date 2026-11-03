@@ -112,18 +112,7 @@
             </div>
 
             <div>
-                <label for="parent_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Scheda genitore</label>
-                <select id="parent_id" name="parent_id" class="input-premium text-sm">
-                    <option value="">Nessun genitore</option>
-                    @foreach($parentPages as $parentPage)
-                        <option value="{{ $parentPage->id }}" {{ (string) old('parent_id', $wiki->parent_id) === (string) $parentPage->id ? 'selected' : '' }}>
-                            {{ $parentPage->category ?: 'Generale' }} — {{ $parentPage->title }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('parent_id')
-                    <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
-                @enderror
+                <x-parent-page-select :parentPages="$parentPages" :selected="$wiki->parent_id" />
             </div>
 
             <!-- Content & Preview -->
@@ -194,11 +183,6 @@ function wikiEditLock(config) {
             window.clearInterval(this.heartbeatTimer);
             window.removeEventListener('pagehide', this.releaseOnExit);
             if (this.autosaveTimer) window.clearInterval(this.autosaveTimer);
-        },
-        destroy() {
-            window.clearInterval(this.pollTimer);
-            window.clearInterval(this.heartbeatTimer);
-            window.removeEventListener('pagehide', this.releaseOnExit);
         },
         async request(url, method = 'POST', payload = null, keepalive = false) {
             const options = {
@@ -376,8 +360,11 @@ function wikiEditLock(config) {
                         if (select) select.value = payload.category;
                     }
                     if (payload.parent_id) {
-                        const select = form.querySelector('[name="parent_id"]');
-                        if (select) select.value = payload.parent_id;
+                        const hidden = form.querySelector('[name="parent_id"]');
+                        if (hidden) {
+                            hidden.value = payload.parent_id;
+                            hidden.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
                     }
                     if (payload.summary) form.querySelector('[name="summary"]').value = payload.summary;
                     const contentField = form.querySelector('[name="content"]');
@@ -396,8 +383,6 @@ function wikiEditLock(config) {
                     localStorage.removeItem(this.autosaveKey);
                 } catch (e) {}
             },
-        },
-    };
-}
-</script>
+        };
+}</script>
 @endsection

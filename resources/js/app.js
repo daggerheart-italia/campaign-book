@@ -9,4 +9,9 @@ if (document.querySelector('[x-data*="markdownEditor("]')) {
     registerMarkdownEditor(Alpine);
 }
 
+if (document.querySelector('[x-data*="parentPageSelect("]')) {
+    const { registerParentPageSelect } = await import('./parent-page-select');
+    registerParentPageSelect(Alpine);
+}
+
 Alpine.start();
