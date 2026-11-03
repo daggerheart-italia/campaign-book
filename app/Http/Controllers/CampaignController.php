@@ -228,20 +228,16 @@ class CampaignController extends Controller
             ->sortBy(fn (WikiPage $page): string => mb_strtolower(($page->category ?: 'Generale')."\0".$page->title))
             ->values();
         $wikiPageTree = $this->buildWikiPageTree($wikiPages);
-        $wikiChildrenByParent = $wikiPages->groupBy('parent_id');
         $wikiPageItems = $wikiPages->map(fn (WikiPage $page): array => [
             'id' => $page->id,
-            'children_ids' => $wikiChildrenByParent
-                ->get($page->id, collect())
-                ->pluck('id')
-                ->all(),
+            'parent_id' => $page->parent_id,
             'title' => $page->title,
+            'slug' => $page->slug,
             'category' => $page->category ?: 'Generale',
             'excerpt' => Str::limit(strip_tags($page->content), 120),
-            'updated_at' => $page->updated_at->diffForHumans(),
+            'updated_at' => $page->updated_at?->toIso8601String(),
             'url' => route('wiki.show', [$campaign, $page]),
-            'edit_url' => route('wiki.edit', [$campaign, $page]),
-            'revisions_url' => route('wiki.revisions', [$campaign, $page]),
+            'sync_version' => $page->sync_version,
         ])->all();
 
         $categories = $wikiPages->pluck('category')
