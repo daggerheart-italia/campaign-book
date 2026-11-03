@@ -103,11 +103,12 @@ it('una pagina wiki creata da un utente appare nellaltro browser tramite sync de
         ->assertNoJavascriptErrors()
         ->waitForText('Nuova Pagina');
 
-    $browserA->click('Nuova Pagina')
+    $browserA->click('Nuova Pagina Wiki')
         ->assertPathBeginsWith("/campaigns/{$campaign->id}/wiki/create")
         ->type('title', 'Pagina Sincronizzata Vista Non Filtrata')
+        ->click('Markdown')
         ->type('content', 'Contenuto della pagina sincronizzata nella vista non filtrata')
-        ->press('Salva Pagina');
-
-    $browserB->waitForText('Pagina Sincronizzata Vista Non Filtrata')->assertSee('Contenuto della pagina sincronizzata nella vista non filtrata');
+        ->press('Salva Scheda Wiki');
+    
+    $browserB->waitForText('Pagina Sincronizzata Vista Non Filtrata', 15)->assertSee('Contenuto della pagina sincronizzata nella vista non filtrata');
 });
