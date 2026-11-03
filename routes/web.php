@@ -17,6 +17,7 @@ Route::get('/', [AuthController::class, 'landing'])->name('landing');
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('/share/{slug}', [PublicCampaignController::class, 'show'])->name('public.show');
     Route::get('/share/{slug}/wiki/{wiki}', [PublicCampaignController::class, 'wiki'])->name('public.wiki');
+    Route::get('/join/{code}', [CampaignController::class, 'joinByCode'])->name('campaigns.joinByCode');
 });
 
 // Guest authentication
@@ -49,7 +50,7 @@ Route::middleware('auth')->group(function () {
 
     // Invites & Joining
     Route::post('/campaigns/join', [CampaignController::class, 'join'])->name('campaigns.join');
-    Route::get('/join/{code}', [CampaignController::class, 'joinByCode'])->name('campaigns.joinByCode');
+    // GET /join/{code} is public (see top) to allow unregistered users to follow invite links.
 
     // GM Campaign Management (Members, Trash, Compact)
     Route::post('/campaigns/{campaign}/members/{userId}/role', [CampaignController::class, 'updateMemberRole'])->name('campaigns.updateMemberRole');
