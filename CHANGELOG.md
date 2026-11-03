@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.9] - 2026-11-04
+
+- feat(maps): add print-friendly view with pin legend (2317c95)
+- chore(changelog): add entries for version 0.1.8 (1d279e4)
+
 ## [0.1.8] - 2026-11-03
 
 - feat(wiki): format updated timestamps with relative time labels (44a9d28)
