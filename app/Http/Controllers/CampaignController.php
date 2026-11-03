@@ -250,6 +250,7 @@ class CampaignController extends Controller
         $notesSyncCursor = $sync->createCursor($campaign);
         $pinsSyncCursor = $sync->createCursor($campaign);
         $wikiSyncCursor = $sync->createCursor($campaign);
+        $mapsSyncCursor = $sync->createCursor($campaign);
         $wikiSnapshotCursor = null;
         $initialNotes = $campaign->sessionNotes->map(fn (SessionNote $note): array => [
             'id' => $note->id,
@@ -279,6 +280,7 @@ class CampaignController extends Controller
             'notesSyncCursor',
             'pinsSyncCursor',
             'wikiSyncCursor',
+            'mapsSyncCursor',
             'wikiSnapshotCursor',
             'initialNotes'
         ));
@@ -292,7 +294,7 @@ class CampaignController extends Controller
         $this->authorize('view', $campaign);
 
         $validated = $request->validate([
-            'entity_type' => ['required', Rule::in(['note', 'pin', 'wiki'])],
+            'entity_type' => ['required', Rule::in(['note', 'pin', 'wiki', 'map'])],
             'cursor' => ['nullable', 'string', 'max:4096'],
             'map_id' => ['nullable', 'integer', Rule::exists('campaign_maps', 'id')->where('campaign_id', $campaign->id)],
         ]);

@@ -174,16 +174,40 @@ class CampaignMapController extends Controller
                 $sync->record($campaign, $pin, $request->user(), deleted: true, previousMapId: $previousMapId);
             });
             $map->delete();
+            $sync->record($campaign, $map, $request->user(), deleted: true);
         });
 
         // If default was deleted, set next map as default
         if ($map->is_default) {
             $next = $campaign->maps()->first();
             if ($next) {
-                $next->update(['is_default' => true]);
+                DB::transaction(function () use ($campaign, $next, $request, $sync): void {
+                    $next->update(['is_default' => true, 'updated_by' => $request->user()?->id]);
+                    $sync->record($campaign, $next, $request->user());
+                });
             }
         }
 
         return back()->with('success', 'Mappa rimossa con successo.');
     }
+
+    /**
+     * Snapshot for sync manager.
+     */
+    public function snapshot(Request $request, Campaign $campaign, CampaignSyncService $sync): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('view', $campaign);
+
+        $validated = $request->validate([
+            'cursor' => ['nullable', 'string', 'max:4096'],
+        ]);
+
+        return response()->json($sync->snapshot(
+            $campaign,
+            'map',
+            $validated['cursor'] ?? null,
+            null
+        ));
+    }
+
 }

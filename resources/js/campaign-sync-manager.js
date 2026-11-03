@@ -111,10 +111,61 @@ export function createCampaignSyncManager(config) {
         },
 
         poll() {
-            if (self.syncing || !self.activeEntity) {
+            if (self.syncing) {
                 return;
             }
-            self.syncActiveEntity();
+            if (self.activeEntity) {
+                self.syncActiveEntity();
+                return;
+            }
+            // If no active entity, still try to sync maps if registered
+            if (self.entities['map']) {
+                self.syncMapsOnly();
+            }
+        },
+
+        async syncMapsOnly() {
+            if (self.syncing || !self.entities['map']) {
+                return;
+            }
+            self.syncing = true;
+            try {
+                let mapCursor = self.cursors['map'] || null;
+                let mapHasMore = true;
+                let mapPages = 0;
+                let mapData = null;
+                while (mapHasMore && mapPages < 5) {
+                    mapPages++;
+                    const mapUrl = new URL(self.syncDeltaUrl, window.location.origin);
+                    mapUrl.searchParams.set('entity_type', 'map');
+                    if (mapCursor) {
+                        mapUrl.searchParams.set('cursor', mapCursor);
+                    }
+                    const mapResp = await fetch(mapUrl, { headers: { Accept: 'application/json' } });
+                    if (!mapResp.ok) break;
+                    mapData = await mapResp.json();
+                    if (mapData.reset_required) {
+                        await self.handleReset();
+                        break;
+                    }
+                    const mapChanges = mapData.changes || [];
+                    const mapEntity = self.entities['map'];
+                    for (const change of mapChanges) {
+                        if (mapEntity && mapEntity.applyChange) {
+                            mapEntity.applyChange(change);
+                        }
+                    }
+                    self.cursors['map'] = mapData.next_cursor ?? mapCursor;
+                    mapCursor = self.cursors['map'];
+                    mapHasMore = !!mapData.has_more;
+                }
+                if (mapData && mapData.campaign_stats) {
+                    self.updateCampaignStats(mapData.campaign_stats);
+                }
+            } catch (e) {
+            } finally {
+                self.syncing = false;
+            }
         },
 
         async syncActiveEntity() {
@@ -174,11 +225,52 @@ export function createCampaignSyncManager(config) {
                     hasMore = !!data.has_more;
                 }
 
+                // Also sync maps when on map tab (pins) to keep map list up to date
+                if (entityType === 'pin' && self.entities['map']) {
+                    try {
+                        let mapCursor = self.cursors['map'] || null;
+                        let mapHasMore = true;
+                        let mapPages = 0;
+                        let mapData = null;
+                        while (mapHasMore && mapPages < 5) {
+                            mapPages++;
+                            const mapUrl = new URL(self.syncDeltaUrl, window.location.origin);
+                            mapUrl.searchParams.set('entity_type', 'map');
+                            if (mapCursor) {
+                                mapUrl.searchParams.set('cursor', mapCursor);
+                            }
+                            const mapResp = await fetch(mapUrl, { headers: { Accept: 'application/json' } });
+                            if (!mapResp.ok) break;
+                            mapData = await mapResp.json();
+                            if (mapData.reset_required) {
+                                generationChanged = true;
+                                break;
+                            }
+                            const mapChanges = mapData.changes || [];
+                            const mapEntity = self.entities['map'];
+                            for (const change of mapChanges) {
+                                if (mapEntity && mapEntity.applyChange) {
+                                    mapEntity.applyChange(change);
+                                }
+                            }
+                            self.cursors['map'] = mapData.next_cursor ?? mapCursor;
+                            mapCursor = self.cursors['map'];
+                            mapHasMore = !!mapData.has_more;
+                        }
+                        if (!data && mapData && mapData.campaign_stats) {
+                            self.updateCampaignStats(mapData.campaign_stats);
+                        }
+                    } catch (e) {
+                    }
+                }
+
 
                 if (generationChanged) {
                     await self.handleReset();
                 } else if (data && data.campaign_stats) {
                     self.updateCampaignStats(data.campaign_stats);
+                } else if (!data && self.cursors['map']) {
+                    // try to get stats
                 }
             } catch (error) {
             } finally {

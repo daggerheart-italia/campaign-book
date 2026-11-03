@@ -17,6 +17,13 @@
         url.searchParams.set('tab', newTab);
         window.history.replaceState({}, '', url);
         window.campaignSyncSetActiveEntity?.(this.entityForTab(newTab));
+        if (newTab === 'map') {
+            setTimeout(() => {
+                if (window.campaignSyncManager && window.campaignSyncManager.entities && window.campaignSyncManager.entities['map']) {
+                    window.campaignSyncManager.syncMapsOnly?.();
+                }
+            }, 50);
+        }
     },
     entityForTab(tab) {
         return { wiki: 'wiki', map: 'pin', notes: 'note' }[tab] || null;
@@ -180,17 +187,25 @@
                     note: '{{ route('notes.snapshot', $campaign) }}',
                     pin: '{{ route('pins.snapshot', $campaign) }}{{ $activeMap ? '?map_id=' . $activeMap->id : '' }}',
                     wiki: '{{ route('wiki.list.snapshot', $campaign) }}',
+                    map: '{{ route('maps.snapshot', $campaign) }}',
                 },
                 initialCursors: {
                     note: @js($notesSyncCursor ?? null),
                     pin: @js($pinsSyncCursor ?? null),
                     wiki: @js($wikiSyncCursor ?? null),
+                    map: @js($mapsSyncCursor ?? null),
                 },
                 initialActiveEntity: @js($initialEntity),
                 pollIntervalActiveMs: 5000,
                 pollIntervalInactiveMs: 60000,
             });
             window.campaignSyncManager.init();
+            // Ensure map list stays in sync globally
+            window.campaignSyncManager.registerEntity('map', {
+                applyChange: () => {},
+                onStatsUpdate: () => {},
+                onReset: () => {},
+            });
             window.campaignSyncManager.start();
             document.addEventListener('visibilitychange', () => {
                 window.campaignSyncManager?.handleVisibilityChange();

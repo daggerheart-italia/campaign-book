@@ -504,6 +504,7 @@ function customImageMap(config) {
         isDragging: false,
         dragOrigin: null,
         pendingPinChanges: [],
+        pendingMapChanges: [],
         savingPinIds: new Set(),
 
         init() {
@@ -521,6 +522,28 @@ function customImageMap(config) {
                     const selectedPin = this.pins.find(pin => pin.id === this.selectedPin?.id);
                     if (selectedPin) this.selectedPin = { ...selectedPin };
                     else if (this.detailsModalOpen) this.detailsModalOpen = false;
+                },
+            });
+            window.campaignSyncManager?.registerEntity('map', {
+                applyChange: (change) => this.applyMapChange(change),
+                onStatsUpdate: () => {},
+                onReset: (items) => {
+                    if (Array.isArray(items)) {
+                        this.maps = items.map(map => ({
+                            id: map.id,
+                            title: map.title,
+                            image_url: map.image_url,
+                            is_default: !!map.is_default,
+                            pins_count: map.pins_count ?? 0,
+                        }));
+                    }
+                    this.pendingMapChanges = [];
+                    if (!this.maps.find(m => m.id === this.activeMapId)) {
+                        const def = this.maps.find(m => m.is_default) || this.maps[0];
+                        if (def) {
+                            this.activeMapId = def.id;
+                        }
+                    }
                 },
             });
         },
@@ -554,6 +577,52 @@ function customImageMap(config) {
             const pending = this.pendingPinChanges.filter(change => change.id === pinId);
             this.pendingPinChanges = this.pendingPinChanges.filter(change => change.id !== pinId);
             pending.forEach(change => this.applyPinChange(change));
+        },
+
+        applyMapChange(change) {
+            const index = this.maps.findIndex(map => map.id === change.id);
+            if (index !== -1 && Number(this.maps[index].sync_version || 0) >= Number(change.sync_version || 0)) {
+                return;
+            }
+            if (change.deleted) {
+                if (index !== -1) this.maps.splice(index, 1);
+                if (this.activeMapId === change.id) {
+                    const def = this.maps.find(m => m.is_default) || this.maps[0];
+                    this.activeMapId = def ? def.id : null;
+                }
+                return;
+            }
+            if (index === -1) {
+                this.maps.push({
+                    id: change.id,
+                    title: change.title,
+                    image_url: change.image_url,
+                    is_default: !!change.is_default,
+                    pins_count: change.pins_count ?? 0,
+                });
+            } else {
+                Object.assign(this.maps[index], {
+                    id: change.id,
+                    title: change.title,
+                    image_url: change.image_url,
+                    is_default: !!change.is_default,
+                    pins_count: change.pins_count ?? this.maps[index].pins_count ?? 0,
+                    sync_version: change.sync_version,
+                });
+            }
+            if (change.is_default) {
+                this.maps.forEach((m, i) => {
+                    if (i !== index && this.maps[i].id !== change.id) {
+                        this.maps[i].is_default = false;
+                    }
+                });
+                if (index === -1) {
+                    const added = this.maps.find(m => m.id === change.id);
+                    if (added) added.is_default = true;
+                } else {
+                    this.maps[index].is_default = true;
+                }
+            }
         },
 
         get mapCanvasStyle() {

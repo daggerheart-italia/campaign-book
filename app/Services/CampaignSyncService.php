@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Campaign;
 use App\Models\MapPin;
+use App\Models\CampaignMap;
 use App\Models\SessionNote;
 use App\Models\User;
 use App\Models\WikiPage;
@@ -41,11 +42,13 @@ class CampaignSyncService
             $entity instanceof SessionNote => 'note',
             $entity instanceof MapPin => 'pin',
             $entity instanceof WikiPage => 'wiki',
+            $entity instanceof CampaignMap => 'map',
             default => throw new \InvalidArgumentException('Unsupported campaign sync entity.'),
         };
 
-        $payload = match (true) {
-            $entity instanceof SessionNote => [
+        $payload = [];
+        if ($entity instanceof SessionNote) {
+            $payload = [
                 'id' => $entity->getKey(),
                 'title' => $entity->title,
                 'session_date' => $entity->session_date?->toDateString(),
@@ -61,9 +64,11 @@ class CampaignSyncService
                     : ($entity->user ? ['id' => $entity->user->id, 'name' => $entity->user->name] : null),
                 'sync_version' => $version,
                 'deleted' => $deleted,
-            ],
-            $entity instanceof MapPin => $this->pinPayload($campaign, $entity, $user, $version, $deleted),
-            $entity instanceof WikiPage => [
+            ];
+        } elseif ($entity instanceof MapPin) {
+            $payload = $this->pinPayload($campaign, $entity, $user, $version, $deleted);
+        } elseif ($entity instanceof WikiPage) {
+            $payload = [
                 'id' => $entity->getKey(),
                 'title' => $entity->title,
                 'slug' => $entity->slug,
@@ -79,9 +84,23 @@ class CampaignSyncService
                 'revisions_url' => route('wiki.revisions', [$campaign, $entity]),
                 'sync_version' => $version,
                 'deleted' => $deleted,
-            ],
-            default => throw new \InvalidArgumentException('Unsupported campaign sync entity.'),
-        };
+            ];
+        } elseif ($entity instanceof CampaignMap) {
+            $payload = [
+                'id' => $entity->getKey(),
+                'title' => $entity->title,
+                'image_url' => method_exists($entity, 'getImageUrlAttribute') ? $entity->getImageUrlAttribute() : null,
+                'is_default' => (bool) $entity->is_default,
+                'pins_count' => 0,
+                'created_at' => $entity->created_at?->toIso8601String(),
+                'updated_at' => $entity->updated_at?->toIso8601String(),
+                'updated_by' => $user ? ['id' => $user->id, 'name' => $user->name] : null,
+                'sync_version' => $version,
+                'deleted' => $deleted,
+            ];
+        } else {
+            throw new \InvalidArgumentException('Unsupported campaign sync entity.');
+        }
 
         DB::table('campaign_sync_events')->insert([
             'campaign_id' => $campaign->getKey(),
@@ -89,40 +108,12 @@ class CampaignSyncService
             'entity_type' => $entityType,
             'entity_id' => $entity->getKey(),
             'campaign_map_id' => $entity instanceof MapPin ? $entity->campaign_map_id : null,
-            'previous_campaign_map_id' => $previousMapId,
+            'previous_campaign_map_id' => $entity instanceof MapPin ? $previousMapId : null,
             'deleted' => $deleted,
             'payload' => json_encode($payload, JSON_THROW_ON_ERROR),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function pinPayload(Campaign $campaign, MapPin $pin, ?User $user, int $version, bool $deleted): array
-    {
-        $pin->load('wikiPage');
-
-        return [
-            'id' => $pin->getKey(),
-            'campaign_map_id' => $pin->campaign_map_id,
-            'title' => $pin->title,
-            'description' => $pin->description,
-            'x' => (float) $pin->x,
-            'y' => (float) $pin->y,
-            'color' => $pin->color,
-            'locked' => (bool) $pin->locked,
-            'wiki_page_id' => $pin->wiki_page_id,
-            'wiki_page_title' => $pin->wikiPage?->title,
-            'wiki_page_url' => $pin->wikiPage
-                ? route('wiki.show', [$campaign, $pin->wikiPage])
-                : null,
-            'updated_at' => $pin->updated_at?->toIso8601String(),
-            'updated_by' => ['id' => $user->id, 'name' => $user->name],
-            'sync_version' => $version,
-            'deleted' => $deleted,
-        ];
     }
 
     /**
@@ -134,7 +125,7 @@ class CampaignSyncService
         ?string $cursor = null,
         ?int $mapId = null
     ): array {
-        if (! in_array($entityType, ['note', 'pin', 'wiki'], true)) {
+        if (! in_array($entityType, ['note', 'pin', 'wiki', 'map'], true)) {
             abort(422, 'Il tipo di snapshot non è valido.');
         }
 
@@ -157,6 +148,7 @@ class CampaignSyncService
             'note' => $campaign->sessionNotes()->with(['user', 'editor']),
             'pin' => $campaign->mapPins()->with(['wikiPage', 'editor']),
             'wiki' => $campaign->wikiPages()->with(['editor']),
+            'map' => $campaign->maps(),
             default => abort(422, 'Il tipo di snapshot non è valido.'),
         };
         $query->where('sync_version', '<=', $snapshotVersion)
@@ -223,6 +215,20 @@ class CampaignSyncService
                     'url' => route('wiki.show', [$campaign, $entity]),
                     'edit_url' => route('wiki.edit', [$campaign, $entity]),
                     'revisions_url' => route('wiki.revisions', [$campaign, $entity]),
+                    'sync_version' => $entity->sync_version,
+                    'deleted' => false,
+                ];
+            }
+
+            if ($entity instanceof CampaignMap) {
+                return [
+                    'id' => $entity->getKey(),
+                    'title' => $entity->title,
+                    'image_url' => $entity->image_url,
+                    'is_default' => (bool) $entity->is_default,
+                    'pins_count' => $entity->pins()->count(),
+                    'created_at' => $entity->created_at?->toIso8601String(),
+                    'updated_at' => $entity->updated_at?->toIso8601String(),
                     'sync_version' => $entity->sync_version,
                     'deleted' => false,
                 ];
@@ -310,7 +316,7 @@ class CampaignSyncService
      */
     public function syncDelta(Campaign $campaign, string $entityType, ?string $cursor = null, ?int $mapId = null): array
     {
-        if (! in_array($entityType, ['note', 'pin', 'wiki'], true)) {
+        if (! in_array($entityType, ['note', 'pin', 'wiki', 'map'], true)) {
             abort(422, 'Il tipo di entità non è valido.');
         }
 
@@ -388,6 +394,35 @@ class CampaignSyncService
         return $payload;
     }
 
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function pinPayload(Campaign $campaign, MapPin $pin, ?User $user, int $version, bool $deleted): array
+    {
+        $pin->loadMissing('wikiPage');
+
+        return [
+            'id' => $pin->getKey(),
+            'campaign_map_id' => $pin->campaign_map_id,
+            'title' => $pin->title,
+            'description' => $pin->description,
+            'x' => (float) $pin->x,
+            'y' => (float) $pin->y,
+            'color' => $pin->color,
+            'locked' => (bool) $pin->locked,
+            'wiki_page_id' => $pin->wiki_page_id,
+            'wiki_page_title' => $pin->wikiPage?->title,
+            'wiki_page_url' => $pin->wikiPage
+                ? route('wiki.show', [$campaign, $pin->wikiPage])
+                : null,
+            'updated_at' => $pin->updated_at?->toIso8601String(),
+            'updated_by' => $user ? ['id' => $user->id, 'name' => $user->name] : null,
+            'sync_version' => $version,
+            'deleted' => $deleted,
+        ];
+    }
+
     public function createCursorAt(
         Campaign $campaign,
         ?int $mapId,
@@ -456,3 +491,5 @@ class CampaignSyncService
         ];
     }
 }
+
+

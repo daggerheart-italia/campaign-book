@@ -16,11 +16,13 @@ class CampaignMap extends Model
     protected $fillable = [
         'campaign_id',
         'created_by',
+        'updated_by',
         'title',
         'image_path',
         'width',
         'height',
         'is_default',
+        'sync_version',
     ];
 
     protected $appends = ['image_url'];
@@ -49,6 +51,11 @@ class CampaignMap extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function editor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function pins(): HasMany

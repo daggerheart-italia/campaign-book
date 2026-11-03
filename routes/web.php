@@ -87,6 +87,7 @@ Route::middleware('auth')->group(function () {
     // Map Pins
     Route::get('/campaigns/{campaign}/pins', [MapPinController::class, 'index'])->name('pins.index');
     Route::get('/campaigns/{campaign}/pins/snapshot', [MapPinController::class, 'snapshot'])->middleware('throttle:120,1')->name('pins.snapshot');
+    Route::get('/campaigns/{campaign}/maps/snapshot', [CampaignMapController::class, 'snapshot'])->middleware('throttle:120,1')->name('maps.snapshot');
     Route::post('/campaigns/{campaign}/pins', [MapPinController::class, 'store'])->name('pins.store');
     Route::put('/campaigns/{campaign}/pins/{pin}', [MapPinController::class, 'update'])->name('pins.update');
     Route::delete('/campaigns/{campaign}/pins/{pin}', [MapPinController::class, 'destroy'])->name('pins.destroy');
