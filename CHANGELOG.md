@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.8] - 2026-11-03
+
+- feat(wiki): format updated timestamps with relative time labels (44a9d28)
+- chore(changelog): update entries for version 0.1.7 (0f11862)
+
 ## [0.1.7] - 2026-11-03
 
 - fix(campaigns): redirect unauthenticated join attempts to login instead of registration (ca49d7e)
