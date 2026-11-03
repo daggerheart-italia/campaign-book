@@ -71,13 +71,13 @@ it('una nota creata da un utente appare nellaltro browser tramite sync delta', f
     $browserB->assertSee('Nota Sincronizzata Multi-Browser');
 });
 
-it('una pagina wiki creata da un utente appare nellaltro browser tramite sync delta', function () {
+it('una pagina wiki creata da un utente appare nellaltro browser tramite sync delta nella vista non filtrata', function () {
     $userA = User::factory()->create(['name' => 'Alice']);
     $userB = User::factory()->create(['name' => 'Bob']);
 
     $campaign = Campaign::create([
         'owner_id' => $userA->id,
-        'name' => 'Campagna Wiki Sync',
+        'name' => 'Campagna Wiki Sync Non Filtrata',
         'system' => 'Daggerheart',
     ]);
     $campaign->users()->attach($userA->id, ['role' => 'gm']);
@@ -105,9 +105,9 @@ it('una pagina wiki creata da un utente appare nellaltro browser tramite sync de
 
     $browserA->click('Nuova Pagina')
         ->assertPathBeginsWith("/campaigns/{$campaign->id}/wiki/create")
-        ->type('title', 'Pagina Sincronizzata')
-        ->type('content', 'Contenuto della pagina sincronizzata')
+        ->type('title', 'Pagina Sincronizzata Vista Non Filtrata')
+        ->type('content', 'Contenuto della pagina sincronizzata nella vista non filtrata')
         ->press('Salva Pagina');
 
-    $browserB->waitForText('Pagina Sincronizzata')->assertSee('Contenuto della pagina sincronizzata');
+    $browserB->waitForText('Pagina Sincronizzata Vista Non Filtrata')->assertSee('Contenuto della pagina sincronizzata nella vista non filtrata');
 });
