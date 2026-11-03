@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.6] - 2026-11-03
+
+- feat(sync): add campaign map synchronization support (9bdf860)
+- feat(ui): add searchable parent page select component (f15b25b)
+- feat(wiki): add noscript fallback and guard children_ids access (105574e)
+- refactor(wiki): derive page hierarchy client-side from parent_id (35ba5b2)
+- test(browser): update wiki sync test selectors and button labels (64463a3)
+- fix: wiki notes sync and loading (8c5e602)
+- refactor(sync): unify campaign sync endpoints and introduce shared sync manager (6883050)
+- test(browser): add Playwright browser tests and supporting infrastructure (e008c47)
+- build(deps): add Pest testing framework and Playwright dependency (8ca00fc)
+- fix(wiki): allow revision restore with update permission and fix sync closure (1669526)
+- feat(sync): add wiki page sync support to campaign sync system (3feaf41)
+- feat(editor): add local autosave for notes and wiki editor (39a6335)
+- chore(changelog): update entries for version 0.1.5 (a2456e4)
+
 ## [0.1.5] - 2026-11-01
 
 - feat(campaigns): hide member emails from non-game-masters (e1e2b18)
