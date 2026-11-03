@@ -240,6 +240,14 @@
     </dialog>
 
     <!-- Wiki Cards Tree -->
+    <noscript>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach($wikiPageTree as $node)
+                @include('campaigns.partials.wiki-page-card', ['node' => $node])
+            @endforeach
+        </div>
+    </noscript>
+
     <template x-if="pages.length > 0 && !hasActiveFilter()">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <template x-for="page in (pages.filter(p => p && (!p.parent_id || !pageById[p.parent_id])))" :key="page.id">

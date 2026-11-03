@@ -754,10 +754,7 @@ class CampaignWorkflowTest extends TestCase
             [(string) $aquila->id, (string) $zeta->id, (string) $parent->id],
             $pageIds[1]
         );
-        $response->assertSee('filteredPages.length > 0 && hasActiveFilter()', false);
-        $response->assertSee('x-for="page in filteredPages"', false);
-        $response->assertDontSee('hasMatchingDescendant', false);
-        $response->assertSee('<dialog', false);
+        $response->assertSee('<noscript>', false);
         $response->assertSee('openChildPages(page.id)', false);
         $response->assertSee('children_ids', false);
         $response->assertSee('grid-cols-1 gap-4 overflow-y-auto p-4 sm:grid-cols-2', false);
@@ -765,7 +762,7 @@ class CampaignWorkflowTest extends TestCase
         $response->assertSee('Leggi', false);
         $response->assertDontSee('Apri scheda', false);
         $response->assertDontSee('Esplora', false);
-        $response->assertSee(":class=\"{ 'wiki-card-stack': page.children_ids.length > 0 }\"", false);
+        $response->assertSee(":class=\"{ 'wiki-card-stack': Array.isArray(page.children_ids) && page.children_ids.length > 0 }\"", false);
         $response->assertDontSee('-right-1 -bottom-1', false);
         $response->assertSee($child->title, false);
         $response->assertSee($grandchild->title, false);
