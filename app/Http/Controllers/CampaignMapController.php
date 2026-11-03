@@ -156,6 +156,19 @@ class CampaignMapController extends Controller
     }
 
     /**
+     * Show a print-friendly view of a map with its pins.
+     */
+    public function print(Campaign $campaign, CampaignMap $map)
+    {
+        $this->authorize('view', $campaign);
+        abort_unless($map->campaign_id === $campaign->id, 404);
+
+        $pins = $map->pins()->orderBy('id')->get();
+
+        return view('campaigns.maps.print', compact('campaign', 'map', 'pins'));
+    }
+
+    /**
      * Delete a map image (soft delete).
      */
     public function destroy(
@@ -194,7 +207,7 @@ class CampaignMapController extends Controller
     /**
      * Snapshot for sync manager.
      */
-    public function snapshot(Request $request, Campaign $campaign, CampaignSyncService $sync): \Illuminate\Http\JsonResponse
+    public function snapshot(Request $request, Campaign $campaign, CampaignSyncService $sync): JsonResponse
     {
         $this->authorize('view', $campaign);
 
@@ -209,5 +222,4 @@ class CampaignMapController extends Controller
             null
         ));
     }
-
 }

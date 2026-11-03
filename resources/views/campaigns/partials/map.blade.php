@@ -73,6 +73,10 @@
     </div>
 
     <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
+        <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')" class="btn-secondary !py-1.5 !px-3 text-xs border" aria-label="Stampa mappa">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
+            <span>Stampa</span>
+        </button>
         <button @click="showLabels = !showLabels"
                 :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
                 class="btn-secondary !py-1.5 !px-3 text-xs border"

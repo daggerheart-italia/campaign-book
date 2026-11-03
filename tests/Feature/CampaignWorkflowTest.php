@@ -1213,4 +1213,42 @@ class CampaignWorkflowTest extends TestCase
 
         $this->actingAs($gm)->get(route('campaigns.show', $campaign))->assertOk()->assertDontSee('Orfano');
     }
+
+    public function test_map_print_page_renders_pins_and_requires_membership(): void
+    {
+        $gm = User::factory()->create();
+        $stranger = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Campagna stampa',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $map = CampaignMap::create([
+            'campaign_id' => $campaign->id,
+            'created_by' => $gm->id,
+            'title' => 'Mappa stampa',
+            'image_path' => 'maps/print.png',
+        ]);
+        MapPin::create([
+            'campaign_id' => $campaign->id,
+            'campaign_map_id' => $map->id,
+            'created_by' => $gm->id,
+            'title' => 'Punto uno',
+            'description' => 'Descrizione punto',
+            'x' => 10,
+            'y' => 20,
+            'color' => '#e11d48',
+        ]);
+
+        $this->actingAs($gm)
+            ->get(route('maps.print', [$campaign, $map]))
+            ->assertOk()
+            ->assertSee('Punto uno')
+            ->assertSee('Descrizione punto');
+
+        $this->actingAs($stranger)
+            ->get(route('maps.print', [$campaign, $map]))
+            ->assertForbidden();
+    }
 }

@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/campaigns/{campaign}/maps', [CampaignMapController::class, 'store'])->name('maps.store');
     Route::post('/campaigns/{campaign}/maps/{map}/default', [CampaignMapController::class, 'setDefault'])->name('maps.setDefault');
     Route::delete('/campaigns/{campaign}/maps/{map}', [CampaignMapController::class, 'destroy'])->name('maps.destroy');
+    Route::get('/campaigns/{campaign}/maps/{map}/print', [CampaignMapController::class, 'print'])->name('maps.print');
 
     // Wiki nested routes
     Route::get('/campaigns/{campaign}/wiki/create', [WikiController::class, 'create'])->name('wiki.create');
