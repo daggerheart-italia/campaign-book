@@ -4,7 +4,7 @@
         <div>
             <div class="flex items-center justify-between gap-2 mb-2">
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20" x-text="page.category"></span>
-                <span class="text-[10px] text-slate-400" x-text="page.updated_at"></span>
+                <span class="text-[10px] text-slate-400" x-text="formatUpdated(page.updated_at)"></span>
             </div>
 
             <a :href="page.url" class="mb-1.5 block font-['Cinzel'] text-base font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-1" x-text="page.title"></a>

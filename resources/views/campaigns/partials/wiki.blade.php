@@ -125,11 +125,13 @@
             const diffMs = Date.now() - date.getTime();
             const minutes = Math.floor(diffMs / 60000);
             if (minutes < 1) return 'adesso';
+            if (minutes < 5) return 'pochi minuti fa';
             if (minutes < 60) return `${minutes} min fa`;
             const hours = Math.floor(minutes / 60);
             if (hours < 24) return `${hours}h fa`;
             const days = Math.floor(hours / 24);
-            return `${days}g fa`;
+            if (days === 1) return 'ieri';
+            return `${days} giorni fa`;
         } catch (e) {
             return 'adesso';
         }
