@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.10] - 2026-11-04
+
+- style(maps): refine print layout, legend columns, and page breaks (b2f9abf)
+- chore(changelog): add entries for version 0.1.9 (660cfce)
+
 ## [0.1.9] - 2026-11-04
 
 - feat(maps): add print-friendly view with pin legend (2317c95)
