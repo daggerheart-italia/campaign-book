@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7] - 2026-11-03
+
+- fix(campaigns): redirect unauthenticated join attempts to login instead of registration (ca49d7e)
+- feat(auth): allow unauthenticated users to follow campaign invite links (193b2d9)
+- fix(wiki): guard edit lock initialization and clean up timers on destroy (8389172)
+- chore(changelog): update entries for version 0.1.6 (2c9d831)
+
 ## [0.1.6] - 2026-11-03
 
 - feat(sync): add campaign map synchronization support (9bdf860)

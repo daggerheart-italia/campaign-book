@@ -164,7 +164,30 @@ function wikiEditLock(config) {
         hasDraft: false,
         autosaveKey: '',
         autosaveStatus: 'Nessun salvataggio automatico locale',
+        _initialized: false,
+        pollTimer: null,
+        heartbeatTimer: null,
+        autosaveTimer: null,
+        releaseOnExit: null,
         init() {
+            if (this._initialized) {
+                return;
+            }
+            this._initialized = true;
+
+            if (this.pollTimer) {
+                window.clearInterval(this.pollTimer);
+            }
+            if (this.heartbeatTimer) {
+                window.clearInterval(this.heartbeatTimer);
+            }
+            if (this.autosaveTimer) {
+                window.clearInterval(this.autosaveTimer);
+            }
+            if (this.releaseOnExit) {
+                window.removeEventListener('pagehide', this.releaseOnExit);
+            }
+
             const storageKey = `wiki-edit-tab:${config.campaignId}:${config.wikiId}`;
             this.tabId = sessionStorage.getItem(storageKey) || crypto.randomUUID();
             sessionStorage.setItem(storageKey, this.tabId);
@@ -179,10 +202,23 @@ function wikiEditLock(config) {
             window.addEventListener('pagehide', this.releaseOnExit);
         },
         destroy() {
-            window.clearInterval(this.pollTimer);
-            window.clearInterval(this.heartbeatTimer);
-            window.removeEventListener('pagehide', this.releaseOnExit);
-            if (this.autosaveTimer) window.clearInterval(this.autosaveTimer);
+            if (this.pollTimer) {
+                window.clearInterval(this.pollTimer);
+                this.pollTimer = null;
+            }
+            if (this.heartbeatTimer) {
+                window.clearInterval(this.heartbeatTimer);
+                this.heartbeatTimer = null;
+            }
+            if (this.autosaveTimer) {
+                window.clearInterval(this.autosaveTimer);
+                this.autosaveTimer = null;
+            }
+            if (this.releaseOnExit) {
+                window.removeEventListener('pagehide', this.releaseOnExit);
+                this.releaseOnExit = null;
+            }
+            this._initialized = false;
         },
         async request(url, method = 'POST', payload = null, keepalive = false) {
             const options = {

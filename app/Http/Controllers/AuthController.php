@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Redirect;
 
 class AuthController extends Controller
 {
@@ -16,6 +15,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect()->route('campaigns.index');
         }
+
         return view('landing');
     }
 
@@ -33,8 +33,9 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials, $request->filled('remember'))){
+        if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
+
             return redirect()->intended(route('campaigns.index'));
 
         }
@@ -66,7 +67,8 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
-        return redirect('/dashboard');
+
+        return redirect()->intended(route('campaigns.index'));
     }
 
     /** Logout */
@@ -75,6 +77,7 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/');
     }
 }

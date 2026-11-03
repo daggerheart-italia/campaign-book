@@ -360,8 +360,14 @@ class CampaignController extends Controller
             ->first();
 
         if (! $campaign) {
-            return redirect()->route('campaigns.index')
+            return redirect()->route('landing')
                 ->with('error', 'Codice di invito non valido o campagna non trovata.');
+        }
+
+        if (! Auth::check()) {
+            session()->put('url.intended', route('campaigns.joinByCode', $code));
+
+            return redirect()->route('login');
         }
 
         $user = Auth::user();

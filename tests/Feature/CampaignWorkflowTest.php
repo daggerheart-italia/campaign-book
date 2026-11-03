@@ -28,7 +28,7 @@ class CampaignWorkflowTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect('/campaigns');
         $this->assertAuthenticated();
 
         $user = User::where('email', 'elia@example.com')->first();
