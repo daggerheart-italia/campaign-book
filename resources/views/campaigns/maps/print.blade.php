@@ -5,11 +5,12 @@
     <title>Stampa Mappa - {{ $map->title }}</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: Georgia, serif; margin: 0; padding: 16px; color: #111; background: #fff; }
+        body { font-family: Georgia, serif; margin: 0; padding: 16px; color: #111; background: #fff; text-align: center; }
+        .legend { text-align: left; }
         h1 { font-size: 20px; margin: 0 0 12px; }
         .toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
         .toolbar button { padding: 6px 12px; border: 1px solid #ccc; background: #f5f5f5; cursor: pointer; border-radius: 6px; }
-        .map-wrap { position: relative; display: inline-block; width: 100%; }
+        .map-wrap { position: relative; display: inline-block; width: auto; max-width: 100%; }
         .map-wrap img { width: 100%; height: auto; display: block; margin: 0 auto; }
         .pin { position: absolute; transform: translate(-50%, -100%); width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; color: #fff; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
         .mode-bw .pin { background-color: #000 !important; }
