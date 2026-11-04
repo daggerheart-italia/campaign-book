@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.11] - 2026-11-04
+
+- feat(maps): add numbered pin markers and legend indices (833816e)
+- chore(changelog): add entries for version 0.1.10 (f426a79)
+
 ## [0.1.10] - 2026-11-04
 
 - style(maps): refine print layout, legend columns, and page breaks (b2f9abf)
