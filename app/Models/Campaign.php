@@ -128,6 +128,20 @@ class Campaign extends Model
         return $this->hasMany(MapPin::class);
     }
 
+    /**
+     * Generate a clean plain text excerpt from Markdown, resolving wikilink labels.
+     */
+    public static function excerpt(?string $markdown, int $limit = 120): string
+    {
+        if (empty($markdown)) {
+            return '';
+        }
+
+        $clean = preg_replace('/\[\[(?:[^|\]]+\|)?([^\]]+)\]\]/', '$1', $markdown);
+
+        return Str::limit(trim(strip_tags((string) $clean)), $limit);
+    }
+
     public function sessionNotes(): HasMany
     {
         return $this->hasMany(SessionNote::class)->orderBy('is_pinned', 'desc')->orderBy('created_at', 'desc');
@@ -144,6 +158,12 @@ class Campaign extends Model
 
         if ($this->owner_id === $user->id) {
             return true;
+        }
+
+        if ($this->relationLoaded('users')) {
+            $member = $this->users->firstWhere('id', $user->id);
+
+            return $member !== null && $member->pivot?->role === 'gm';
         }
 
         return $this->users()
@@ -165,6 +185,10 @@ class Campaign extends Model
             return true;
         }
 
+        if ($this->relationLoaded('users')) {
+            return $this->users->contains('id', $user->id);
+        }
+
         return $this->users()->where('user_id', $user->id)->exists();
     }
 
@@ -179,6 +203,12 @@ class Campaign extends Model
 
         if ($this->owner_id === $user->id) {
             return 'gm';
+        }
+
+        if ($this->relationLoaded('users')) {
+            $pivot = $this->users->firstWhere('id', $user->id);
+
+            return $pivot ? $pivot->pivot?->role : null;
         }
 
         $pivot = $this->users()->where('user_id', $user->id)->first();

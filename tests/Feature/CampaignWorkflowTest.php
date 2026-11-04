@@ -1251,4 +1251,71 @@ class CampaignWorkflowTest extends TestCase
             ->get(route('maps.print', [$campaign, $map]))
             ->assertForbidden();
     }
+
+    public function test_map_creation_and_set_default_record_sync_events(): void
+    {
+        Storage::fake('public');
+        Storage::fake('local');
+
+        $gm = User::factory()->create();
+        $campaign = Campaign::create([
+            'owner_id' => $gm->id,
+            'name' => 'Mappa Sync Test',
+        ]);
+        $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+        $sync = new CampaignSyncService;
+        $initialCursor = $sync->createCursor($campaign->fresh());
+
+        // Upload first map
+        $file1 = UploadedFile::fake()->image('map1.png', 800, 600);
+        $this->uploadMapInChunks($gm, $campaign, 'Mappa Alpha', file_get_contents($file1->getRealPath()))
+            ->assertOk();
+
+        $map1 = CampaignMap::where('title', 'Mappa Alpha')->first();
+        $this->assertNotNull($map1);
+        $this->assertTrue($map1->is_default);
+        $this->assertGreaterThan(0, $map1->sync_version);
+
+        // Upload second map
+        $file2 = UploadedFile::fake()->image('map2.png', 800, 600);
+        $this->uploadMapInChunks($gm, $campaign, 'Mappa Beta', file_get_contents($file2->getRealPath()))
+            ->assertOk();
+
+        $map2 = CampaignMap::where('title', 'Mappa Beta')->first();
+        $this->assertNotNull($map2);
+        $this->assertFalse($map2->is_default);
+
+        // Verify delta sync returns both map creations
+        $delta1 = $this->actingAs($gm)->getJson(route('campaigns.syncDelta', [
+            'campaign' => $campaign,
+            'entity_type' => 'map',
+            'cursor' => $initialCursor,
+        ]));
+        $delta1->assertOk()
+            ->assertJsonCount(2, 'changes')
+            ->assertJsonPath('changes.0.id', $map1->id)
+            ->assertJsonPath('changes.1.id', $map2->id);
+
+        $cursorAfterUploads = $delta1->json('next_cursor');
+
+        // Set map2 as default
+        $this->actingAs($gm)
+            ->post(route('maps.setDefault', [$campaign, $map2]))
+            ->assertRedirect();
+
+        $map1->refresh();
+        $map2->refresh();
+        $this->assertFalse($map1->is_default);
+        $this->assertTrue($map2->is_default);
+
+        // Verify delta sync returns both default updates
+        $delta2 = $this->actingAs($gm)->getJson(route('campaigns.syncDelta', [
+            'campaign' => $campaign,
+            'entity_type' => 'map',
+            'cursor' => $cursorAfterUploads,
+        ]));
+        $delta2->assertOk()
+            ->assertJsonCount(2, 'changes');
+    }
 }

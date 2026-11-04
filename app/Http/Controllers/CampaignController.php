@@ -234,7 +234,7 @@ class CampaignController extends Controller
             'title' => $page->title,
             'slug' => $page->slug,
             'category' => $page->category ?: 'Generale',
-            'excerpt' => Str::limit(strip_tags($page->content), 120),
+            'excerpt' => Campaign::excerpt($page->content),
             'updated_at' => $page->updated_at?->toIso8601String(),
             'url' => route('wiki.show', [$campaign, $page]),
             'edit_url' => route('wiki.edit', [$campaign, $page]),
@@ -452,18 +452,23 @@ class CampaignController extends Controller
 
         $wikiPageIds = $campaign->wikiPages()->withTrashed()->pluck('id');
 
-        $deletedCount = 0;
+        $revisionIdsToDelete = [];
         foreach ($wikiPageIds as $pageId) {
-            $excessRevisions = WikiPageRevision::where('wiki_page_id', $pageId)
+            $ids = WikiPageRevision::where('wiki_page_id', $pageId)
                 ->orderBy('created_at', 'desc')
                 ->skip(2)
-                ->take(100)
-                ->get();
+                ->take(500)
+                ->pluck('id')
+                ->all();
 
-            foreach ($excessRevisions as $rev) {
-                $rev->delete();
-                $deletedCount++;
+            if (! empty($ids)) {
+                $revisionIdsToDelete = array_merge($revisionIdsToDelete, $ids);
             }
+        }
+
+        $deletedCount = 0;
+        if (! empty($revisionIdsToDelete)) {
+            $deletedCount = WikiPageRevision::whereIn('id', $revisionIdsToDelete)->delete();
         }
 
         return back()->with('success', "Revisioni compattate con successo. Eliminate {$deletedCount} revisioni storiche ridondanti.");
@@ -476,7 +481,7 @@ class CampaignController extends Controller
     {
         $this->authorize('view', $campaign);
 
-        $campaign->load(['wikiPages', 'sessionNotes', 'mapPins.campaignMap']);
+        $campaign->load(['wikiPages', 'sessionNotes', 'mapPins.campaignMap', 'mapPins.wikiPage']);
 
         $md = '# '.$campaign->name."\n\n";
         $md .= '**Sistema:** '.$campaign->system."\n";

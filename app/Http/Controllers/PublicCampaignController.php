@@ -32,7 +32,7 @@ class PublicCampaignController extends Controller
             'children_count' => $childrenByParent->get($page->id, collect())->count(),
             'title' => $page->title,
             'category' => $page->category ?: 'Generale',
-            'excerpt' => Str::limit(strip_tags($campaign->renderMarkdown($page->content, true)), 120),
+            'excerpt' => Campaign::excerpt($page->content),
             'updated_at' => $page->updated_at->diffForHumans(),
             'url' => route('public.wiki', [$campaign->public_slug, $page]),
         ])->values()->all();

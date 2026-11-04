@@ -4,19 +4,9 @@
     pages: {{ Js::from($wikiPageItems) }},
     pageById: {},
     navigationStack: [],
-    wikiSyncCursor: @js($wikiSyncCursor ?? null),
-    wikiSnapshotCursor: @js($wikiSnapshotCursor ?? null),
-    syncUrl: @js(route('campaigns.syncDelta', $campaign)),
-    snapshotUrl: @js(route('wiki.list.snapshot', $campaign)),
-    syncError: '',
-    syncTimer: null,
-    syncing: false,
     init() {
         this.pages = Array.isArray(this.pages) ? this.pages.map(page => ({...page})) : [];
         this.rebuild();
-        if (this.wikiSyncCursor) {
-            this.syncTimer = window.setInterval(() => this.syncChanges(), 10000);
-        }
         window.campaignSyncManager?.registerEntity('wiki', {
             applyChange: (change) => this.applyChange(change),
             onStatsUpdate: () => {},
@@ -25,9 +15,6 @@
                 this.rebuild();
             },
         });
-    },
-    destroy() {
-        if (this.syncTimer) window.clearInterval(this.syncTimer);
     },
     get filteredPages() {
         return this.pages.filter(page => this.matchesPage(page));
@@ -66,37 +53,6 @@
             if (p && Array.isArray(p.children_ids)) {
                 p.children_ids = p.children_ids.filter(id => this.pageById[id]);
             }
-        }
-    },
-    async syncChanges() {
-        if (this.syncing || !this.wikiSyncCursor) return;
-        this.syncing = true;
-        try {
-            let hasMore = true;
-            let pagesProcessed = 0;
-            while (hasMore && pagesProcessed < 5) {
-                pagesProcessed++;
-                const url = `${this.syncUrl}?entity_type=wiki&cursor=${encodeURIComponent(this.wikiSyncCursor)}`;
-                const response = await fetch(url, {
-                    headers: { 'Accept': 'application/json' },
-                });
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.message || `Sincronizzazione wiki non riuscita (${response.status}).`);
-                if (data.reset_required) {
-                    throw new Error('Sincronizzazione wiki reimpostata. Ricarica la pagina per aggiornare.');
-                }
-                for (const change of data.changes) {
-                    this.applyChange(change);
-                }
-                this.wikiSyncCursor = data.next_cursor;
-                hasMore = data.has_more;
-            }
-            this.syncError = '';
-            window.dispatchEvent(new CustomEvent('wiki-count-updated', { detail: this.pages.length }));
-        } catch (error) {
-            this.syncError = error.message;
-        } finally {
-            this.syncing = false;
         }
     },
     applyChange(change) {
