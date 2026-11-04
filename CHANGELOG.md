@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.14] - 2026-11-04
+
+- feat(markdown-editor): add image insertion from public URLs (bd16253)
+- chore(changelog): add entries for version 0.1.13 (ca95a2d)
+
 ## [0.1.13] - 2026-11-04
 
 - fix(maps): center map and constrain width in print view (108d0da)
