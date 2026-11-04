@@ -234,7 +234,7 @@ class WikiController extends Controller
      */
     public function destroy(Campaign $campaign, WikiPage $wiki, CampaignSyncService $sync)
     {
-        $this->authorize('update', $campaign);
+        $this->authorize('delete', $campaign);
         abort_unless($wiki->campaign_id === $campaign->id, 404);
 
         $wiki = DB::transaction(function () use ($campaign, $wiki, $sync): WikiPage {

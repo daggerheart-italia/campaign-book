@@ -21,12 +21,17 @@ Route::middleware('throttle:60,1')->group(function () {
 });
 
 // Guest authentication
-Route::middleware('guest')->group(function () {
+Route::middleware(['guest', 'throttle:5,1'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
 
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
+
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.update');
 });
 
 // Authenticated routes
@@ -59,7 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/campaigns/{campaign}/revisions/compact', [CampaignController::class, 'compactRevisions'])->name('campaigns.compactRevisions');
 
     // Campaign Custom Maps
-    Route::post('/campaigns/{campaign}/maps/chunks', [CampaignMapController::class, 'storeChunk'])->name('maps.storeChunk');
+    Route::post('/campaigns/{campaign}/maps/chunks', [CampaignMapController::class, 'storeChunk'])->middleware('throttle:30,1')->name('maps.storeChunk');
     Route::post('/campaigns/{campaign}/maps', [CampaignMapController::class, 'store'])->name('maps.store');
     Route::post('/campaigns/{campaign}/maps/{map}/default', [CampaignMapController::class, 'setDefault'])->name('maps.setDefault');
     Route::delete('/campaigns/{campaign}/maps/{map}', [CampaignMapController::class, 'destroy'])->name('maps.destroy');

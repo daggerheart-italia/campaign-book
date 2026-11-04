@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Campaign;
-use App\Models\MapPin;
 use App\Models\CampaignMap;
+use App\Models\MapPin;
 use App\Models\SessionNote;
 use App\Models\User;
 use App\Models\WikiPage;
@@ -12,7 +12,6 @@ use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class CampaignSyncService
 {
@@ -75,7 +74,7 @@ class CampaignSyncService
                 'category' => $entity->category ?: 'Generale',
                 'parent_id' => $entity->parent_id,
                 'content' => $entity->content,
-                'excerpt' => Str::limit(strip_tags($campaign->renderMarkdown($entity->content, false)), 120),
+                'excerpt' => Campaign::excerpt($entity->content),
                 'created_at' => $entity->created_at?->toIso8601String(),
                 'updated_at' => $entity->updated_at?->toIso8601String(),
                 'updated_by' => $user ? ['id' => $user->id, 'name' => $user->name] : ($entity->editor ? ['id' => $entity->editor->id, 'name' => $entity->editor->name] : null),
@@ -89,9 +88,9 @@ class CampaignSyncService
             $payload = [
                 'id' => $entity->getKey(),
                 'title' => $entity->title,
-                'image_url' => method_exists($entity, 'getImageUrlAttribute') ? $entity->getImageUrlAttribute() : null,
+                'image_url' => $entity->image_url,
                 'is_default' => (bool) $entity->is_default,
-                'pins_count' => 0,
+                'pins_count' => $entity->pins()->count(),
                 'created_at' => $entity->created_at?->toIso8601String(),
                 'updated_at' => $entity->updated_at?->toIso8601String(),
                 'updated_by' => $user ? ['id' => $user->id, 'name' => $user->name] : null,
@@ -148,7 +147,7 @@ class CampaignSyncService
             'note' => $campaign->sessionNotes()->with(['user', 'editor']),
             'pin' => $campaign->mapPins()->with(['wikiPage', 'editor']),
             'wiki' => $campaign->wikiPages()->with(['editor']),
-            'map' => $campaign->maps(),
+            'map' => $campaign->maps()->withCount('pins'),
             default => abort(422, 'Il tipo di snapshot non è valido.'),
         };
         $query->where('sync_version', '<=', $snapshotVersion)
@@ -206,7 +205,7 @@ class CampaignSyncService
                     'category' => $entity->category ?: 'Generale',
                     'parent_id' => $entity->parent_id,
                     'content' => $entity->content,
-                    'excerpt' => \Illuminate\Support\Str::limit(strip_tags($campaign->renderMarkdown($entity->content, false)), 120),
+                    'excerpt' => Campaign::excerpt($entity->content),
                     'created_at' => $entity->created_at?->toIso8601String(),
                     'updated_at' => $entity->updated_at?->toIso8601String(),
                     'updated_by' => $entity->editor
@@ -226,7 +225,7 @@ class CampaignSyncService
                     'title' => $entity->title,
                     'image_url' => $entity->image_url,
                     'is_default' => (bool) $entity->is_default,
-                    'pins_count' => $entity->pins()->count(),
+                    'pins_count' => $entity->pins_count ?? $entity->pins()->count(),
                     'created_at' => $entity->created_at?->toIso8601String(),
                     'updated_at' => $entity->updated_at?->toIso8601String(),
                     'sync_version' => $entity->sync_version,
@@ -394,7 +393,6 @@ class CampaignSyncService
         return $payload;
     }
 
-
     /**
      * @return array<string, mixed>
      */
@@ -491,5 +489,3 @@ class CampaignSyncService
         ];
     }
 }
-
-

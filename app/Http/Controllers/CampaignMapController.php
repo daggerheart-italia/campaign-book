@@ -49,7 +49,7 @@ class CampaignMapController extends Controller
     /**
      * Assemble the uploaded chunks and store the new custom campaign map image.
      */
-    public function store(Request $request, Campaign $campaign)
+    public function store(Request $request, Campaign $campaign, CampaignSyncService $sync)
     {
         $this->authorize('update', $campaign);
 
@@ -85,17 +85,22 @@ class CampaignMapController extends Controller
             $disk->deleteDirectory($directory);
         }
 
-        // If this is the first map, mark it as default
-        $isFirst = ! $campaign->maps()->exists();
+        $map = DB::transaction(function () use ($campaign, $validated, $path, $dimensions, $request, $sync): CampaignMap {
+            $isFirst = ! $campaign->maps()->exists();
 
-        $map = $campaign->maps()->create([
-            'created_by' => Auth::id(),
-            'title' => $validated['title'],
-            'image_path' => $path,
-            'width' => $dimensions ? $dimensions[0] : null,
-            'height' => $dimensions ? $dimensions[1] : null,
-            'is_default' => $isFirst,
-        ]);
+            $map = $campaign->maps()->create([
+                'created_by' => $request->user()?->id ?? Auth::id(),
+                'title' => $validated['title'],
+                'image_path' => $path,
+                'width' => $dimensions ? $dimensions[0] : null,
+                'height' => $dimensions ? $dimensions[1] : null,
+                'is_default' => $isFirst,
+            ]);
+
+            $sync->record($campaign, $map, $request->user());
+
+            return $map;
+        });
 
         $message = "Mappa \"{$map->title}\" caricata con successo!";
 
@@ -144,13 +149,21 @@ class CampaignMapController extends Controller
     /**
      * Set a map as the default active map.
      */
-    public function setDefault(Campaign $campaign, CampaignMap $map)
+    public function setDefault(Request $request, Campaign $campaign, CampaignMap $map, CampaignSyncService $sync)
     {
         $this->authorize('update', $campaign);
         abort_unless($map->campaign_id === $campaign->id, 404);
 
-        $campaign->maps()->update(['is_default' => false]);
-        $map->update(['is_default' => true]);
+        DB::transaction(function () use ($campaign, $map, $request, $sync): void {
+            $previousDefaults = $campaign->maps()->where('is_default', true)->where('id', '!=', $map->id)->get();
+            foreach ($previousDefaults as $oldDefault) {
+                $oldDefault->update(['is_default' => false, 'updated_by' => $request->user()?->id]);
+                $sync->record($campaign, $oldDefault, $request->user());
+            }
+
+            $map->update(['is_default' => true, 'updated_by' => $request->user()?->id]);
+            $sync->record($campaign, $map, $request->user());
+        });
 
         return back()->with('success', "La mappa \"{$map->title}\" è ora la mappa principale.");
     }
@@ -177,7 +190,7 @@ class CampaignMapController extends Controller
         CampaignMap $map,
         CampaignSyncService $sync
     ): RedirectResponse {
-        $this->authorize('update', $campaign);
+        $this->authorize('delete', $campaign);
         abort_unless($map->campaign_id === $campaign->id, 404);
 
         DB::transaction(function () use ($request, $campaign, $map, $sync): void {

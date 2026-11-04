@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'version' => is_file(__DIR__.'/../VERSION') ? trim((string) file_get_contents(__DIR__.'/../VERSION')) : null,
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

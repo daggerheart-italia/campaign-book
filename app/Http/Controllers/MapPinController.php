@@ -142,7 +142,7 @@ class MapPinController extends Controller
         MapPin $pin,
         CampaignSyncService $sync
     ): JsonResponse|RedirectResponse {
-        $this->authorize('update', $campaign);
+        $this->authorize('delete', $campaign);
         abort_unless($pin->campaign_id === $campaign->id, 404);
 
         DB::transaction(function () use ($request, $campaign, $pin, $sync): void {

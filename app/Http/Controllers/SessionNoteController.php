@@ -92,7 +92,7 @@ class SessionNoteController extends Controller
         SessionNote $note,
         CampaignSyncService $sync
     ): RedirectResponse|JsonResponse {
-        $this->authorize('update', $campaign);
+        $this->authorize('delete', $campaign);
         abort_unless($note->campaign_id === $campaign->id, 404);
 
         DB::transaction(function () use ($request, $campaign, $note, $sync): void {

@@ -20,12 +20,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $version = file_get_contents(base_path('VERSION'));
+        if (! config('app.version')) {
+            $version = @file_get_contents(base_path('VERSION'));
 
-        if ($version === false) {
-            throw new RuntimeException('Unable to read the application version from VERSION.');
+            if ($version === false) {
+                throw new RuntimeException('Unable to read the application version from VERSION.');
+            }
+
+            config(['app.version' => trim($version)]);
         }
-
-        config(['app.version' => trim($version)]);
     }
 }

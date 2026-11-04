@@ -6,10 +6,10 @@
 <div x-data="{ 
     tab: (new URLSearchParams(window.location.search)).get('tab') || 'wiki',
     stats: {
-        wiki_count: {{ $campaign->wikiPages()->whereNull('deleted_at')->count() }},
-        notes_count: {{ $campaign->sessionNotes()->whereNull('deleted_at')->count() }},
-        maps_count: {{ $campaign->maps()->whereNull('deleted_at')->count() }},
-        users_count: {{ $campaign->users()->count() }},
+        wiki_count: {{ $campaign->wikiPages->count() }},
+        notes_count: {{ $campaign->sessionNotes->count() }},
+        maps_count: {{ $campaign->maps->count() }},
+        users_count: {{ $campaign->users->count() }},
     },
     setTab(newTab) {
         this.tab = newTab;
