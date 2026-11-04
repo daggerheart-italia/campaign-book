@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.13] - 2026-11-04
+
+- fix(maps): center map and constrain width in print view (108d0da)
+- chore(changelog): update entries for version 0.1.12 (48e2e0a)
+
 ## [0.1.12] - 2026-11-04
 
 - test(browser): add smoke test covering main authenticated routes (0cae9f0)
