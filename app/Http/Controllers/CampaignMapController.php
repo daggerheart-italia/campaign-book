@@ -190,7 +190,7 @@ class CampaignMapController extends Controller
         CampaignMap $map,
         CampaignSyncService $sync
     ): RedirectResponse {
-        $this->authorize('update', $campaign);
+        $this->authorize('delete', $campaign);
         abort_unless($map->campaign_id === $campaign->id, 404);
 
         DB::transaction(function () use ($request, $campaign, $map, $sync): void {
