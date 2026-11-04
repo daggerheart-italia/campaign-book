@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.12] - 2026-11-04
+
+- test(browser): add smoke test covering main authenticated routes (0cae9f0)
+- feat(auth): add password reset and recovery flow (7643cd1)
+- refactor(campaigns): optimize sync tracking, excerpts, and map defaults (560287b)
+- chore(changelog): update entries for version 0.1.11 (b96c003)
+
 ## [0.1.11] - 2026-11-04
 
 - feat(maps): add numbered pin markers and legend indices (833816e)
