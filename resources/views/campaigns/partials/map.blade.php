@@ -155,7 +155,7 @@
                      draggable="false" />
 
                 <!-- Clickable Pins Overlay -->
-                <template x-for="pin in currentPins" :key="pin.id">
+                <template x-for="(pin, pinIndex) in currentPins" :key="pin.id">
                     <div data-map-pin
                          class="absolute -translate-x-1/2 -translate-y-full cursor-pointer group z-30 transition-transform duration-75"
                          :style="'left: ' + pin.x + '%; top: ' + pin.y + '%;'"
@@ -173,11 +173,16 @@
 
                         <!-- Pin Marker Icon -->
                         <div class="relative flex flex-col items-center">
-                            <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125"
+                            <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125 text-[10px] font-bold"
                                  :style="'background-color: ' + pin.color + '; box-shadow: 0 0 12px ' + pin.color + ', 0 4px 8px rgba(0,0,0,0.6);'">
-                                <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-                                </svg>
+                                <template x-if="showLabels">
+                                    <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                    </svg>
+                                </template>
+                                <template x-if="!showLabels">
+                                    <span x-text="pinIndex + 1"></span>
+                                </template>
                             </div>
                             <!-- Pin Needle Point -->
                             <div class="w-0 h-0 border-x-[3px] border-x-transparent border-t-[5px] -mt-[1px]"
@@ -205,10 +210,10 @@
         </template>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-            <template x-for="pin in currentPins" :key="pin.id">
+            <template x-for="(pin, pinIndex) in currentPins" :key="pin.id">
                 <div class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] p-2.5 rounded-lg flex items-center justify-between gap-2 transition-colors">
                     <button @click="openPinPopover(pin)" class="flex items-center gap-2.5 text-left flex-1 min-w-0">
-                        <span class="w-3 h-3 rounded-full shrink-0 shadow-sm" :style="'background-color: ' + pin.color"></span>
+                        <span class="w-5 h-5 rounded-full shrink-0 shadow-sm flex items-center justify-center text-[10px] font-bold text-white" :style="'background-color: ' + pin.color" x-text="pinIndex + 1"></span>
                         <div class="truncate">
                             <div class="text-xs font-semibold text-slate-200 truncate" x-text="pin.title"></div>
                             <div class="text-[10px] text-slate-400 truncate" x-text="pin.description || 'Coordinate: ' + pin.x.toFixed(1) + '%, ' + pin.y.toFixed(1) + '%'"></div>
