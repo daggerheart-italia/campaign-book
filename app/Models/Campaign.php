@@ -137,9 +137,47 @@ class Campaign extends Model
             return '';
         }
 
-        $clean = preg_replace('/\[\[(?:[^|\]]+\|)?([^\]]+)\]\]/', '$1', $markdown);
+        $text = $markdown;
 
-        return Str::limit(trim(strip_tags((string) $clean)), $limit);
+        // Remove fenced code blocks
+        $text = preg_replace('/```[\s\S]*?```/u', ' ', $text);
+
+        // Remove inline code
+        $text = preg_replace('/`([^`]+)`/u', '$1', $text);
+
+        // Remove images ![alt](url)
+        $text = preg_replace('/!\[[^\]]*\]\([^)]+\)/u', ' ', $text);
+
+        // Remove links [text](url) -> text
+        $text = preg_replace('/\[([^\]]+)\]\([^)]+\)/u', '$1', $text);
+
+        // Resolve wikilinks [[page]] or [[page|label]] -> label
+        $text = preg_replace('/\[\[(?:[^|\]]+\|)?([^\]]+)\]\]/u', '$1', $text);
+
+        // Remove HTML tags
+        $text = strip_tags($text);
+
+        // Remove headings (# ## ### ...)
+        $text = preg_replace('/^\s{0,3}#{1,6}\s+/mu', '', $text);
+
+        // Remove blockquotes
+        $text = preg_replace('/^\s{0,3}>\s?/mu', '', $text);
+
+        // Remove horizontal rules
+        $text = preg_replace('/^\s{0,3}([-*_])\s*(?:\1\s*){2,}$/mu', ' ', $text);
+
+        // Remove list markers (- * +) and ordered lists (1. 2.)
+        $text = preg_replace('/^\s{0,3}([-*+]|\d+\.)\s+/mu', '', $text);
+
+        // Remove emphasis/bold/strikethrough (** __ * _ ~~)
+        $text = preg_replace('/(\*\*|__)(.*?)\1/u', '$2', $text);
+        $text = preg_replace('/(\*|_)(.*?)\1/u', '$2', $text);
+        $text = preg_replace('/~~(.*?)~~/u', '$1', $text);
+
+        // Collapse whitespace (newlines, tabs, multiple spaces)
+        $text = preg_replace('/\s+/u', ' ', $text);
+
+        return Str::limit(trim($text), $limit);
     }
 
     public function sessionNotes(): HasMany

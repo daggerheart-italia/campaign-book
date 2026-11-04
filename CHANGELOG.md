@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.15] - 2026-11-04
+
+- refactor(campaign): improve markdown excerpt stripping (4332849)
+- chore(changelog): update entries for version 0.1.14 (e21d455)
+
 ## [0.1.14] - 2026-11-04
 
 - feat(markdown-editor): add image insertion from public URLs (bd16253)
