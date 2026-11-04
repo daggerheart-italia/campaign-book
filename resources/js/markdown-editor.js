@@ -2,6 +2,7 @@ import { Editor, Extension, Node, mergeAttributes } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Suggestion from '@tiptap/suggestion';
+import Image from '@tiptap/extension-image';
 import { Markdown } from 'tiptap-markdown';
 
 /**
@@ -214,6 +215,11 @@ export function registerMarkdownEditor(Alpine) {
         active: {},
         // Declared so each component owns it instead of writing to a shared parent scope.
         editorRef: null,
+        showImageModal: false,
+        imageUrl: '',
+        imageAlt: '',
+        imageError: '',
+        imageTargetMode: 'visual',
 
         init() {
             // Kept out of Alpine's reactive proxy, which breaks ProseMirror.
@@ -224,6 +230,7 @@ export function registerMarkdownEditor(Alpine) {
                     Placeholder.configure({ placeholder: config.placeholder || '' }),
                     WikiLink,
                     wikiLinkSuggestion(config.pages || []),
+                    Image.configure({ inline: false, allowBase64: false }),
                     Markdown.configure({ html: true, breaks: true, linkify: false }),
                 ],
                 content: this.value ?? '',
@@ -263,10 +270,103 @@ export function registerMarkdownEditor(Alpine) {
             this.mode = mode;
         },
 
+        openImageModal(targetMode = null) {
+            this.imageTargetMode = targetMode || this.mode;
+            this.imageUrl = '';
+            this.imageAlt = '';
+            this.imageError = '';
+            this.showImageModal = true;
+            this.$nextTick(() => {
+                this.$refs.imageUrlInput?.focus();
+            });
+        },
+
+        cancelImageModal() {
+            this.showImageModal = false;
+            this.imageError = '';
+        },
+
+        confirmImageModal() {
+            const trimmed = (this.imageUrl || '').trim();
+            if (!/^https?:\/\//i.test(trimmed)) {
+                this.imageError = 'Inserisci un URL valido che inizi con http:// o https://';
+                this.$nextTick(() => {
+                    this.$refs.imageUrlInput?.focus();
+                });
+                return;
+            }
+
+            this.imageError = '';
+            const altText = (this.imageAlt || '').trim();
+
+            if (this.imageTargetMode === 'visual') {
+                const editor = this.editorRef();
+                editor.chain().focus().setImage({ src: trimmed, alt: altText }).run();
+            } else {
+                this.insertImageMarkdownDirect(trimmed, altText);
+            }
+
+            this.showImageModal = false;
+        },
+
+        insertImageMarkdownDirect(url, altText = '') {
+            const textarea = document.querySelector('textarea[name="content"]');
+            const escapedAlt = altText.replace(/\]/g, '\\]');
+            const markdown = `![${escapedAlt}](${url})`;
+            if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const before = this.value.substring(0, start);
+                const after = this.value.substring(end);
+                this.value = before + markdown + after;
+                this.$nextTick(() => {
+                    textarea.focus();
+                    const pos = start + markdown.length;
+                    textarea.setSelectionRange(pos, pos);
+                });
+                return;
+            }
+            this.value = (this.value ? this.value + '\n\n' : '') + markdown;
+        },
+
+        insertImageMarkdown() {
+            const textarea = document.querySelector('textarea[name="content"]');
+            const url = window.prompt('URL dell\'immagine (http/https)');
+            if (!url) {
+                return;
+            }
+            const trimmed = url.trim();
+            if (!/^https?:\/\//i.test(trimmed)) {
+                window.alert('È possibile inserire solo URL http o https pubblici.');
+                return;
+            }
+            const alt = window.prompt('Testo alternativo (facoltativo)', '') || '';
+            const altText = alt.trim().replace(/\]/g, '\\]');
+            const markdown = `![${altText}](${trimmed})`;
+            if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const before = this.value.substring(0, start);
+                const after = this.value.substring(end);
+                this.value = before + markdown + after;
+                this.$nextTick(() => {
+                    textarea.focus();
+                    const pos = start + markdown.length;
+                    textarea.setSelectionRange(pos, pos);
+                });
+                return;
+            }
+            this.value = (this.value ? this.value + '\n\n' : '') + markdown;
+        },
+
         run(command) {
             const editor = this.editorRef();
             if (command === 'wikilink' && editor.state.doc.textBetween(Math.max(0, editor.state.selection.from - 2), editor.state.selection.from) === '[[') {
                 editor.commands.focus();
+                return;
+            }
+            if (command === 'image') {
+                this.openImageModal('visual');
                 return;
             }
             const chain = editor.chain().focus();
