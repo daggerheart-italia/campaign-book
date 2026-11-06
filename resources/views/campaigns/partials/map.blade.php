@@ -80,16 +80,16 @@
              aria-label="Controlli zoom mappa">
             <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
                     class="min-h-11 min-w-11 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                <x-icon-label icon="zoom-out" label="Riduci zoom" />
+                <x-icon-label icon="zoom-out" label="Riduci zoom" hideOnDesktop="true"/>
             </button>
             <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="(Math.round(zoomLevel * 10) / 10) + '%'"></span>
             <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
                     class="min-h-11 min-w-11 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                <x-icon-label icon="zoom-in" label="Aumenta zoom" />
+                <x-icon-label icon="zoom-in" label="Aumenta zoom" hideOnDesktop="true"/>
             </button>
             <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
                     class="min-h-11 min-w-11 rounded px-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                <x-icon-label icon="expand" label="Adatta" />
+                <x-icon-label icon="expand" label="Adatta" hideOnDesktop="true"/>
             </button>
         </div>
     </div>

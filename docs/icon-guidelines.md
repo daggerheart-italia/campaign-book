@@ -21,7 +21,7 @@ Le icone sono fornite da `mallardduck/blade-lucide-icons` e renderizzate lato se
 Il comportamento di `<x-icon-label>` può essere personalizzato con due proprietà booleane indipendenti:
 
 - `:show-on-mobile="true"` mostra l'etichetta anche sotto `sm`.
-- `:hide-on-desktop="true"` nasconde visivamente l'etichetta da `sm` in su, mantenendola disponibile agli screen reader.
+- `:hide-on-desktop="true"` nasconde visivamente l'etichetta da `sm` in su, mantenendola disponibile agli screen reader e mostrando il tooltip nativo del browser al passaggio del puntatore sull'icona.
 
 Le proprietà possono essere combinate: ad esempio, `<x-icon-label icon="search" label="Cerca" :show-on-mobile="true" :hide-on-desktop="true" />` mostra il testo solo su mobile. Senza proprietà aggiuntive rimane il comportamento predefinito.
 

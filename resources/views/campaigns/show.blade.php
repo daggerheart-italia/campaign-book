@@ -124,7 +124,7 @@
             <button @click="setTab('trash')" 
                     :class="tab === 'trash' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'"
                     class="flex items-center gap-2 px-3 sm:px-4 min-h-11 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0 sm:ml-auto">
-                <x-icon-label icon="trash-2" label="Cestino &amp; Revisioni" />
+                <x-icon-label icon="trash-2" label="Cestino & Revisioni" />
                 @php $totalTrashed = $trashedWikiPages->count() + $trashedMapPins->count() + $trashedSessionNotes->count(); @endphp
                 @if($totalTrashed > 0)
                     <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500/30 text-rose-300 font-bold">{{ $totalTrashed }}</span>

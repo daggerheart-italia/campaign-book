@@ -6,7 +6,7 @@
     'hideOnDesktop' => false,
 ])
 
-<span class="inline-flex items-center gap-2">
+<span class="inline-flex items-center gap-2" @if($hideOnDesktop) title="{{ $label }}" @endif>
     <x-app-icon :name="$icon" :class="$iconClass" />
     <span @class([
         'icon-label-mobile' => ! $showOnMobile,
