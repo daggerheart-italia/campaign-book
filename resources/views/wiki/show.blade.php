@@ -51,24 +51,26 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-2 shrink-0 overflow-x-auto scrollbar-none">
                 @if($campaign->isGm(auth()->user()))
-                    <a href="{{ route('wiki.revisions', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-3" title="Visualizza revisioni storiche">
+                    <a href="{{ route('wiki.revisions', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-3 shrink-0" title="Visualizza revisioni storiche">
                         <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>Revisioni ({{ $wiki->revisions->count() }})</span>
+                        <span class="hidden sm:inline">Revisioni ({{ $wiki->revisions->count() }})</span>
+                        <span class="sm:hidden">({{ $wiki->revisions->count() }})</span>
                     </a>
                 @endif
 
-                <a href="{{ route('wiki.edit', [$campaign, $wiki]) }}" class="btn-primary text-xs py-2 px-4">
+                <a href="{{ route('wiki.edit', [$campaign, $wiki]) }}" class="btn-primary text-xs py-2 px-4 shrink-0">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                    <span>Modifica</span>
+                    <span class="hidden sm:inline">Modifica</span>
                 </a>
 
-                <form method="POST" action="{{ route('wiki.destroy', [$campaign, $wiki]) }}" onsubmit="return confirm('Spostare questa scheda nel cestino? Potrà essere ripristinata dal GM.')" class="inline">
+                <form method="POST" action="{{ route('wiki.destroy', [$campaign, $wiki]) }}" onsubmit="return confirm('Spostare questa scheda nel cestino? Potrà essere ripristinata dal GM.')" class="inline shrink-0">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn-danger !p-2 text-xs" title="Sposta nel cestino">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <span class="sr-only sm:not-sr-only sm:ml-1 hidden sm:inline">Elimina</span>
                     </button>
                 </form>
             </div>

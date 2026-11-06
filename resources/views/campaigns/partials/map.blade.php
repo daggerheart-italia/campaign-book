@@ -495,8 +495,10 @@ function customImageMap(config) {
         isPinchZooming: false,
         mapError: '',
         savingPinLock: false,
-        createModalOpen: false,
-        detailsModalOpen: false,
+        modalOpen: false,
+        modalMode: 'view',
+        pinForm: { title: '', description: '', color: '#e11d48', wiki_page_id: '' },
+        linkWikiId: '',
         uploadModalOpen: false,
         uploadingMap: false,
         uploadProgress: 0,
@@ -531,6 +533,7 @@ function customImageMap(config) {
                     const selectedPin = this.pins.find(pin => pin.id === this.selectedPin?.id);
                     if (selectedPin) this.selectedPin = { ...selectedPin };
                     else if (this.detailsModalOpen) this.detailsModalOpen = false;
+                    if (this.detailsModalOpen) this.modalOpen = false;
                 },
             });
             window.campaignSyncManager?.registerEntity('map', {
@@ -836,6 +839,8 @@ function customImageMap(config) {
                 wiki_page_id: ''
             };
             this.createModalOpen = true;
+            this.modalOpen = true;
+            this.modalMode = 'create';
         },
 
         startPan(event) {
@@ -879,6 +884,21 @@ function customImageMap(config) {
             this.mapError = '';
             this.editingPin = false;
             this.detailsModalOpen = true;
+            this.modalOpen = true;
+            this.modalMode = 'view';
+        },
+
+        openCreateModal() {
+            this.modalOpen = true;
+            this.modalMode = 'create';
+        },
+
+        openPinModal(pin) {
+            this.selectedPin = pin;
+            this.mapError = '';
+            this.editingPin = false;
+            this.modalOpen = true;
+            this.modalMode = 'view';
         },
 
         editingPin: false,
@@ -1165,6 +1185,7 @@ function customImageMap(config) {
                 if (response.ok) {
                     this.pins = this.pins.filter(p => p.id !== pin.id);
                     this.detailsModalOpen = false;
+                    this.modalOpen = false;
                 }
             } catch (err) {
                 console.error(err);
@@ -1272,6 +1293,8 @@ function customImageMap(config) {
                 this.mapError = error.message;
                 this.detailsModalOpen = true;
                 this.selectedPin = pin;
+                this.modalOpen = true;
+                this.modalMode = 'view';
                 console.error(error);
             } finally {
                 this.savingPinIds.delete(pin.id);

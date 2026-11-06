@@ -1,4 +1,4 @@
-@props(['parentPages', 'selected' => null, 'restoreRevision' => null])
+@props(['parentPages', 'selected' => null, 'restoreRevision' => null, 'name' => 'parent_id', 'label' => 'Scheda genitore', 'modelable' => null])
 
 @php
     $options = $parentPages->map(fn ($page) => [
@@ -6,7 +6,8 @@
         'label' => ($page->category ?: 'Generale') . ' — ' . $page->title,
     ])->values()->toArray();
 
-    $initialSelected = old('parent_id', $selected);
+    $initialSelected = old($name, $selected);
+    $id = $name;
 @endphp
 
 <div x-data="parentPageSelect({{ json_encode(['options' => $options, 'selected' => (string) $initialSelected]) }})"
@@ -14,7 +15,7 @@
      @keydown.escape.window="closeDropdown()"
      class="relative">
 
-    <label for="parent_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">Scheda genitore</label>
+    <label for="{{ $id }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">{{ $label }}</label>
 
     <div class="relative">
         <input type="text"
@@ -22,21 +23,21 @@
                @input="onInput()"
                @keydown="onKeyDown($event)"
                @focus="openDropdown()"
-               placeholder="Cerca scheda genitore…"
+               placeholder="Cerca scheda…"
                class="input-premium text-sm w-full"
                autocomplete="off"
                aria-autocomplete="list"
-               aria-controls="parent_id_listbox"
+               aria-controls="{{ $id }}_listbox"
                aria-expanded="false"
                x-bind:aria-expanded="open"
-               x-bind:aria-owns="open ? 'parent_id_listbox' : null"
-               x-bind:aria-activedescendant="open && highlight >= 0 ? 'parent_id_option_' + highlight : null" />
+               x-bind:aria-owns="open ? '{{ $id }}_listbox' : null"
+               x-bind:aria-activedescendant="open && highlight >= 0 ? '{{ $id }}_option_' + highlight : null" />
 
         <button type="button"
                 @click="toggleDropdown()"
                 class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-amber-400 transition-colors"
                 :aria-expanded="open"
-                aria-label="Apri/chiudi elenco schede genitore">
+                aria-label="Apri/chiudi elenco">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-transition>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M19 9l-7 7-7-7"/>
@@ -44,9 +45,10 @@
         </button>
 
         <input type="hidden"
-               name="parent_id"
-               id="parent_id"
+               name="{{ $name }}"
+               id="{{ $id }}"
                x-model="selected"
+               @if($modelable) x-modelable="{{ $modelable }}" @endif
                value="{{ $initialSelected }}"
                class="sr-only" />
     </div>
@@ -60,7 +62,7 @@
          x-transition:leave-end="opacity-0 scale-95"
          @click.stop="closeDropdown()"
          class="absolute z-50 mt-1 w-full min-w-[16rem] max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-[#0b1120] shadow-2xl shadow-black/50"
-         id="parent_id_listbox"
+         id="{{ $id }}_listbox"
          role="listbox"
          ref="list"
          x-cloak>
@@ -72,7 +74,7 @@
         </template>
 
         <template x-for="(option, index) in filtered" :key="option.id">
-            <div :id="'parent_id_option_' + index"
+            <div :id="'{{ $id }}_option_' + index"
                  @click="select(option)"
                  @mouseenter="highlight = index"
                  :class="{
@@ -103,7 +105,7 @@
         </div>
     </div>
 
-    @error('parent_id')
+    @error($name)
         <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
     @endif
 </div>
