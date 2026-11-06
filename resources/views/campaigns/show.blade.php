@@ -95,7 +95,7 @@
         <button @click="setTab('wiki')" 
                 :class="tab === 'wiki' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'"
                 class="inline-flex items-center gap-2 px-3 sm:px-4 min-h-11 rounded-lg text-xs sm:text-sm font-semibold border transition-all duration-200 whitespace-nowrap shrink-0">
-            <x-icon-label icon="book-open" label="Wiki &amp; Grimorio" />
+            <x-icon-label icon="book-open" label="Wiki & Grimorio" />
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="stats.wiki_count"></span>
         </button>
 

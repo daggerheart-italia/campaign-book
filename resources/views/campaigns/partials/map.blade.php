@@ -200,33 +200,33 @@
             <p class="text-xs text-slate-400 text-center py-4">Nessun punto segnato su questa mappa. Clicca sull'immagine per posizionare il primo pin!</p>
         </template>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
             <template x-for="(pin, pinIndex) in currentPins" :key="pin.id">
-                <div class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] p-2.5 rounded-lg flex items-center justify-between gap-2 transition-colors">
+                <div class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] p-2.5 rounded-lg flex min-w-0 items-center justify-between gap-2 transition-colors">
                     <button @click="openPinPopover(pin)" class="flex min-h-11 items-center gap-2.5 text-left flex-1 min-w-0">
                         <span class="w-5 h-5 rounded-full shrink-0 shadow-sm flex items-center justify-center text-[10px] font-bold text-white" :style="'background-color: ' + pin.color" x-text="pinIndex + 1"></span>
-                        <div class="truncate">
-                            <div class="text-xs font-semibold text-slate-200 truncate" x-text="pin.title"></div>
-                            <div class="text-[10px] text-slate-400 truncate" x-text="pin.description || 'Coordinate: ' + pin.x.toFixed(1) + '%, ' + pin.y.toFixed(1) + '%'"></div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-xs font-semibold text-slate-200 line-clamp-2 break-words" x-text="pin.title"></div>
+                            <div class="text-[10px] text-slate-400 line-clamp-2 break-words" x-text="pin.description || 'Coordinate: ' + pin.x.toFixed(1) + '%, ' + pin.y.toFixed(1) + '%'"></div>
                         </div>
                     </button>
 
                     <div class="flex items-center gap-1 shrink-0">
                         <template x-if="pin.wiki_page_url">
-                            <a :href="pin.wiki_page_url" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-amber-400 hover:text-amber-300">
-                                <x-icon-label icon="book-open" label="Apri Scheda Wiki" icon-class="w-3.5 h-3.5" />
+                            <a :href="pin.wiki_page_url" aria-label="Apri Scheda Wiki" title="Apri Scheda Wiki" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-amber-400 hover:text-amber-300">
+                                <x-app-icon name="book-open" class="w-3.5 h-3.5" />
                             </a>
                         </template>
 
                         <template x-if="!pin.wiki_page_url">
                             <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + pin.id + '&title=' + encodeURIComponent(pin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
-                               class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-emerald-400 hover:text-emerald-300">
-                                <x-icon-label icon="plus" label="Crea Scheda Wiki" icon-class="w-3.5 h-3.5" />
+                               aria-label="Crea Scheda Wiki" title="Crea Scheda Wiki" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-emerald-400 hover:text-emerald-300">
+                                <x-app-icon name="plus" class="w-3.5 h-3.5" />
                             </a>
                         </template>
 
-                        <button @click="deletePin(pin)" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-slate-500 hover:text-rose-400">
-                            <x-icon-label icon="trash-2" label="Elimina Segnaposto" icon-class="w-3.5 h-3.5" />
+                        <button @click="deletePin(pin)" aria-label="Elimina Segnaposto" title="Elimina Segnaposto" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-slate-500 hover:text-rose-400">
+                            <x-app-icon name="trash-2" class="w-3.5 h-3.5" />
                         </button>
                     </div>
                 </div>
