@@ -38,7 +38,7 @@
                 class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-amber-400 transition-colors"
                 :aria-expanded="open"
                 aria-label="Apri/chiudi elenco">
-            <x-app-icon name="chevron-down" class="w-4 h-4" x-transition />
+            <x-app-icon name="chevron-down" class="w-4 h-4" x-transition="" />
         </button>
 
         <input type="hidden"

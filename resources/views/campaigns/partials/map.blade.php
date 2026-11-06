@@ -496,6 +496,8 @@ function customImageMap(config) {
         savingPinLock: false,
         modalOpen: false,
         modalMode: 'view',
+        createModalOpen: false,
+        detailsModalOpen: false,
         pinForm: { title: '', description: '', color: '#e11d48', wiki_page_id: '' },
         linkWikiId: '',
         uploadModalOpen: false,
