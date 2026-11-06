@@ -65,6 +65,26 @@ Apply the same icon-only pattern already used for the markdown editor toolbar to
 - Browser tests: `./scripts/browser-procs.sh --kill && ./vendor/bin/sail pest tests/Browser/` — run on desktop (default) and mobile devices (`Device::IPHONE_SE`, `Device::IPHONE_15`, `Device::MOBILE`) with `screenshot()` captures into `tests/Browser/Screenshots/` for visual regression review.
 - Manual check at 320px, 375px, 768px, 1024px on: campaign tabs, map tab, wiki edit modal, wiki show page, pin create/details modals.
 
-## Out of scope
+## Incremental Todo List
+
+### Polish (approach A)
+- [x] Normalize campaign tab bar (show.blade.php)
+- [x] Map controls stackable + roster 1-col on <sm
+- [ ] Markdown editor toolbar icon-only on `<sm`
+- [x] Wiki show actions icon-only + scrollable
+
+### Unified pin modal (approach B)
+- [x] Parameterize parent-page-select (name/modelable/label)
+- [x] Add `modalMode`/`modalOpen` state + `openPinModal` helpers
+- [x] Update `handleMapInsert` to open create modal via helper
+- [x] Update `openPinPopover` to open view modal via helper
+- [x] Update `applyPinChange`/`deletePin` to use `modalOpen`/`modalMode`
+- [ ] 1. Replace create modal markup with unified `x-if` sub-states (Crea)
+- [ ] 2. Replace details modal markup with unified view/edit sub-states (Visualizza/Modifica)
+- [ ] 3. Wire `parentPageSelect` in create mode (`newPinForm.wiki_page_id`)
+- [ ] 4. Wire `parentPageSelect` in edit mode (`pinEditForm.wiki_page_id`)
+- [ ] 5. Wire `parentPageSelect` in view mode + `linkWikiId` watcher -> `linkPinToWiki`
+- [ ] 6. Add `color` to `savePinDetails` PUT body
+- [ ] 7. Run build + pint + artisan test
 
 - No restructuring into bottom sheets, no new JS dependencies, no backend changes.
