@@ -21,29 +21,29 @@
     <div class="md-editor-toolbar">
         <template x-if="mode === 'visual'">
             <div class="flex flex-wrap items-center gap-1">
-                <button type="button" :class="{ 'is-active': active.bold }" @click="run('bold')"><x-icon-label icon="bold" label="Grassetto" /></button>
-                <button type="button" :class="{ 'is-active': active.italic }" @click="run('italic')"><x-icon-label icon="italic" label="Corsivo" /></button>
-                <button type="button" :class="{ 'is-active': active.h2 }" @click="run('h2')"><x-icon-label icon="heading-2" label="Titolo" /></button>
-                <button type="button" :class="{ 'is-active': active.h3 }" @click="run('h3')"><x-icon-label icon="heading-3" label="Sottotitolo" /></button>
-                <button type="button" :class="{ 'is-active': active.bullet }" @click="run('bullet')"><x-icon-label icon="list" label="Elenco puntato" /></button>
-                <button type="button" :class="{ 'is-active': active.ordered }" @click="run('ordered')"><x-icon-label icon="list-ordered" label="Elenco numerato" /></button>
-                <button type="button" :class="{ 'is-active': active.quote }" @click="run('quote')"><x-icon-label icon="quote" label="Citazione" /></button>
-                <button type="button" @click="run('wikilink')"><x-icon-label icon="link" label="Collega a una pagina wiki" /></button>
-                <button type="button" @click="openImageModal('visual')"><x-icon-label icon="image" label="Inserisci immagine" /></button>
+                <button type="button" :class="{ 'is-active': active.bold }" @click="run('bold')" class="min-h-11 min-w-11" title="Grassetto"><x-icon-label icon="bold" label="Grassetto" /></button>
+                <button type="button" :class="{ 'is-active': active.italic }" @click="run('italic')" class="min-h-11 min-w-11" title="Corsivo"><x-icon-label icon="italic" label="Corsivo" /></button>
+                <button type="button" :class="{ 'is-active': active.h2 }" @click="run('h2')" class="min-h-11 min-w-11" title="Titolo"><x-icon-label icon="heading-2" label="Titolo" /></button>
+                <button type="button" :class="{ 'is-active': active.h3 }" @click="run('h3')" class="min-h-11 min-w-11" title="Sottotitolo"><x-icon-label icon="heading-3" label="Sottotitolo" /></button>
+                <button type="button" :class="{ 'is-active': active.bullet }" @click="run('bullet')" class="min-h-11 min-w-11" title="Elenco puntato"><x-icon-label icon="list" label="Elenco puntato" /></button>
+                <button type="button" :class="{ 'is-active': active.ordered }" @click="run('ordered')" class="min-h-11 min-w-11" title="Elenco numerato"><x-icon-label icon="list-ordered" label="Elenco numerato" /></button>
+                <button type="button" :class="{ 'is-active': active.quote }" @click="run('quote')" class="min-h-11 min-w-11" title="Citazione"><x-icon-label icon="quote" label="Citazione" /></button>
+                <button type="button" @click="run('wikilink')" class="min-h-11 min-w-11" title="Collega a una pagina wiki"><x-icon-label icon="link" label="Collega a una pagina wiki" /></button>
+                <button type="button" @click="openImageModal('visual')" class="min-h-11 min-w-11" title="Inserisci immagine"><x-icon-label icon="image" label="Inserisci immagine" /></button>
             </div>
         </template>
 
         <template x-if="mode === 'markdown'">
             <div class="flex flex-wrap items-center gap-1">
-                <button type="button" @click="openImageModal('markdown')"><x-icon-label icon="image" label="Inserisci immagine" /></button>
+                <button type="button" @click="openImageModal('markdown')" class="min-h-11 min-w-11" title="Inserisci immagine"><x-icon-label icon="image" label="Inserisci immagine" /></button>
             </div>
         </template>
 
-        <div class="ml-auto inline-flex p-0.5 rounded-lg bg-black/40 border border-white/10 text-xs">
-            <button type="button" @click="setMode('visual')" :class="mode === 'visual' ? 'bg-amber-500/20 text-amber-300 font-bold' : ''">
+        <div class="ml-auto inline-flex p-0.5 rounded-lg bg-black/40 border border-white/10 text-xs gap-0.5">
+            <button type="button" @click="setMode('visual')" :class="mode === 'visual' ? 'bg-amber-500/20 text-amber-300 font-bold' : ''" class="min-h-11 min-w-11">
                 <x-icon-label icon="eye" label="Visuale" />
             </button>
-            <button type="button" @click="setMode('markdown')" :class="mode === 'markdown' ? 'bg-amber-500/20 text-amber-300 font-bold' : ''">
+            <button type="button" @click="setMode('markdown')" :class="mode === 'markdown' ? 'bg-amber-500/20 text-amber-300 font-bold' : ''" class="min-h-11 min-w-11">
                 <x-icon-label icon="file-code" label="Markdown" />
             </button>
         </div>

@@ -55,19 +55,19 @@
             <!-- Action Buttons -->
             <div class="flex items-center gap-2 shrink-0 overflow-x-auto scrollbar-none">
                 @if($campaign->isGm(auth()->user()))
-                    <a href="{{ route('wiki.revisions', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-3 shrink-0" title="Visualizza revisioni storiche">
+                    <a href="{{ route('wiki.revisions', [$campaign, $wiki]) }}" class="btn-secondary text-xs min-h-11 px-3 shrink-0" title="Visualizza revisioni storiche">
                         <x-icon-label icon="clock-3" label="Revisioni ({{ $wiki->revisions->count() }})" />
                     </a>
                 @endif
 
-                <a href="{{ route('wiki.edit', [$campaign, $wiki]) }}" class="btn-primary text-xs py-2 px-4 shrink-0">
+                <a href="{{ route('wiki.edit', [$campaign, $wiki]) }}" class="btn-primary text-xs min-h-11 px-4 shrink-0">
                     <x-icon-label icon="pencil" label="Modifica" />
                 </a>
 
                 <form method="POST" action="{{ route('wiki.destroy', [$campaign, $wiki]) }}" onsubmit="return confirm('Spostare questa scheda nel cestino? Potrà essere ripristinata dal GM.')" class="inline shrink-0">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn-danger !p-2 sm:!px-3 text-xs" title="Sposta nel cestino">
+                    <button type="submit" class="btn-danger min-h-11 px-3 text-xs" title="Sposta nel cestino">
                         <x-icon-label icon="trash-2" label="Elimina" />
                     </button>
                 </form>

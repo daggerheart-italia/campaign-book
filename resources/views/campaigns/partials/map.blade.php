@@ -46,7 +46,7 @@
             <template x-for="map in maps" :key="map.id">
                 <button @click="selectMap(map.id)" 
                         :class="activeMapId === map.id ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 shrink-0">
+                        class="px-3 min-h-11 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full" :class="map.is_default ? 'bg-amber-400' : 'bg-slate-400'"></span>
                     <span x-text="map.title"></span>
                     <span class="text-[10px] opacity-70" x-text="'(' + (getPinsForMap(map.id).length) + ')'"></span>
@@ -56,45 +56,39 @@
 
         <!-- Action Buttons -->
         <div class="flex items-center gap-2 shrink-0">
-            <!-- Labels Toggle -->
-            {{-- <button @click="showLabels = !showLabels"
-                    :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                    class="hidden">
-                <x-app-icon name="tag" class="w-3.5 h-3.5" />
-                <span class="hidden sm:inline">Etichette</span>
-            </button> --}}
-
             <!-- Upload New Map Button -->
-            <button @click="uploadModalOpen = true" class="btn-primary text-xs py-1.5 px-3">
+            <button @click="uploadModalOpen = true" class="btn-primary text-xs min-h-11 px-3">
                 <x-icon-label icon="image" label="Carica Mappa" />
             </button>
         </div>
     </div>
 
     <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
-        <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')" class="btn-secondary !py-1.5 !px-3 text-xs border">
-            <x-icon-label icon="printer" label="Stampa mappa" />
-        </button>
-        <button @click="showLabels = !showLabels"
-                :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                class="btn-secondary !py-1.5 !px-3 text-xs border">
-            <x-icon-label icon="tag" label="Etichette" />
-        </button>
+        <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')" class="btn-secondary min-h-11 px-3 text-xs border">
+                <x-icon-label icon="printer" label="Stampa mappa" />
+            </button>
+            <button @click="showLabels = !showLabels"
+                    :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
+                    class="btn-secondary min-h-11 px-3 text-xs border">
+                <x-icon-label icon="tag" label="Etichette" />
+            </button>
+        </div>
 
         <div class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 p-0.5"
              role="group"
              aria-label="Controlli zoom mappa">
             <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
-                    class="h-8 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                    class="min-h-11 min-w-11 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
                 <x-icon-label icon="zoom-out" label="Riduci zoom" />
             </button>
             <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="(Math.round(zoomLevel * 10) / 10) + '%'"></span>
             <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
-                    class="h-8 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                    class="min-h-11 min-w-11 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
                 <x-icon-label icon="zoom-in" label="Aumenta zoom" />
             </button>
             <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
-                    class="rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                    class="min-h-11 min-w-11 rounded px-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
                 <x-icon-label icon="expand" label="Adatta mappa" />
             </button>
         </div>
@@ -245,13 +239,13 @@
          x-transition
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
          x-cloak>
-        <div @click.away="modalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto relative">
-            <button type="button" @click="modalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi segnaposto">
+        <div @click.away="modalOpen = false" class="glass-panel p-4 sm:p-6 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain relative">
+            <button type="button" @click="modalOpen = false" class="absolute top-4 right-4 min-h-11 min-w-11 flex items-center justify-center text-slate-400 hover:text-white" aria-label="Chiudi segnaposto">
                 <x-app-icon name="x" class="w-5 h-5" />
             </button>
 
             <template x-if="modalMode === 'create' || modalMode === 'edit'">
-            <form @submit.prevent="modalMode === 'create' ? saveNewPin() : savePinDetails()" class="space-y-3">
+            <form @submit.prevent="modalMode === 'create' ? saveNewPin() : savePinDetails()" class="space-y-4 pr-8">
                 <h3 class="font-['Cinzel'] text-lg font-bold text-white mb-1" x-text="modalMode === 'create' ? 'Nuovo Punto sulla Mappa' : 'Modifica segnaposto'"></h3>
                 <p x-show="modalMode === 'create'" class="text-xs text-slate-400 mb-4" x-text="'Posizione: X ' + newPinCoords.x.toFixed(1) + '% • Y ' + newPinCoords.y.toFixed(1) + '%'"></p>
                 <div>
@@ -265,12 +259,12 @@
                 </div>
 
                 <div>
-                    <span class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Colore Segnaposto</span>
-                    <div class="flex items-center gap-2">
+                    <span class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Colore Segnaposto</span>
+                    <div class="flex items-center gap-3 flex-wrap">
                         <template x-for="option in pinColors" :key="option.value">
                             <button type="button" @click="pinForm.color = option.value" :aria-label="option.label"
-                                    :aria-pressed="pinForm.color === option.value" class="h-8 w-8 rounded-full border-2"
-                                    :class="pinForm.color === option.value ? 'border-white' : 'border-transparent'"
+                                    :aria-pressed="pinForm.color === option.value" class="h-11 w-11 rounded-full border-2 transition-transform hover:scale-110"
+                                    :class="pinForm.color === option.value ? 'border-white scale-110' : 'border-transparent'"
                                     :style="'background-color: ' + option.value"></button>
                         </template>
                     </div>
@@ -279,19 +273,19 @@
                     label="Collega a Scheda Wiki" modelable="pinForm.wiki_page_id" />
                 <p x-show="mapError" x-text="mapError" role="alert" class="text-xs text-rose-300"></p>
 
-                <div class="flex items-center justify-end gap-2 pt-3">
-                    <button type="button" @click="modalMode === 'create' ? modalOpen = false : modalMode = 'view'" class="btn-secondary text-xs py-2 px-3"><x-icon-label icon="x" label="Annulla" /></button>
-                    <button type="submit" :disabled="savingPinDetails || !pinForm.title.trim()" class="btn-primary text-xs py-2 px-4 disabled:opacity-50"><x-icon-label icon="check" label="Salva segnaposto" /></button>
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 pt-3 border-t border-white/10">
+                    <button type="button" @click="modalMode === 'create' ? modalOpen = false : modalMode = 'view'" class="btn-secondary text-xs min-h-11 px-3 w-full sm:w-auto"><x-icon-label icon="x" label="Annulla" /></button>
+                    <button type="submit" :disabled="savingPinDetails || !pinForm.title.trim()" class="btn-primary text-xs min-h-11 px-4 w-full sm:w-auto disabled:opacity-50"><x-icon-label icon="check" label="Salva segnaposto" /></button>
                 </div>
             </form>
             </template>
 
             <template x-if="modalMode === 'view'">
-                <div>
-                    <div class="flex items-center gap-2.5 mb-2 pr-8">
+                <div class="pr-8">
+                    <div class="flex items-center gap-2.5 mb-2">
                         <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>
-                        <h3 class="font-['Cinzel'] text-xl font-bold text-white min-w-0 break-words" x-text="selectedPin.title"></h3>
-                        <button type="button" @click="startPinEdit()" class="shrink-0 p-1 text-slate-400 hover:text-amber-300">
+                        <h3 class="font-['Cinzel'] text-xl font-bold text-white min-w-0 break-words flex-1" x-text="selectedPin.title"></h3>
+                        <button type="button" @click="startPinEdit()" class="shrink-0 min-h-11 min-w-11 flex items-center justify-center text-slate-400 hover:text-amber-300">
                             <x-icon-label icon="pencil" label="Modifica nome e descrizione" />
                         </button>
                     </div>
@@ -301,7 +295,7 @@
                 <!-- If linked to Wiki page -->
                 <template x-if="selectedPin.wiki_page_url">
                     <div class="space-y-2">
-                        <a :href="selectedPin.wiki_page_url" class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
+                        <a :href="selectedPin.wiki_page_url" class="btn-primary w-full text-xs min-h-11 justify-center shadow-lg">
                             <x-icon-label icon="book-open" label="Leggi scheda Wiki" />
                             <span class="sr-only sm:not-sr-only" x-text="selectedPin.wiki_page_title || 'Visualizza'"></span>
                         </a>
@@ -321,7 +315,7 @@
 
                         <!-- Direct button to create wiki page pre-filled from this pin -->
                         <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + selectedPin.id + '&title=' + encodeURIComponent(selectedPin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
-                           class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
+                           class="btn-primary w-full text-xs min-h-11 justify-center shadow-lg">
                             <x-icon-label icon="plus" label="Crea Pagina Wiki per questo Luogo" />
                         </a>
 
@@ -335,11 +329,11 @@
 
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-[11px] text-slate-400">Colore</span>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-3 flex-wrap">
                         <template x-for="option in pinColors" :key="option.value">
                             <button type="button" @click="changePinColor(option.value)" :disabled="savingPinColor"
                                     :title="option.label" :aria-label="option.label"
-                                    class="h-5 w-5 rounded-full border-2 transition disabled:opacity-50"
+                                    class="h-8 w-8 rounded-full border-2 transition disabled:opacity-50 hover:scale-110"
                                     :class="selectedPin.color === option.value ? 'border-white scale-110' : 'border-transparent hover:border-white/50'"
                                     :style="'background-color: ' + option.value"></button>
                         </template>
