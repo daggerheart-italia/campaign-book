@@ -20,7 +20,7 @@
         <input type="text"
                x-model="query"
                @input="onInput()"
-               @keydown="onKeydown($event)"
+               @keydown="onKeyDown($event)"
                @focus="openDropdown()"
                placeholder="Cerca scheda genitore…"
                class="input-premium text-sm w-full"

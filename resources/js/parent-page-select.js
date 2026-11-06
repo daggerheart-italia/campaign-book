@@ -58,6 +58,8 @@ export function registerParentPageSelect(Alpine) {
         },
 
         closeDropdown() {
+            const match = this.options.find(o => String(o.id) === String(this.selected));
+            this.query = match ? match.label : '';
             this.open = false;
             this.highlight = -1;
         },
@@ -110,10 +112,11 @@ export function registerParentPageSelect(Alpine) {
                         this.openDropdown();
                     }
                     break;
-                case 'Escape':
-                    event.preventDefault();
-                    this.closeDropdown();
-                    break;
+            case 'Escape':
+                event.preventDefault();
+                event.stopPropagation();
+                this.closeDropdown();
+                break;
                 case 'Tab':
                     this.closeDropdown();
                     break;
