@@ -89,7 +89,7 @@
             </button>
             <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
                     class="min-h-11 min-w-11 rounded px-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                <x-icon-label icon="expand" label="Adatta mappa" />
+                <x-icon-label icon="expand" label="Adatta" />
             </button>
         </div>
     </div>
@@ -169,7 +169,7 @@
                             <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125 text-[10px] font-bold"
                                  :style="'background-color: ' + pin.color + '; box-shadow: 0 0 12px ' + pin.color + ', 0 4px 8px rgba(0,0,0,0.6);'">
                                 <template x-if="showLabels">
-                                    <x-app-icon name="map-pin" class="h-2.5 w-2.5" />
+                                    <x-app-icon name="circle-dot" class="h-2.5 w-2.5" stroke-width="3" />
                                 </template>
                                 <template x-if="!showLabels">
                                     <span x-text="pinIndex + 1"></span>

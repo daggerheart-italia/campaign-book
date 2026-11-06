@@ -18,6 +18,13 @@ Le icone sono fornite da `mallardduck/blade-lucide-icons` e renderizzate lato se
 8. Marcare come decorative le icone ridondanti rispetto a un'etichetta (`aria-hidden="true"` e non focalizzabili); è il comportamento predefinito di `<x-app-icon>`.
 9. Riservare SVG personalizzati a marchi, illustrazioni o simboli specifici del prodotto che non abbiano un equivalente adeguato nel set.
 
+Il comportamento di `<x-icon-label>` può essere personalizzato con due proprietà booleane indipendenti:
+
+- `:show-on-mobile="true"` mostra l'etichetta anche sotto `sm`.
+- `:hide-on-desktop="true"` nasconde visivamente l'etichetta da `sm` in su, mantenendola disponibile agli screen reader.
+
+Le proprietà possono essere combinate: ad esempio, `<x-icon-label icon="search" label="Cerca" :show-on-mobile="true" :hide-on-desktop="true" />` mostra il testo solo su mobile. Senza proprietà aggiuntive rimane il comportamento predefinito.
+
 ## Criteri per valutare alternative
 
 Se si confrontano altri set, valutarli con gli stessi criteri:

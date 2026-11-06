@@ -56,7 +56,7 @@ body {
 }
 
 @media (min-width: 40rem) {
-    .icon-label-mobile {
+    .icon-label-mobile:not(.icon-label-hide-desktop) {
         position: static;
         width: auto;
         height: auto;
