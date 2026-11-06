@@ -14,14 +14,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [AuthController::class, 'landing'])->name('landing');
 
 // Public read-only campaign sharing
-Route::middleware('throttle:60,1')->group(function () {
+Route::middleware('throttle:'.config('throttle.public',60).',1')->group(function () {
     Route::get('/share/{slug}', [PublicCampaignController::class, 'show'])->name('public.show');
     Route::get('/share/{slug}/wiki/{wiki}', [PublicCampaignController::class, 'wiki'])->name('public.wiki');
     Route::get('/join/{code}', [CampaignController::class, 'joinByCode'])->name('campaigns.joinByCode');
 });
 
 // Guest authentication
-Route::middleware(['guest', 'throttle:5,1'])->group(function () {
+Route::middleware(['guest', 'throttle:'.config('throttle.guest',5).',1'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
 
@@ -29,9 +29,9 @@ Route::middleware(['guest', 'throttle:5,1'])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
-    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:5,1')->name('password.email');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:'.config('throttle.guest',5).',1')->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
-    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.update');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:'.config('throttle.guest',5).',1')->name('password.update');
 });
 
 // Authenticated routes
@@ -47,7 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/campaigns/create', [CampaignController::class, 'create'])->name('campaigns.create');
     Route::post('/campaigns', [CampaignController::class, 'store'])->name('campaigns.store');
     Route::get('/campaigns/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');
-    Route::get('/campaigns/{campaign}/sync/delta', [CampaignController::class, 'syncDelta'])->middleware('throttle:30,1')->name('campaigns.syncDelta');
+    Route::get('/campaigns/{campaign}/sync/delta', [CampaignController::class, 'syncDelta'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('campaigns.syncDelta');
     Route::get('/campaigns/{campaign}/edit', [CampaignController::class, 'edit'])->name('campaigns.edit');
     Route::put('/campaigns/{campaign}', [CampaignController::class, 'update'])->name('campaigns.update');
     Route::put('/campaigns/{campaign}/sharing', [CampaignController::class, 'updateSharing'])->name('campaigns.updateSharing');
@@ -64,7 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/campaigns/{campaign}/revisions/compact', [CampaignController::class, 'compactRevisions'])->name('campaigns.compactRevisions');
 
     // Campaign Custom Maps
-    Route::post('/campaigns/{campaign}/maps/chunks', [CampaignMapController::class, 'storeChunk'])->middleware('throttle:30,1')->name('maps.storeChunk');
+    Route::post('/campaigns/{campaign}/maps/chunks', [CampaignMapController::class, 'storeChunk'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('maps.storeChunk');
     Route::post('/campaigns/{campaign}/maps', [CampaignMapController::class, 'store'])->name('maps.store');
     Route::post('/campaigns/{campaign}/maps/{map}/default', [CampaignMapController::class, 'setDefault'])->name('maps.setDefault');
     Route::delete('/campaigns/{campaign}/maps/{map}', [CampaignMapController::class, 'destroy'])->name('maps.destroy');
@@ -73,15 +73,15 @@ Route::middleware('auth')->group(function () {
     // Wiki nested routes
     Route::get('/campaigns/{campaign}/wiki/create', [WikiController::class, 'create'])->name('wiki.create');
     Route::post('/campaigns/{campaign}/wiki', [WikiController::class, 'store'])->name('wiki.store');
-    Route::get('/campaigns/{campaign}/wiki/{wiki}/sync', [WikiController::class, 'sync'])->middleware('throttle:30,1')->name('wiki.sync');
-    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/lock', [WikiEditLockController::class, 'acquire'])->middleware('throttle:30,1')->name('wiki.edit.lock');
-    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/heartbeat', [WikiEditLockController::class, 'heartbeat'])->middleware('throttle:30,1')->name('wiki.edit.heartbeat');
+    Route::get('/campaigns/{campaign}/wiki/{wiki}/sync', [WikiController::class, 'sync'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('wiki.sync');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/lock', [WikiEditLockController::class, 'acquire'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('wiki.edit.lock');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/heartbeat', [WikiEditLockController::class, 'heartbeat'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('wiki.edit.heartbeat');
     Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/release', [WikiEditLockController::class, 'release'])->name('wiki.edit.release');
-    Route::get('/campaigns/{campaign}/wiki/{wiki}/edit/state', [WikiEditLockController::class, 'state'])->middleware('throttle:30,1')->name('wiki.edit.state');
+    Route::get('/campaigns/{campaign}/wiki/{wiki}/edit/state', [WikiEditLockController::class, 'state'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('wiki.edit.state');
     Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/join', [WikiEditLockController::class, 'joinQueue'])->name('wiki.edit.queue.join');
     Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/leave', [WikiEditLockController::class, 'leaveQueue'])->name('wiki.edit.queue.leave');
     Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/accept', [WikiEditLockController::class, 'acceptOffer'])->name('wiki.edit.queue.accept');
-    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/advance', [WikiEditLockController::class, 'advance'])->middleware('throttle:15,1')->name('wiki.edit.queue.advance');
+    Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/queue/advance', [WikiEditLockController::class, 'advance'])->middleware('throttle:'.config('throttle.queue_advance',60).',1')->name('wiki.edit.queue.advance');
     Route::post('/campaigns/{campaign}/wiki/{wiki}/edit/force-release', [WikiEditLockController::class, 'forceRelease'])->name('wiki.edit.forceRelease');
     Route::get('/campaigns/{campaign}/wiki/{wiki}', [WikiController::class, 'show'])->name('wiki.show');
     Route::get('/campaigns/{campaign}/wiki/{wiki}/edit', [WikiController::class, 'edit'])->name('wiki.edit');
@@ -93,16 +93,16 @@ Route::middleware('auth')->group(function () {
 
     // Map Pins
     Route::get('/campaigns/{campaign}/pins', [MapPinController::class, 'index'])->name('pins.index');
-    Route::get('/campaigns/{campaign}/pins/snapshot', [MapPinController::class, 'snapshot'])->middleware('throttle:120,1')->name('pins.snapshot');
-    Route::get('/campaigns/{campaign}/maps/snapshot', [CampaignMapController::class, 'snapshot'])->middleware('throttle:120,1')->name('maps.snapshot');
+    Route::get('/campaigns/{campaign}/pins/snapshot', [MapPinController::class, 'snapshot'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('pins.snapshot');
+    Route::get('/campaigns/{campaign}/maps/snapshot', [CampaignMapController::class, 'snapshot'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('maps.snapshot');
     Route::post('/campaigns/{campaign}/pins', [MapPinController::class, 'store'])->name('pins.store');
     Route::put('/campaigns/{campaign}/pins/{pin}', [MapPinController::class, 'update'])->name('pins.update');
     Route::delete('/campaigns/{campaign}/pins/{pin}', [MapPinController::class, 'destroy'])->name('pins.destroy');
     Route::post('/campaigns/{campaign}/pins/{pin}/restore', [MapPinController::class, 'restore'])->name('pins.restore');
 
     // Session Notes
-    Route::get('/campaigns/{campaign}/notes/snapshot', [SessionNoteController::class, 'snapshot'])->middleware('throttle:120,1')->name('notes.snapshot');
-    Route::get('/campaigns/{campaign}/wiki/snapshot', [WikiController::class, 'snapshotList'])->middleware('throttle:120,1')->name('wiki.list.snapshot');
+    Route::get('/campaigns/{campaign}/notes/snapshot', [SessionNoteController::class, 'snapshot'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('notes.snapshot');
+    Route::get('/campaigns/{campaign}/wiki/snapshot', [WikiController::class, 'snapshotList'])->middleware('throttle:'.config('throttle.polling',120).',1')->name('wiki.list.snapshot');
     Route::post('/campaigns/{campaign}/notes', [SessionNoteController::class, 'store'])->name('notes.store');
     Route::put('/campaigns/{campaign}/notes/{note}', [SessionNoteController::class, 'update'])->name('notes.update');
     Route::post('/campaigns/{campaign}/notes/{note}/pin', [SessionNoteController::class, 'togglePin'])->name('notes.togglePin');
