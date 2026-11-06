@@ -44,7 +44,7 @@
                     <p class="text-xs text-amber-300 mt-2">Stai preparando il ripristino della revisione del {{ $restoreRevision->created_at->format('d/m/Y H:i') }}. Puoi modificare il testo prima di salvarlo.</p>
                 @endif
             </div>
-            <a href="{{ route('wiki.show', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-1.5 px-3">Annulla</a>
+            <a href="{{ route('wiki.show', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-1.5 px-3"><x-icon-label icon="x" label="Annulla" /></a>
         </div>
 
         <section class="mb-5 rounded-xl border border-white/10 bg-black/20 p-4" aria-live="polite">
@@ -55,20 +55,20 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <button type="button" class="btn-primary text-xs py-2 px-3" x-show="!canEdit && !offerAvailable && !queuePosition && !sameUserOtherTab" @click="joinQueue()" x-cloak>
-                        Mettimi in coda
+                        <x-icon-label icon="list-plus" label="Mettimi in coda" />
                     </button>
                     <button type="button" class="btn-primary text-xs py-2 px-3" x-show="offerAvailable" @click="acceptOffer()" x-cloak>
-                        Accetta il turno
+                        <x-icon-label icon="check" label="Accetta il turno" />
                     </button>
                     <button type="button" class="btn-secondary text-xs py-2 px-3" x-show="queuePosition" @click="leaveQueue()" x-cloak>
-                        Esci dalla coda
+                        <x-icon-label icon="log-out" label="Esci dalla coda" />
                     </button>
                     <button type="button" class="btn-secondary text-xs py-2 px-3" x-show="sameUserOtherTab" @click="acquire(true)" x-cloak>
-                        Usa questa scheda
+                        <x-icon-label icon="copy" label="Usa questa scheda" />
                     </button>
                     @if($campaign->isGm(auth()->user()))
                         <button type="button" class="btn-danger text-xs py-2 px-3" @click="forceRelease()" x-show="owner && !canEdit" x-cloak>
-                            Forza rilascio
+                            <x-icon-label icon="unlock" label="Forza rilascio" />
                         </button>
                     @endif
                 </div>
@@ -135,10 +135,9 @@
                     <span x-text="autosaveStatus"></span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('wiki.show', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-4">Annulla</a>
+                    <a href="{{ route('wiki.show', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-4"><x-icon-label icon="x" label="Annulla" /></a>
                     <button type="submit" class="btn-primary text-xs py-2 px-5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <span>Salva Nuova Revisione</span>
+                        <x-icon-label icon="check" label="Salva Nuova Revisione" />
                     </button>
                 </div>
             </div>

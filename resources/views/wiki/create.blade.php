@@ -21,12 +21,12 @@
                 
                 @if(isset($pin) && $pin)
                     <div class="inline-flex items-center gap-1.5 px-3 py-1 mt-2.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold">
-                        <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <x-app-icon name="map-pin" class="w-3.5 h-3.5 text-rose-400" />
                         <span>Verrà collegata automaticamente al segnaposto <strong>{{ $pin->title }}</strong></span>
                     </div>
                 @endif
             </div>
-            <a href="{{ route('campaigns.show', ['campaign' => $campaign, 'tab' => isset($pin) ? 'map' : 'wiki']) }}" class="btn-secondary text-xs py-1.5 px-3 self-start sm:self-auto">Annulla</a>
+            <a href="{{ route('campaigns.show', ['campaign' => $campaign, 'tab' => isset($pin) ? 'map' : 'wiki']) }}" class="btn-secondary text-xs py-1.5 px-3 self-start sm:self-auto"><x-icon-label icon="x" label="Annulla" /></a>
         </div>
 
         <form method="POST" action="{{ route('wiki.store', $campaign) }}" class="space-y-5">
@@ -66,10 +66,9 @@
             </div>
 
             <div class="pt-4 border-t border-white/[0.08] flex items-center justify-end gap-3">
-                <a href="{{ route('campaigns.show', ['campaign' => $campaign, 'tab' => isset($pin) ? 'map' : 'wiki']) }}" class="btn-secondary text-xs py-2 px-4">Annulla</a>
+                <a href="{{ route('campaigns.show', ['campaign' => $campaign, 'tab' => isset($pin) ? 'map' : 'wiki']) }}" class="btn-secondary text-xs py-2 px-4"><x-icon-label icon="x" label="Annulla" /></a>
                 <button type="submit" class="btn-primary text-xs py-2 px-5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span>Salva Scheda Wiki</span>
+                    <x-icon-label icon="check" label="Salva Scheda Wiki" />
                 </button>
             </div>
         </form>

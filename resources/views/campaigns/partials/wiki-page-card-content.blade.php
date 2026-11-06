@@ -14,27 +14,23 @@
         <div class="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.08] pt-3 text-xs">
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <a :href="page.url" class="text-amber-400 hover:text-amber-300 font-semibold inline-flex min-h-11 items-center gap-1">
-                    <span>Leggi</span>
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    <x-icon-label icon="book-open" label="Leggi" />
                 </a>
                 <button x-show="Array.isArray(page.children_ids) && page.children_ids.length > 0" type="button" @click="openChildPages(page.id)" aria-haspopup="dialog"
                         class="inline-flex min-h-11 items-center gap-1 text-amber-300 hover:text-amber-200"
                         aria-label="Visualizza le sottopagine">
-                    <span>Sottopagine</span>
+                    <x-icon-label icon="folder-kanban" label="Sottopagine" />
                     <span x-text="`(${page.children_ids.length})`"></span>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                    </svg>
+                    <x-app-icon name="chevron-right" class="w-3.5 h-3.5" />
                 </button>
             </div>
 
             <div class="flex items-center gap-2">
                 <a :href="page.revisions_url" class="text-slate-400 hover:text-slate-200 text-[11px] flex min-h-11 items-center gap-1" title="Cronologia Revisioni">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span>Revisioni</span>
+                    <x-icon-label icon="clock-3" label="Revisioni" />
                 </a>
-                <a :href="page.edit_url" class="btn-secondary !p-1.5 !rounded-lg text-slate-300 hover:text-amber-400" title="Modifica">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                <a :href="page.edit_url" class="btn-secondary !p-1.5 sm:!px-3 !rounded-lg text-slate-300 hover:text-amber-400">
+                    <x-icon-label icon="pencil" label="Modifica" />
                 </a>
             </div>
         </div>

@@ -38,10 +38,7 @@
                 class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-amber-400 transition-colors"
                 :aria-expanded="open"
                 aria-label="Apri/chiudi elenco">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-transition>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M19 9l-7 7-7-7"/>
-            </svg>
+            <x-app-icon name="chevron-down" class="w-4 h-4" x-transition />
         </button>
 
         <input type="hidden"
@@ -88,9 +85,7 @@
                 <span x-show="String(selected) === String(option.id)"
                       class="shrink-0 text-amber-400"
                       x-cloak>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
+                    <x-app-icon name="check" class="w-4 h-4" />
                 </span>
             </div>
         </template>

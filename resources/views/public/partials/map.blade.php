@@ -19,24 +19,26 @@
             </div>
 
             <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
-                <button @click="showLabels = !showLabels"
+                <button @click="showLabels = !showLabels" :aria-pressed="showLabels"
                         :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                        class="btn-secondary !py-1.5 !px-3 text-xs border" aria-label="Mostra o nascondi le etichette con nome">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                    <span>Etichette</span>
+                        class="btn-secondary !py-1.5 !px-3 text-xs border">
+                    <x-icon-label icon="tag" label="Etichette" icon-class="w-3.5 h-3.5" />
                 </button>
 
                 <div class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 p-0.5" role="group" aria-label="Controlli zoom mappa">
                     <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
-                            class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                            aria-label="Riduci zoom">−</button>
+                            class="min-w-8 rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                        <x-icon-label icon="zoom-out" label="Riduci zoom" />
+                    </button>
                     <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="(Math.round(zoomLevel * 10) / 10) + '%'"></span>
                     <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
-                            class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                            aria-label="Aumenta zoom">+</button>
+                            class="min-w-8 rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                        <x-icon-label icon="zoom-in" label="Aumenta zoom" />
+                    </button>
                     <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
-                            class="rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                            aria-label="Reimposta zoom al 100%">Adatta</button>
+                            class="rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                        <x-icon-label icon="scan" label="Adatta" />
+                    </button>
                 </div>
             </div>
 
@@ -70,7 +72,7 @@
                                 <div class="relative flex flex-col items-center">
                                     <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125"
                                          :style="'background-color: ' + pin.color + '; box-shadow: 0 0 12px ' + pin.color + ', 0 4px 8px rgba(0,0,0,0.6);'">
-                                        <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                                        <x-app-icon name="map-pin" class="h-2.5 w-2.5" />
                                     </div>
                                     <div class="w-0 h-0 border-x-[3px] border-x-transparent border-t-[5px] -mt-[1px]" :style="'border-top-color: ' + pin.color + ';'"></div>
                                 </div>
@@ -101,7 +103,7 @@
     <div x-show="detailsOpen" x-transition x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
         <div @click.away="detailsOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
             <button @click="detailsOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <x-app-icon name="x" class="w-5 h-5" />
             </button>
             <div class="flex items-center gap-2.5 mb-2 pr-8">
                 <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>

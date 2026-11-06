@@ -6,8 +6,7 @@
 <div class="max-w-2xl mx-auto my-6 sm:my-10">
     <div class="mb-4">
         <a href="{{ route('campaigns.show', $campaign) }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            <span>Torna alla campagna</span>
+            <x-icon-label icon="arrow-left" label="Torna alla campagna" />
         </a>
     </div>
 
@@ -40,10 +39,9 @@
             </div>
 
             <div class="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3">
-                <a href="{{ route('campaigns.show', $campaign) }}" class="btn-secondary w-full sm:w-auto text-sm order-2 sm:order-1">Annulla</a>
+                <a href="{{ route('campaigns.show', $campaign) }}" class="btn-secondary w-full sm:w-auto text-sm order-2 sm:order-1"><x-icon-label icon="x" label="Annulla" /></a>
                 <button type="submit" class="btn-primary w-full sm:w-auto text-sm order-1 sm:order-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span>Salva modifiche</span>
+                    <x-icon-label icon="check" label="Salva modifiche" />
                 </button>
             </div>
         </form>
@@ -86,7 +84,7 @@
             @endif
 
             <div class="flex justify-end">
-                <button type="submit" class="btn-primary text-sm">Salva link</button>
+                <button type="submit" class="btn-primary text-sm"><x-icon-label icon="check" label="Salva link" /></button>
             </div>
         </form>
     </div>

@@ -31,7 +31,7 @@
             </div>
 
             <button type="submit" class="btn-primary w-full py-3 mt-2 text-base">
-                <span>Invia link di reset</span>
+                <x-icon-label icon="send" label="Invia link di reset" />
             </button>
         </form>
 

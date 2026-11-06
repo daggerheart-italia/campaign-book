@@ -43,6 +43,79 @@ body {
     display: none !important;
 }
 
+.icon-label-mobile {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (min-width: 40rem) {
+    .icon-label-mobile {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+    }
+}
+
+@media (max-width: 39.999rem) {
+    .icon-label-mobile::after,
+    button[aria-label]::after,
+    a[aria-label]::after {
+        position: fixed;
+        z-index: 9999;
+        left: 50%;
+        bottom: calc(1rem + env(safe-area-inset-bottom));
+        max-width: min(80vw, 20rem);
+        padding: 0.5rem 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 0.5rem;
+        background: #111827;
+        color: #f8fafc;
+        font-size: 0.75rem;
+        line-height: 1.25rem;
+        text-align: center;
+        white-space: normal;
+        pointer-events: none;
+        opacity: 0;
+        visibility: hidden;
+        transform: translate(-50%, 0.25rem);
+        transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+    }
+
+    .icon-label-mobile::after {
+        content: attr(data-tooltip);
+    }
+
+    button[aria-label]::after,
+    a[aria-label]::after {
+        content: attr(aria-label);
+    }
+
+    button:focus .icon-label-mobile::after,
+    a:focus .icon-label-mobile::after,
+    button:hover .icon-label-mobile::after,
+    a:hover .icon-label-mobile::after,
+    button[aria-label]:focus::after,
+    a[aria-label]:focus::after,
+    button[aria-label]:hover::after,
+    a[aria-label]:hover::after {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, 0);
+    }
+}
+
 /* Glassmorphism card */
 .glass-panel {
     background: var(--bg-card);

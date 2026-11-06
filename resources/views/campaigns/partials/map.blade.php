@@ -60,44 +60,43 @@
             {{-- <button @click="showLabels = !showLabels"
                     :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
                     class="hidden">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                <x-app-icon name="tag" class="w-3.5 h-3.5" />
                 <span class="hidden sm:inline">Etichette</span>
             </button> --}}
 
             <!-- Upload New Map Button -->
             <button @click="uploadModalOpen = true" class="btn-primary text-xs py-1.5 px-3">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span>Carica Mappa</span>
+                <x-icon-label icon="image" label="Carica Mappa" />
             </button>
         </div>
     </div>
 
     <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
-        <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')" class="btn-secondary !py-1.5 !px-3 text-xs border" aria-label="Stampa mappa">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
-            <span>Stampa</span>
+        <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')" class="btn-secondary !py-1.5 !px-3 text-xs border">
+            <x-icon-label icon="printer" label="Stampa mappa" />
         </button>
         <button @click="showLabels = !showLabels"
                 :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                class="btn-secondary !py-1.5 !px-3 text-xs border"
-                aria-label="Mostra o nascondi le etichette con nome">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-            <span>Etichette</span>
+                class="btn-secondary !py-1.5 !px-3 text-xs border">
+            <x-icon-label icon="tag" label="Etichette" />
         </button>
 
         <div class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 p-0.5"
              role="group"
              aria-label="Controlli zoom mappa">
             <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
-                    class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Riduci zoom" title="Riduci zoom">−</button>
+                    class="h-8 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                <x-icon-label icon="zoom-out" label="Riduci zoom" />
+            </button>
             <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="(Math.round(zoomLevel * 10) / 10) + '%'"></span>
             <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
-                    class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Aumenta zoom" title="Aumenta zoom">+</button>
+                    class="h-8 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                <x-icon-label icon="zoom-in" label="Aumenta zoom" />
+            </button>
             <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
-                    class="rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Reimposta zoom al 100%" title="Reimposta zoom">Adatta</button>
+                    class="rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                <x-icon-label icon="expand" label="Adatta mappa" />
+            </button>
         </div>
     </div>
 
@@ -113,13 +112,13 @@
                     <template x-if="!activeMap.is_default">
                         <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/default'" method="POST" class="inline">
                             @csrf
-                            <button type="submit" class="text-amber-400 hover:underline text-[11px]">Imposta come predefinita</button>
+                            <button type="submit" class="text-amber-400 hover:underline text-[11px]"><x-icon-label icon="check" label="Imposta come predefinita" /></button>
                         </form>
                     </template>
                     <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id" method="POST" onsubmit="return confirm('Eliminare questa mappa e i suoi segnaposto?')" class="inline">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-rose-400 hover:text-rose-300 text-[11px] ml-2">Elimina Mappa</button>
+                        <button type="submit" class="text-rose-400 hover:text-rose-300 text-[11px] ml-2"><x-icon-label icon="trash-2" label="Elimina mappa" /></button>
                     </form>
                 @endif
             </div>
@@ -176,9 +175,7 @@
                             <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125 text-[10px] font-bold"
                                  :style="'background-color: ' + pin.color + '; box-shadow: 0 0 12px ' + pin.color + ', 0 4px 8px rgba(0,0,0,0.6);'">
                                 <template x-if="showLabels">
-                                    <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-                                    </svg>
+                                    <x-app-icon name="map-pin" class="h-2.5 w-2.5" />
                                 </template>
                                 <template x-if="!showLabels">
                                     <span x-text="pinIndex + 1"></span>
@@ -200,7 +197,7 @@
     <div class="glass-panel p-4 rounded-xl">
         <div class="flex items-center justify-between mb-3">
             <h3 class="font-['Cinzel'] text-sm font-bold text-white flex items-center gap-2">
-                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <x-app-icon name="map-pin" class="w-4 h-4 text-amber-400" />
                 <span>Luoghi Segnati (<span x-text="currentPins.length"></span>)</span>
             </h3>
         </div>
@@ -222,20 +219,20 @@
 
                     <div class="flex items-center gap-1 shrink-0">
                         <template x-if="pin.wiki_page_url">
-                            <a :href="pin.wiki_page_url" class="p-1 text-amber-400 hover:text-amber-300" title="Apri Scheda Wiki">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                            <a :href="pin.wiki_page_url" class="p-1 text-amber-400 hover:text-amber-300">
+                                <x-icon-label icon="book-open" label="Apri Scheda Wiki" icon-class="w-3.5 h-3.5" />
                             </a>
                         </template>
 
                         <template x-if="!pin.wiki_page_url">
                             <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + pin.id + '&title=' + encodeURIComponent(pin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
-                               class="p-1 text-emerald-400 hover:text-emerald-300" title="Crea Scheda Wiki per questo Luogo">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                               class="p-1 text-emerald-400 hover:text-emerald-300">
+                                <x-icon-label icon="plus" label="Crea Scheda Wiki" icon-class="w-3.5 h-3.5" />
                             </a>
                         </template>
 
-                        <button @click="deletePin(pin)" class="p-1 text-slate-500 hover:text-rose-400" title="Elimina Segnaposto">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <button @click="deletePin(pin)" class="p-1 text-slate-500 hover:text-rose-400">
+                            <x-icon-label icon="trash-2" label="Elimina Segnaposto" icon-class="w-3.5 h-3.5" />
                         </button>
                     </div>
                 </div>
@@ -250,7 +247,7 @@
          x-cloak>
         <div @click.away="createModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
             <button @click="createModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <x-app-icon name="x" class="w-5 h-5" />
             </button>
 
             <h3 class="font-['Cinzel'] text-lg font-bold text-white mb-1">Nuovo Punto sulla Mappa</h3>
@@ -291,8 +288,8 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-2 pt-3">
-                    <button type="button" @click="createModalOpen = false" class="btn-secondary text-xs py-2 px-3">Annulla</button>
-                    <button type="submit" class="btn-primary text-xs py-2 px-4">Salva Segnaposto</button>
+                    <button type="button" @click="createModalOpen = false" class="btn-secondary text-xs py-2 px-3"><x-icon-label icon="x" label="Annulla" /></button>
+                    <button type="submit" class="btn-primary text-xs py-2 px-4"><x-icon-label icon="check" label="Salva segnaposto" /></button>
                 </div>
             </form>
         </div>
@@ -304,8 +301,8 @@
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
          x-cloak>
         <div @click.away="detailsModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
-            <button @click="detailsModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button @click="detailsModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi dettagli segnaposto">
+                <x-app-icon name="x" class="w-5 h-5" />
             </button>
 
             <template x-if="!editingPin">
@@ -313,8 +310,8 @@
                     <div class="flex items-center gap-2.5 mb-2 pr-8">
                         <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>
                         <h3 class="font-['Cinzel'] text-xl font-bold text-white min-w-0 break-words" x-text="selectedPin.title"></h3>
-                        <button type="button" @click="startPinEdit()" class="shrink-0 p-1 text-slate-400 hover:text-amber-300" title="Modifica nome e descrizione" aria-label="Modifica nome e descrizione">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 16.536 8 18l1-5z"/></svg>
+                        <button type="button" @click="startPinEdit()" class="shrink-0 p-1 text-slate-400 hover:text-amber-300">
+                            <x-icon-label icon="pencil" label="Modifica nome e descrizione" />
                         </button>
                     </div>
 
@@ -342,8 +339,12 @@
                         </select>
                     </div>
                     <div class="flex items-center justify-end gap-2">
-                        <button type="button" @click="editingPin = false" :disabled="savingPinDetails" class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-50">Annulla</button>
-                        <button type="submit" :disabled="savingPinDetails || !pinEditForm.title.trim()" class="btn-primary text-xs py-1.5 px-3 disabled:opacity-50">Salva</button>
+                        <button type="button" @click="editingPin = false" :disabled="savingPinDetails" class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-50">
+                            <x-icon-label icon="x" label="Annulla" />
+                        </button>
+                        <button type="submit" :disabled="savingPinDetails || !pinEditForm.title.trim()" class="btn-primary text-xs py-1.5 px-3 disabled:opacity-50">
+                            <x-icon-label icon="check" label="Salva" />
+                        </button>
                     </div>
                 </form>
             </template>
@@ -353,8 +354,8 @@
                 <template x-if="selectedPin.wiki_page_url">
                     <div class="space-y-2">
                         <a :href="selectedPin.wiki_page_url" class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                            <span x-text="'Leggi Scheda Wiki: ' + (selectedPin.wiki_page_title || 'Visualizza')"></span>
+                            <x-icon-label icon="book-open" label="Leggi scheda Wiki" />
+                            <span class="sr-only sm:not-sr-only" x-text="selectedPin.wiki_page_title || 'Visualizza'"></span>
                         </a>
                     </div>
                 </template>
@@ -364,7 +365,7 @@
                     <div class="space-y-3">
                         <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
                             <div class="text-amber-300 font-semibold mb-1 flex items-center gap-1.5">
-                                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <x-app-icon name="info" class="w-4 h-4 text-amber-400" />
                                 <span>Nessuna scheda wiki collegata</span>
                             </div>
                             <p class="text-slate-400 text-[11px] leading-relaxed">Puoi creare una nuova pagina per descrivere la storia, i pericoli e i PNG di questo luogo.</p>
@@ -373,8 +374,8 @@
                         <!-- Direct button to create wiki page pre-filled from this pin -->
                         <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + selectedPin.id + '&title=' + encodeURIComponent(selectedPin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
                            class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <span>Crea Pagina Wiki per questo Luogo</span>
+                            <x-app-icon name="plus" class="w-4 h-4" />
+                            <x-icon-label icon="plus" label="Crea Pagina Wiki per questo Luogo" />
                         </a>
 
                         <!-- Or link to an existing wiki page -->
@@ -388,7 +389,7 @@
                                     @endforeach
                                 </select>
                                 <button type="button" @click="linkPinToWiki(selectedPin, linkWikiId)" :disabled="!linkWikiId" class="btn-secondary text-xs py-1.5 px-3 shrink-0 disabled:opacity-50">
-                                    Collega
+                                    <x-icon-label icon="link" label="Collega" />
                                 </button>
                             </div>
                         </div>
@@ -412,16 +413,13 @@
                 <p class="text-[11px] text-slate-500 pt-1">Trascina il pin sulla mappa per riposizionarlo</p>
                 <div class="flex items-center justify-between gap-2 text-xs">
                     <button type="button" @click="togglePinLock(selectedPin)" :disabled="savingPinLock"
-                            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-amber-300 hover:text-amber-200 disabled:opacity-50"
-                            :aria-label="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'"
-                            :title="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path x-show="!selectedPin.locked" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0m-2 4h12v10H6V11z"/>
-                            <path x-show="selectedPin.locked" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4m-2 0h12v10H6V11z"/>
-                        </svg>
-                        <span x-text="selectedPin.locked ? 'Sblocca' : 'Blocca'"></span>
+                            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-amber-300 hover:text-amber-200 disabled:opacity-50">
+                        <x-app-icon name="lock-keyhole" class="h-4 w-4" />
+                        <span class="icon-label-mobile" :data-tooltip="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'" x-text="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'"></span>
                     </button>
-                    <button type="button" @click="deletePin(selectedPin)" class="shrink-0 whitespace-nowrap text-rose-400 hover:text-rose-300 text-xs" title="Elimina segnaposto">Elimina</button>
+                    <button type="button" @click="deletePin(selectedPin)" class="shrink-0 whitespace-nowrap text-rose-400 hover:text-rose-300 text-xs">
+                        <x-icon-label icon="trash-2" label="Elimina segnaposto" />
+                    </button>
                 </div>
             </div>
         </div>
@@ -433,13 +431,13 @@
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
          x-cloak>
         <div @click.away="uploadModalOpen = false" class="glass-panel p-6 sm:p-8 rounded-2xl max-w-lg w-full relative">
-            <button @click="uploadModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button @click="uploadModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi caricamento mappa">
+                <x-app-icon name="x" class="w-5 h-5" />
             </button>
 
             <div class="text-center mb-5">
                 <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto mb-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <x-app-icon name="image" class="w-6 h-6" />
                 </div>
                 <h3 class="font-['Cinzel'] text-xl font-bold text-white mb-1">Carica Mappa di Gioco</h3>
                 <p class="text-xs text-slate-400">Carica una mappa geografica, mappa regionale o piantina di un dungeon (PNG, JPG, WebP fino a 50MB).</p>
@@ -464,9 +462,10 @@
                 <p x-show="uploadError" x-text="uploadError" role="alert" class="text-xs text-rose-300" x-cloak></p>
 
                 <div class="flex items-center justify-end gap-2 pt-2">
-                    <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50">Annulla</button>
+                    <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50"><x-icon-label icon="x" label="Annulla" /></button>
                     <button type="submit" :disabled="uploadingMap" class="btn-primary text-xs py-2 px-4 disabled:opacity-50">
-                        <span x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
+                        <x-app-icon name="image" />
+                        <span class="icon-label-mobile" data-tooltip="Carica mappa" x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
                     </button>
                 </div>
             </form>

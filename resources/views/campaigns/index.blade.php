@@ -13,8 +13,7 @@
 
         <div class="flex items-center gap-2.5">
             <button @click="joinModalOpen = true" class="btn-secondary text-sm">
-                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
-                <span>Unisciti con Codice</span>
+                <x-icon-label icon="user-round-plus" label="Unisciti con Codice" />
             </button>
         </div>
     </div>
@@ -23,7 +22,7 @@
     @if($campaigns->isEmpty())
         <div class="glass-panel p-10 sm:p-14 rounded-2xl text-center max-w-xl mx-auto my-8 border-dashed border-white/20">
             <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mx-auto mb-4">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <x-app-icon name="book-open" class="w-8 h-8" />
             </div>
             <h3 class="font-['Cinzel'] text-xl font-bold text-white mb-2">Nessuna campagna attiva</h3>
             <p class="text-sm text-slate-400 mb-6 leading-relaxed">
@@ -31,10 +30,10 @@
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a href="{{ route('campaigns.create') }}" class="btn-primary w-full sm:w-auto">
-                    <span>Crea la tua prima Campagna</span>
+                    <x-icon-label icon="plus" label="Crea la tua prima Campagna" />
                 </a>
                 <button @click="joinModalOpen = true" class="btn-secondary w-full sm:w-auto">
-                    <span>Inserisci Codice Invito</span>
+                    <x-icon-label icon="key-round" label="Inserisci Codice Invito" />
                 </button>
             </div>
         </div>
@@ -90,8 +89,7 @@
                         </div>
 
                         <a href="{{ route('campaigns.show', $campaign) }}" class="btn-primary w-full py-2.5 text-xs font-semibold justify-center">
-                            <span>Apri Grimorio</span>
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            <x-icon-label icon="book-open" label="Apri Grimorio" />
                         </a>
                     </div>
                 </div>
@@ -110,13 +108,13 @@
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
          x-cloak>
         <div @click.away="joinModalOpen = false" class="glass-panel p-6 sm:p-8 rounded-2xl max-w-md w-full relative">
-            <button @click="joinModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button @click="joinModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi finestra">
+                <x-app-icon name="x" class="w-5 h-5" />
             </button>
 
             <div class="text-center mb-6">
                 <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mx-auto mb-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    <x-app-icon name="key-round" class="w-6 h-6" />
                 </div>
                 <h3 class="font-['Cinzel'] text-xl font-bold text-white mb-1">Unisciti a una Campagna</h3>
                 <p class="text-xs text-slate-400">Incolla il codice di invito ricevuto dal Game Master.</p>
@@ -130,8 +128,8 @@
                 </div>
 
                 <div class="flex items-center gap-3 pt-2">
-                    <button type="button" @click="joinModalOpen = false" class="btn-secondary w-1/2 py-2.5 text-xs">Annulla</button>
-                    <button type="submit" class="btn-primary w-1/2 py-2.5 text-xs">Unisciti</button>
+                    <button type="button" @click="joinModalOpen = false" class="btn-secondary w-1/2 py-2.5 text-xs"><x-icon-label icon="x" label="Annulla" /></button>
+                    <button type="submit" class="btn-primary w-1/2 py-2.5 text-xs"><x-icon-label icon="user-round-plus" label="Unisciti" /></button>
                 </div>
             </form>
         </div>

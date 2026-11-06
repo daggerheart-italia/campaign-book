@@ -62,7 +62,7 @@ x-data="{
         <div class="flex items-center justify-between cursor-pointer" @click="composerOpen = !composerOpen">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <x-app-icon name="pencil" class="w-4 h-4" />
                 </div>
                 <div>
                     <h3 class="font-['Cinzel'] text-sm sm:text-base font-bold text-white">Nuova Nota di Sessione</h3>
@@ -70,7 +70,7 @@ x-data="{
                 </div>
             </div>
             <button type="button" class="btn-secondary !p-1.5 !rounded-lg text-slate-300">
-                <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': composerOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <x-app-icon name="chevron-down" class="w-4 h-4 transition-transform duration-200" ::class="{ 'rotate-180': composerOpen }" />
             </button>
         </div>
 
@@ -99,7 +99,7 @@ x-data="{
                         </label>
                         <span class="text-xs text-slate-400" x-text="autosaveStatus"></span>
                     </div>
-                    <button type="submit" class="btn-primary text-xs py-2 px-4"><span>Salva Nota</span></button>
+                    <button type="submit" class="btn-primary text-xs py-2 px-4"><x-icon-label icon="check" label="Salva Nota" /></button>
                 </div>
             </form>
         </div>
@@ -108,18 +108,20 @@ x-data="{
     <template x-if="notes.length === 0">
         <div class="glass-panel p-8 rounded-xl text-center max-w-md mx-auto my-6 border-dashed border-white/20">
             <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mx-auto mb-3">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <x-app-icon name="file-text" class="w-6 h-6" />
             </div>
             <h4 class="font-['Cinzel'] font-bold text-white text-base mb-1">Nessuna nota registrata</h4>
             <p class="text-xs text-slate-400 mb-3">Il diario di sessione è ancora intonso. Inizia a scriverlo!</p>
-            <button @click="composerOpen = true" class="btn-primary text-xs py-2 px-3"><span>Scrivi la prima Nota</span></button>
+            <button @click="composerOpen = true" class="btn-primary text-xs py-2 px-3"><x-icon-label icon="plus" label="Scrivi la prima Nota" /></button>
         </div>
     </template>
     <div class="glass-panel p-4 rounded-xl relative" x-show="notes.length > 0">
-        <svg class="w-4 h-4 text-slate-400 absolute left-7 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <x-app-icon name="search" class="w-4 h-4 text-slate-400 absolute left-7 top-1/2 -translate-y-1/2" />
         <input type="text" x-model="search" @keydown.escape="search = ''" placeholder="Cerca tra le note di sessione..."
                class="input-premium !pl-10 text-xs sm:text-sm py-2">
-        <button type="button" x-show="search" @click="search = ''" class="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs" aria-label="Cancella ricerca">✕</button>
+        <button type="button" x-show="search" @click="search = ''" class="absolute right-7 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+            <x-icon-label icon="x" label="Cancella ricerca" />
+        </button>
     </div>
     <div x-show="notes.length > 0 && visibleNotes.length === 0" class="glass-panel p-8 rounded-xl text-center max-w-md mx-auto border-dashed border-white/20" x-cloak>
         <h4 class="font-['Cinzel'] font-bold text-white text-base mb-1">Nessuna nota trovata</h4>
@@ -132,7 +134,7 @@ x-data="{
                 <div class="flex items-start justify-between gap-3 mb-2.5">
                     <div class="flex items-center gap-2">
                         <span x-show="note.is_pinned" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30" x-cloak>
-                            <svg class="w-3 h-3 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/></svg>
+                            <x-app-icon name="bookmark" class="w-3 h-3 text-amber-400" />
                             Fissata
                         </span>
                         <h3 class="font-['Cinzel'] text-base sm:text-lg font-bold text-white" x-text="note.title"></h3>
@@ -140,30 +142,33 @@ x-data="{
                     <div class="flex items-center gap-1 shrink-0">
                         <form method="POST" :action="`/campaigns/${campaignId}/notes/${note.id}/pin`" class="inline">
                             @csrf
-                            <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-white/5" :title="note.is_pinned ? 'Rimuovi evidenza' : 'Fissa in alto'">
-                                <svg class="w-4 h-4" :class="note.is_pinned ? 'text-amber-400 fill-amber-400/20' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                            <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-white/5">
+                                <span class="inline-flex items-center gap-2">
+                                    <x-app-icon name="bookmark" class="w-4 h-4" ::class="note.is_pinned ? 'text-amber-400 fill-amber-400/20' : ''" />
+                                    <span class="icon-label-mobile" :data-tooltip="note.is_pinned ? 'Rimuovi evidenza' : 'Fissa in alto'" x-text="note.is_pinned ? 'Rimuovi evidenza' : 'Fissa in alto'"></span>
+                                </span>
                             </button>
                         </form>
-                        <button @click="editingNote = { ...note }; editModalOpen = true" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5" title="Modifica Nota">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        <button @click="editingNote = { ...note }; editModalOpen = true" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5">
+                            <x-icon-label icon="pencil" label="Modifica Nota" />
                         </button>
                         <form method="POST" :action="`/campaigns/${campaignId}/notes/${note.id}`" onsubmit="return confirm('Spostare questa nota nel cestino?')" class="inline">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10" title="Elimina">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10">
+                                <x-icon-label icon="trash-2" label="Elimina" />
                             </button>
                         </form>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 text-[11px] text-slate-400 mb-3 pb-2 border-b border-white/[0.05]">
                     <span class="flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <x-app-icon name="calendar-days" class="w-3.5 h-3.5 text-slate-500" />
                         <span x-text="note.session_date_label"></span>
                     </span>
                     <span>•</span>
                     <span class="flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7-7z"/></svg>
+                        <x-app-icon name="user-round" class="w-3.5 h-3.5 text-slate-500" />
                         <span x-text="note.author_name"></span>
                     </span>
                 </div>
@@ -175,7 +180,7 @@ x-data="{
     <div x-show="editModalOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" x-cloak>
         <div @click.away="editModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-lg w-full relative">
             <button @click="editModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <x-app-icon name="x" class="w-5 h-5" />
             </button>
             <h3 class="font-['Cinzel'] text-lg font-bold text-white mb-4">Modifica Nota di Sessione</h3>
             <form :action="`/campaigns/${campaignId}/notes/${editingNote.id}`" method="POST" class="space-y-3" x-data="{ lastSaved: '' }" @submit="lastSaved = 'Salvataggio...'">
@@ -200,8 +205,8 @@ x-data="{
                     </label>
                     <div class="flex items-center gap-2">
                         <span class="text-xs text-slate-400" x-text="lastSaved"></span>
-                        <button type="button" @click="editModalOpen = false" class="btn-secondary text-xs py-2 px-3">Annulla</button>
-                        <button type="submit" class="btn-primary text-xs py-2 px-4">Aggiorna Nota</button>
+                        <button type="button" @click="editModalOpen = false" class="btn-secondary text-xs py-2 px-3"><x-icon-label icon="x" label="Annulla" /></button>
+                        <button type="submit" class="btn-primary text-xs py-2 px-4"><x-icon-label icon="check" label="Aggiorna Nota" /></button>
                     </div>
                 </div>
             </form>
