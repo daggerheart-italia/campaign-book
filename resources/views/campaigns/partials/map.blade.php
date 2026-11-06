@@ -30,7 +30,7 @@
     mapChunkSize: {{ \App\Http\Controllers\CampaignMapController::MAX_CHUNK_BYTES }},
     mapMaxBytes: {{ \App\Http\Controllers\CampaignMapController::MAX_IMAGE_BYTES }},
     csrfToken: '{{ csrf_token() }}'
-})" class="space-y-4">
+})" class="space-y-4" data-parent-page-select>
 
     <!-- Top Map Selector & Upload Actions -->
     <div class="glass-panel p-3.5 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
@@ -209,7 +209,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             <template x-for="(pin, pinIndex) in currentPins" :key="pin.id">
                 <div class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] p-2.5 rounded-lg flex items-center justify-between gap-2 transition-colors">
-                    <button @click="openPinPopover(pin)" class="flex items-center gap-2.5 text-left flex-1 min-w-0">
+                    <button @click="openPinPopover(pin)" class="flex min-h-11 items-center gap-2.5 text-left flex-1 min-w-0">
                         <span class="w-5 h-5 rounded-full shrink-0 shadow-sm flex items-center justify-center text-[10px] font-bold text-white" :style="'background-color: ' + pin.color" x-text="pinIndex + 1"></span>
                         <div class="truncate">
                             <div class="text-xs font-semibold text-slate-200 truncate" x-text="pin.title"></div>
@@ -219,19 +219,19 @@
 
                     <div class="flex items-center gap-1 shrink-0">
                         <template x-if="pin.wiki_page_url">
-                            <a :href="pin.wiki_page_url" class="p-1 text-amber-400 hover:text-amber-300">
+                            <a :href="pin.wiki_page_url" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-amber-400 hover:text-amber-300">
                                 <x-icon-label icon="book-open" label="Apri Scheda Wiki" icon-class="w-3.5 h-3.5" />
                             </a>
                         </template>
 
                         <template x-if="!pin.wiki_page_url">
                             <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + pin.id + '&title=' + encodeURIComponent(pin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
-                               class="p-1 text-emerald-400 hover:text-emerald-300">
+                               class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-emerald-400 hover:text-emerald-300">
                                 <x-icon-label icon="plus" label="Crea Scheda Wiki" icon-class="w-3.5 h-3.5" />
                             </a>
                         </template>
 
-                        <button @click="deletePin(pin)" class="p-1 text-slate-500 hover:text-rose-400">
+                        <button @click="deletePin(pin)" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-slate-500 hover:text-rose-400">
                             <x-icon-label icon="trash-2" label="Elimina Segnaposto" icon-class="w-3.5 h-3.5" />
                         </button>
                     </div>
@@ -240,72 +240,53 @@
         </div>
     </div>
 
-    <!-- Create Pin Modal -->
-    <div x-show="createModalOpen" 
+    <!-- Pin Modal -->
+    <div x-show="modalOpen"
          x-transition
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
          x-cloak>
-        <div @click.away="createModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
-            <button @click="createModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+        <div @click.away="modalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto relative">
+            <button type="button" @click="modalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi segnaposto">
                 <x-app-icon name="x" class="w-5 h-5" />
             </button>
 
-            <h3 class="font-['Cinzel'] text-lg font-bold text-white mb-1">Nuovo Punto sulla Mappa</h3>
-            <p class="text-xs text-slate-400 mb-4" x-text="'Posizione: X ' + newPinCoords.x.toFixed(1) + '% • Y ' + newPinCoords.y.toFixed(1) + '%'"></p>
-
-            <form @submit.prevent="saveNewPin" class="space-y-3">
+            <template x-if="modalMode === 'create' || modalMode === 'edit'">
+            <form @submit.prevent="modalMode === 'create' ? saveNewPin() : savePinDetails()" class="space-y-3">
+                <h3 class="font-['Cinzel'] text-lg font-bold text-white mb-1" x-text="modalMode === 'create' ? 'Nuovo Punto sulla Mappa' : 'Modifica segnaposto'"></h3>
+                <p x-show="modalMode === 'create'" class="text-xs text-slate-400 mb-4" x-text="'Posizione: X ' + newPinCoords.x.toFixed(1) + '% • Y ' + newPinCoords.y.toFixed(1) + '%'"></p>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nome del Luogo o Etichetta *</label>
-                    <input type="text" x-model="newPinForm.title" required autofocus class="input-premium text-sm font-semibold" placeholder="es. Cittadella delle Ossa, Locanda del Lupo" />
+                    <input type="text" x-model="pinForm.title" required maxlength="255" class="input-premium text-sm font-semibold" placeholder="es. Cittadella delle Ossa, Locanda del Lupo" />
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Descrizione / Note rapide</label>
-                    <textarea x-model="newPinForm.description" rows="2" class="input-premium text-xs" placeholder="Chi vive qui? Quali indizi o pericoli attendono gli avventurieri?"></textarea>
+                    <textarea x-model="pinForm.description" rows="2" class="input-premium text-xs" placeholder="Chi vive qui? Quali indizi o pericoli attendono gli avventurieri?"></textarea>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Colore Segnaposto</label>
-                        <select x-model="newPinForm.color" class="input-premium text-xs">
-                            <option value="#e11d48">Rosso Cremisi</option>
-                            <option value="#f59e0b">Oro / Ambra</option>
-                            <option value="#10b981">Smeraldo</option>
-                            <option value="#06b6d4">Azzurro Arcano</option>
-                            <option value="#8b5cf6">Viola Mistico</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Collega a Scheda Wiki</label>
-                        <select x-model="newPinForm.wiki_page_id" class="input-premium text-xs">
-                            <option value="">Nessun collegamento</option>
-                            @foreach($campaign->wikiPages as $wp)
-                                <option value="{{ $wp->id }}">{{ $wp->title }} ({{ $wp->category }})</option>
-                            @endforeach
-                        </select>
+                <div>
+                    <span class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Colore Segnaposto</span>
+                    <div class="flex items-center gap-2">
+                        <template x-for="option in pinColors" :key="option.value">
+                            <button type="button" @click="pinForm.color = option.value" :aria-label="option.label"
+                                    :aria-pressed="pinForm.color === option.value" class="h-8 w-8 rounded-full border-2"
+                                    :class="pinForm.color === option.value ? 'border-white' : 'border-transparent'"
+                                    :style="'background-color: ' + option.value"></button>
+                        </template>
                     </div>
                 </div>
+                <x-parent-page-select :parent-pages="$campaign->wikiPages" name="pin_form_wiki_page_id"
+                    label="Collega a Scheda Wiki" modelable="pinForm.wiki_page_id" />
+                <p x-show="mapError" x-text="mapError" role="alert" class="text-xs text-rose-300"></p>
 
                 <div class="flex items-center justify-end gap-2 pt-3">
-                    <button type="button" @click="createModalOpen = false" class="btn-secondary text-xs py-2 px-3"><x-icon-label icon="x" label="Annulla" /></button>
-                    <button type="submit" class="btn-primary text-xs py-2 px-4"><x-icon-label icon="check" label="Salva segnaposto" /></button>
+                    <button type="button" @click="modalMode === 'create' ? modalOpen = false : modalMode = 'view'" class="btn-secondary text-xs py-2 px-3"><x-icon-label icon="x" label="Annulla" /></button>
+                    <button type="submit" :disabled="savingPinDetails || !pinForm.title.trim()" class="btn-primary text-xs py-2 px-4 disabled:opacity-50"><x-icon-label icon="check" label="Salva segnaposto" /></button>
                 </div>
             </form>
-        </div>
-    </div>
+            </template>
 
-    <!-- Pin Details Popover / Modal with DIRECT WIKI CREATION -->
-    <div x-show="detailsModalOpen" 
-         x-transition
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         x-cloak>
-        <div @click.away="detailsModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
-            <button @click="detailsModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi dettagli segnaposto">
-                <x-app-icon name="x" class="w-5 h-5" />
-            </button>
-
-            <template x-if="!editingPin">
+            <template x-if="modalMode === 'view'">
                 <div>
                     <div class="flex items-center gap-2.5 mb-2 pr-8">
                         <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>
@@ -316,39 +297,6 @@
                     </div>
 
                     <p class="text-xs text-slate-300 leading-relaxed mb-4 whitespace-pre-wrap" x-text="selectedPin.description || 'Nessuna descrizione specificata.'"></p>
-                </div>
-            </template>
-
-            <template x-if="editingPin">
-                <form @submit.prevent="savePinDetails()" class="space-y-3 mb-4">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nome *</label>
-                        <input type="text" x-model="pinEditForm.title" required maxlength="255" class="input-premium text-sm font-semibold" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Descrizione</label>
-                        <textarea x-model="pinEditForm.description" rows="4" class="input-premium text-xs"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Scheda Wiki collegata</label>
-                        <select x-model="pinEditForm.wiki_page_id" class="input-premium text-xs">
-                            <option value="">Nessun collegamento</option>
-                            @foreach($campaign->wikiPages as $wp)
-                                <option value="{{ $wp->id }}">{{ $wp->title }} ({{ $wp->category }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="flex items-center justify-end gap-2">
-                        <button type="button" @click="editingPin = false" :disabled="savingPinDetails" class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-50">
-                            <x-icon-label icon="x" label="Annulla" />
-                        </button>
-                        <button type="submit" :disabled="savingPinDetails || !pinEditForm.title.trim()" class="btn-primary text-xs py-1.5 px-3 disabled:opacity-50">
-                            <x-icon-label icon="check" label="Salva" />
-                        </button>
-                    </div>
-                </form>
-            </template>
-
             <div class="space-y-3 pt-3 border-t border-white/10">
                 <!-- If linked to Wiki page -->
                 <template x-if="selectedPin.wiki_page_url">
@@ -374,24 +322,13 @@
                         <!-- Direct button to create wiki page pre-filled from this pin -->
                         <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + selectedPin.id + '&title=' + encodeURIComponent(selectedPin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
                            class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
-                            <x-app-icon name="plus" class="w-4 h-4" />
                             <x-icon-label icon="plus" label="Crea Pagina Wiki per questo Luogo" />
                         </a>
 
                         <!-- Or link to an existing wiki page -->
-                        <div class="pt-2 border-t border-white/[0.06]" x-data="{ linkWikiId: '' }">
-                            <label class="block text-[11px] text-slate-400 mb-1">Oppure collega a una scheda esistente:</label>
-                            <div class="flex items-center gap-2">
-                                <select x-model="linkWikiId" class="input-premium text-xs py-1.5">
-                                    <option value="">Seleziona pagina wiki...</option>
-                                    @foreach($campaign->wikiPages as $wp)
-                                        <option value="{{ $wp->id }}">{{ $wp->title }} ({{ $wp->category }})</option>
-                                    @endforeach
-                                </select>
-                                <button type="button" @click="linkPinToWiki(selectedPin, linkWikiId)" :disabled="!linkWikiId" class="btn-secondary text-xs py-1.5 px-3 shrink-0 disabled:opacity-50">
-                                    <x-icon-label icon="link" label="Collega" />
-                                </button>
-                            </div>
+                        <div class="pt-2 border-t border-white/[0.06]">
+                            <x-parent-page-select :parent-pages="$campaign->wikiPages" name="pin_link_wiki_page_id"
+                                label="Collega a una scheda esistente" modelable="linkWikiId" />
                         </div>
                     </div>
                 </template>
@@ -422,6 +359,8 @@
                     </button>
                 </div>
             </div>
+                </div>
+            </template>
         </div>
     </div>
 
@@ -496,8 +435,6 @@ function customImageMap(config) {
         savingPinLock: false,
         modalOpen: false,
         modalMode: 'view',
-        createModalOpen: false,
-        detailsModalOpen: false,
         pinForm: { title: '', description: '', color: '#e11d48', wiki_page_id: '' },
         linkWikiId: '',
         uploadModalOpen: false,
@@ -506,12 +443,6 @@ function customImageMap(config) {
         uploadError: '',
         selectedPin: {},
         newPinCoords: { x: 50, y: 50 },
-        newPinForm: {
-            title: '',
-            description: '',
-            color: '#e11d48',
-            wiki_page_id: ''
-        },
         draggingPin: null,
         isDragging: false,
         dragOrigin: null,
@@ -520,6 +451,11 @@ function customImageMap(config) {
         savingPinIds: new Set(),
 
         init() {
+            this.$watch('linkWikiId', (wikiId) => {
+                if (wikiId && this.modalOpen && this.modalMode === 'view' && this.selectedPin.id) {
+                    this.linkPinToWiki(this.selectedPin, wikiId);
+                }
+            });
             this.$nextTick(() => {
                 this.mapResizeObserver = new ResizeObserver(() => this.fitMap());
                 this.mapResizeObserver.observe(this.$refs.mapViewport);
@@ -533,8 +469,7 @@ function customImageMap(config) {
                     this.pendingPinChanges = [];
                     const selectedPin = this.pins.find(pin => pin.id === this.selectedPin?.id);
                     if (selectedPin) this.selectedPin = { ...selectedPin };
-                    else if (this.detailsModalOpen) this.detailsModalOpen = false;
-                    if (this.detailsModalOpen) this.modalOpen = false;
+                    else if (this.modalOpen && this.modalMode !== 'create') this.modalOpen = false;
                 },
             });
             window.campaignSyncManager?.registerEntity('map', {
@@ -576,12 +511,12 @@ function customImageMap(config) {
             }
             if (change.deleted) {
                 if (index !== -1) this.pins.splice(index, 1);
-                if (this.selectedPin.id === change.id) this.detailsModalOpen = false;
+                if (this.selectedPin.id === change.id && this.modalMode !== 'create') this.modalOpen = false;
                 return;
             }
             if (index === -1) this.pins.push(change);
             else Object.assign(this.pins[index], change);
-            if (this.selectedPin.id === change.id && !this.editingPin) {
+            if (this.selectedPin.id === change.id && this.modalMode !== 'edit') {
                 this.selectedPin = { ...change };
             }
         },
@@ -833,15 +768,13 @@ function customImageMap(config) {
             const yPercent = Math.max(0, Math.min(100, (clickY / rect.height) * 100));
 
             this.newPinCoords = { x: xPercent, y: yPercent };
-            this.newPinForm = {
+            this.pinForm = {
                 title: '',
                 description: '',
                 color: '#e11d48',
                 wiki_page_id: ''
             };
-            this.createModalOpen = true;
-            this.modalOpen = true;
-            this.modalMode = 'create';
+            this.openCreateModal();
         },
 
         startPan(event) {
@@ -881,15 +814,11 @@ function customImageMap(config) {
 
         openPinPopover(pin, event) {
             if (this.isDragging) return;
-            this.selectedPin = pin;
-            this.mapError = '';
-            this.editingPin = false;
-            this.detailsModalOpen = true;
-            this.modalOpen = true;
-            this.modalMode = 'view';
+            this.openPinModal(pin);
         },
 
         openCreateModal() {
+            this.mapError = '';
             this.modalOpen = true;
             this.modalMode = 'create';
         },
@@ -897,28 +826,28 @@ function customImageMap(config) {
         openPinModal(pin) {
             this.selectedPin = pin;
             this.mapError = '';
-            this.editingPin = false;
+            this.linkWikiId = '';
             this.modalOpen = true;
             this.modalMode = 'view';
         },
 
-        editingPin: false,
         savingPinDetails: false,
-        pinEditForm: { title: '', description: '', wiki_page_id: '' },
 
         startPinEdit() {
-            this.pinEditForm = {
+            this.pinForm = {
                 title: this.selectedPin.title,
                 description: this.selectedPin.description ?? '',
+                color: this.selectedPin.color,
                 wiki_page_id: this.selectedPin.wiki_page_id ? String(this.selectedPin.wiki_page_id) : '',
             };
             this.mapError = '';
-            this.editingPin = true;
+            this.modalMode = 'edit';
         },
 
         async savePinDetails() {
             const pin = this.pins.find((item) => item.id === this.selectedPin.id);
             if (!pin) {
+                this.mapError = 'Il segnaposto non è più disponibile.';
                 return;
             }
 
@@ -934,9 +863,10 @@ function customImageMap(config) {
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        title: this.pinEditForm.title.trim(),
-                        description: this.pinEditForm.description.trim() || null,
-                        wiki_page_id: this.pinEditForm.wiki_page_id || null,
+                        title: this.pinForm.title.trim(),
+                        description: this.pinForm.description.trim() || null,
+                        color: this.pinForm.color,
+                        wiki_page_id: this.pinForm.wiki_page_id || null,
                     })
                 });
                 if (!response.ok) {
@@ -946,12 +876,13 @@ function customImageMap(config) {
                 const data = await response.json();
                 pin.title = data.pin.title;
                 pin.description = data.pin.description;
+                pin.color = data.pin.color;
                 pin.wiki_page_id = data.pin.wiki_page_id;
                 pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
                 pin.wiki_page_url = data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page_id}` : null;
                 pin.sync_version = data.pin.sync_version;
                 this.selectedPin = { ...pin };
-                this.editingPin = false;
+                this.modalMode = 'view';
             } catch (error) {
                 this.mapError = error.message;
                 console.error(error);
@@ -1097,15 +1028,17 @@ function customImageMap(config) {
         },
 
         async saveNewPin() {
+            this.savingPinDetails = true;
+            this.mapError = '';
             try {
                 const payload = {
-                    title: this.newPinForm.title,
-                    description: this.newPinForm.description,
+                    title: this.pinForm.title,
+                    description: this.pinForm.description,
                     x: this.newPinCoords.x,
                     y: this.newPinCoords.y,
-                    color: this.newPinForm.color,
+                    color: this.pinForm.color,
                     campaign_map_id: this.activeMapId,
-                    wiki_page_id: this.newPinForm.wiki_page_id || null
+                    wiki_page_id: this.pinForm.wiki_page_id || null
                 };
 
                 const response = await fetch(config.storePinUrl, {
@@ -1118,33 +1051,43 @@ function customImageMap(config) {
                     body: JSON.stringify(payload)
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const newPin = {
-                        id: data.pin.id,
-                        campaign_map_id: data.pin.campaign_map_id,
-                        title: data.pin.title,
-                        description: data.pin.description,
-                        x: parseFloat(data.pin.x),
-                        y: parseFloat(data.pin.y),
-                        color: data.pin.color,
-                        locked: data.pin.locked,
-                        wiki_page_id: data.pin.wiki_page_id,
-                        wiki_page_title: data.pin.wiki_page ? data.pin.wiki_page.title : null,
-                        wiki_page_url: data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page.id}` : null,
-                        sync_version: data.pin.sync_version,
-                    };
-                    this.pins.push(newPin);
-                    this.createModalOpen = false;
+                if (!response.ok) {
+                    throw new Error(`Impossibile creare il segnaposto (${response.status}).`);
                 }
+                const data = await response.json();
+                const newPin = {
+                    id: data.pin.id,
+                    campaign_map_id: data.pin.campaign_map_id,
+                    title: data.pin.title,
+                    description: data.pin.description,
+                    x: parseFloat(data.pin.x),
+                    y: parseFloat(data.pin.y),
+                    color: data.pin.color,
+                    locked: data.pin.locked,
+                    wiki_page_id: data.pin.wiki_page_id,
+                    wiki_page_title: data.pin.wiki_page ? data.pin.wiki_page.title : null,
+                    wiki_page_url: data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page.id}` : null,
+                    sync_version: data.pin.sync_version,
+                };
+                const existing = this.pins.find(pin => pin.id === newPin.id);
+                if (existing) {
+                    Object.assign(existing, newPin);
+                } else {
+                    this.pins.push(newPin);
+                }
+                this.modalOpen = false;
             } catch (err) {
+                this.mapError = err.message;
                 console.error(err);
+            } finally {
+                this.savingPinDetails = false;
             }
         },
 
         async linkPinToWiki(pin, wikiId) {
             if (!wikiId) return;
 
+            this.mapError = '';
             try {
                 const response = await fetch(`${config.updatePinBaseUrl}/${pin.id}`, {
                     method: 'PUT',
@@ -1158,15 +1101,18 @@ function customImageMap(config) {
                     })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    pin.wiki_page_id = parseInt(wikiId);
-                    pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
-                    pin.wiki_page_url = `/campaigns/${config.campaignId}/wiki/${wikiId}`;
-                    pin.sync_version = data.pin.sync_version;
-                    this.selectedPin = { ...pin };
+                if (!response.ok) {
+                    throw new Error(`Impossibile collegare la scheda wiki (${response.status}).`);
                 }
+                const data = await response.json();
+                pin.wiki_page_id = data.pin.wiki_page_id;
+                pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
+                pin.wiki_page_url = `/campaigns/${config.campaignId}/wiki/${wikiId}`;
+                pin.sync_version = data.pin.sync_version;
+                this.selectedPin = { ...pin };
             } catch (err) {
+                this.mapError = err.message;
+                this.linkWikiId = '';
                 console.error(err);
             }
         },
@@ -1185,7 +1131,6 @@ function customImageMap(config) {
 
                 if (response.ok) {
                     this.pins = this.pins.filter(p => p.id !== pin.id);
-                    this.detailsModalOpen = false;
                     this.modalOpen = false;
                 }
             } catch (err) {
@@ -1292,7 +1237,6 @@ function customImageMap(config) {
                 pin.x = originalPosition.x;
                 pin.y = originalPosition.y;
                 this.mapError = error.message;
-                this.detailsModalOpen = true;
                 this.selectedPin = pin;
                 this.modalOpen = true;
                 this.modalMode = 'view';

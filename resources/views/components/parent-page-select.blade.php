@@ -11,20 +11,22 @@
 @endphp
 
 <div x-data="parentPageSelect({{ json_encode(['options' => $options, 'selected' => (string) $initialSelected]) }})"
+     @if($modelable) x-model="{{ $modelable }}" x-modelable="selected" @endif
      @click.outside="closeDropdown()"
      @keydown.escape.window="closeDropdown()"
      class="relative">
 
-    <label for="{{ $id }}" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">{{ $label }}</label>
+    <label for="{{ $id }}_search" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">{{ $label }}</label>
 
     <div class="relative">
         <input type="text"
+               id="{{ $id }}_search"
                x-model="query"
                @input="onInput()"
                @keydown="onKeyDown($event)"
                @focus="openDropdown()"
                placeholder="Cerca scheda…"
-               class="input-premium text-sm w-full"
+               class="input-premium text-sm w-full !pr-16"
                autocomplete="off"
                aria-autocomplete="list"
                aria-controls="{{ $id }}_listbox"
@@ -33,6 +35,11 @@
                x-bind:aria-owns="open ? '{{ $id }}_listbox' : null"
                x-bind:aria-activedescendant="open && highlight >= 0 ? '{{ $id }}_option_' + highlight : null" />
 
+        <button type="button" x-show="selected !== ''" @click="clear()"
+                class="absolute right-9 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-amber-400"
+                aria-label="Rimuovi selezione" x-cloak>
+            <x-app-icon name="x" class="w-4 h-4" />
+        </button>
         <button type="button"
                 @click="toggleDropdown()"
                 class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-amber-400 transition-colors"
@@ -45,7 +52,6 @@
                name="{{ $name }}"
                id="{{ $id }}"
                x-model="selected"
-               @if($modelable) x-modelable="{{ $modelable }}" @endif
                value="{{ $initialSelected }}"
                class="sr-only" />
     </div>
@@ -58,10 +64,10 @@
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
          @click.stop="closeDropdown()"
-         class="absolute z-50 mt-1 w-full min-w-[16rem] max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-[#0b1120] shadow-2xl shadow-black/50"
+         class="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-[#0b1120] shadow-2xl shadow-black/50"
          id="{{ $id }}_listbox"
          role="listbox"
-         ref="list"
+         x-ref="list"
          x-cloak>
 
         <template x-if="!hasResults">

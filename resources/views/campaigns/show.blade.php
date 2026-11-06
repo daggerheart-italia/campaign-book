@@ -101,21 +101,21 @@
 
         <button @click="setTab('map')" 
                 :class="tab === 'map' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'"
-                class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
+                class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
             <x-icon-label icon="map" label="Mappa" />
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="stats.maps_count"></span>
         </button>
 
         <button @click="setTab('notes')" 
                 :class="tab === 'notes' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'"
-                class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
+                class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
             <x-icon-label icon="pencil" label="Note" />
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="stats.notes_count"></span>
         </button>
 
         <button @click="setTab('members')" 
                 :class="tab === 'members' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'"
-                class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
+                class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0">
             <x-icon-label icon="users" label="Membri" />
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300" x-text="stats.users_count"></span>
         </button>
@@ -123,7 +123,7 @@
         @if($isGm)
             <button @click="setTab('trash')" 
                     :class="tab === 'trash' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5 border-transparent'"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0 ml-auto">
+                    class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all border shrink-0 ml-auto">
                 <x-icon-label icon="trash-2" label="Cestino &amp; Revisioni" />
                 @php $totalTrashed = $trashedWikiPages->count() + $trashedMapPins->count() + $trashedSessionNotes->count(); @endphp
                 @if($totalTrashed > 0)

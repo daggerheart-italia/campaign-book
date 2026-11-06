@@ -61,7 +61,7 @@ Apply the same icon-only pattern already used for the markdown editor toolbar to
 
 - `vendor/bin/sail npm run build` compiles without errors.
 - `vendor/bin/sail bin pint --dirty --format agent` on touched PHP files (none expected).
-- **PHPUnit suite must stay green:** `vendor/bin/sail artisan test` (alias `vendor/bin/sail composer run test`). This runs `tests/Unit`, `tests/Feature`, and `tests/Browser` via Pest — including `tests/Browser/AllRoutesSmokeTest.php` which visits `/campaigns/{id}/pins` and `/campaigns/{id}/maps/{map}/print`, so any structural change to the map partial is caught here. Re-run after every change to the map partial or Alpine data model.
+- **PHPUnit suite must stay green:** `vendor/bin/sail artisan test` (alias `vendor/bin/sail composer run test`). Browser tests are run separately with Pest; `tests/Browser/AllRoutesSmokeTest.php` visits `/campaigns/{id}/pins` and `/campaigns/{id}/maps/{map}/print`.
 - Browser tests: `./scripts/browser-procs.sh --kill && ./vendor/bin/sail pest tests/Browser/` — run on desktop (default) and mobile devices (`Device::IPHONE_SE`, `Device::IPHONE_15`, `Device::MOBILE`) with `screenshot()` captures into `tests/Browser/Screenshots/` for visual regression review.
 - Manual check at 320px, 375px, 768px, 1024px on: campaign tabs, map tab, wiki edit modal, wiki show page, pin create/details modals.
 
@@ -70,7 +70,7 @@ Apply the same icon-only pattern already used for the markdown editor toolbar to
 ### Polish (approach A)
 - [x] Normalize campaign tab bar (show.blade.php)
 - [x] Map controls stackable + roster 1-col on <sm
-- [ ] Markdown editor toolbar icon-only on `<sm`
+- [x] Markdown editor toolbar icon-only on `<sm`
 - [x] Wiki show actions icon-only + scrollable
 
 ### Unified pin modal (approach B)
@@ -79,12 +79,12 @@ Apply the same icon-only pattern already used for the markdown editor toolbar to
 - [x] Update `handleMapInsert` to open create modal via helper
 - [x] Update `openPinPopover` to open view modal via helper
 - [x] Update `applyPinChange`/`deletePin` to use `modalOpen`/`modalMode`
-- [ ] 1. Replace create modal markup with unified `x-if` sub-states (Crea)
-- [ ] 2. Replace details modal markup with unified view/edit sub-states (Visualizza/Modifica)
-- [ ] 3. Wire `parentPageSelect` in create mode (`newPinForm.wiki_page_id`)
-- [ ] 4. Wire `parentPageSelect` in edit mode (`pinEditForm.wiki_page_id`)
-- [ ] 5. Wire `parentPageSelect` in view mode + `linkWikiId` watcher -> `linkPinToWiki`
-- [ ] 6. Add `color` to `savePinDetails` PUT body
-- [ ] 7. Run build + pint + artisan test
+- [x] 1. Replace create modal markup with unified `x-if` sub-states (Crea)
+- [x] 2. Replace details modal markup with unified view/edit sub-states (Visualizza/Modifica)
+- [x] 3. Wire `parentPageSelect` in create mode (`pinForm.wiki_page_id`)
+- [x] 4. Wire `parentPageSelect` in edit mode (`pinForm.wiki_page_id`)
+- [x] 5. Wire `parentPageSelect` in view mode + `linkWikiId` watcher -> `linkPinToWiki`
+- [x] 6. Add `color` to `savePinDetails` PUT body
+- [x] 7. Run build + pint + artisan test
 
 - No restructuring into bottom sheets, no new JS dependencies, no backend changes.

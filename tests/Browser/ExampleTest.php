@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Campaign;
+use App\Models\MapPin;
 use App\Models\User;
+use App\Models\WikiPage;
 
 it('permette il login contemporaneo di due utenti su browser separati', function () {
     $alice = User::factory()->create(['name' => 'Alice']);
@@ -112,4 +114,59 @@ it('una pagina wiki creata da un utente appare nellaltro browser tramite sync de
         ->press('Salva Scheda Wiki');
 
     $browserB->waitForText('Pagina Sincronizzata Vista Non Filtrata', 15)->assertSee('Contenuto della pagina sincronizzata nella vista non filtrata');
+});
+
+it('crea modifica e collega un segnaposto dalla modale mappa', function () {
+    $user = User::factory()->create();
+    $campaign = Campaign::factory()->create(['owner_id' => $user->id]);
+    $campaign->users()->attach($user->id, ['role' => 'gm']);
+    $wiki = WikiPage::factory()->create([
+        'campaign_id' => $campaign->id,
+        'title' => 'Torre segreta',
+        'category' => 'Luoghi',
+        'created_by' => $user->id,
+        'updated_by' => $user->id,
+    ]);
+
+    $browser = visit('/login')
+        ->type('email', $user->email)
+        ->type('password', 'password')
+        ->press('Entra nella Campagna')
+        ->navigate("/campaigns/{$campaign->id}?tab=map")
+        ->assertSee('Mappa Predefinita')
+        ->assertNoJavascriptErrors();
+
+    $browser->script('() => { const image = document.querySelector("[x-ref=mapImage]"); const rect = image.getBoundingClientRect(); image.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 })); }');
+    $browser->assertSee('Nuovo Punto sulla Mappa')
+        ->type('input[x-model="pinForm.title"]', 'Pin della torre')
+        ->click('button[aria-label="Oro / Ambra"]')
+        ->type('#pin_form_wiki_page_id_search', 'Torre segreta')
+        ->click('#pin_form_wiki_page_id_option_0')
+        ->press('Salva segnaposto')
+        ->assertSee('Pin della torre');
+
+    $pin = MapPin::where('title', 'Pin della torre')->firstOrFail();
+    expect($pin->color)->toBe('#f59e0b')
+        ->and($pin->wiki_page_id)->toBe($wiki->id);
+
+    $browser->click('button[\\@click="openPinPopover(pin)"]')
+        ->assertSee('Leggi scheda Wiki')
+        ->click('Modifica nome e descrizione')
+        ->type('input[x-model="pinForm.title"]', 'Pin modificato')
+        ->click('button[aria-label="Smeraldo"]')
+        ->click('button[aria-label="Rimuovi selezione"]')
+        ->press('Salva segnaposto')
+        ->assertSee('Nessuna scheda wiki collegata');
+
+    $pin->refresh();
+    expect($pin->title)->toBe('Pin modificato')
+        ->and($pin->color)->toBe('#10b981')
+        ->and($pin->wiki_page_id)->toBeNull();
+
+    $browser->type('#pin_link_wiki_page_id_search', 'Torre segreta')
+        ->click('#pin_link_wiki_page_id_option_0')
+        ->assertSee('Leggi scheda Wiki')
+        ->assertNoJavascriptErrors();
+
+    expect($pin->fresh()->wiki_page_id)->toBe($wiki->id);
 });

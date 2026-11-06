@@ -9,7 +9,7 @@ if (document.querySelector('[x-data*="markdownEditor("]')) {
     registerMarkdownEditor(Alpine);
 }
 
-if (document.querySelector('[x-data*="parentPageSelect("]')) {
+if (document.querySelector('[x-data*="parentPageSelect("], [data-parent-page-select]')) {
     const { registerParentPageSelect } = await import('./parent-page-select');
     registerParentPageSelect(Alpine);
 }
