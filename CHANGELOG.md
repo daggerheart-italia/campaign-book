@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.16] - 2026-11-06
+
+- feat(config): make route throttle limits configurable (7fc20b0)
+- fix(ui): correct keydown handler name and restore query on close (5b0823f)
+- chore(changelog): add entries for version 0.1.15 (96c121f)
+
 ## [0.1.15] - 2026-11-04
 
 - refactor(campaign): improve markdown excerpt stripping (4332849)
