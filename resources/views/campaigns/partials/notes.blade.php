@@ -98,7 +98,7 @@ x-data="{
                         </label>
                         <span class="text-xs text-slate-400" x-text="autosaveStatus"></span>
                     
-                    <button type="submit" class="btn-primary text-xs py-2 px-4"><x-icon-label icon="check" label="Salva Nota" /></button>
+                    <button type="submit" class="btn-primary text-xs py-2 px-4"><x-icon-label icon="check" label="Salva Nota" showOnMobile="true" /></button>
                 </div>
             </form>
         </div>

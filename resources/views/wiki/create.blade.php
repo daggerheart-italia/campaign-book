@@ -14,7 +14,7 @@
     </div>
 
     <div class="glass-panel p-5 sm:p-8 rounded-2xl">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.08]">
+        <div class="flex flex-row items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.08]">
             <div>
                 <h1 class="font-['Cinzel'] text-xl sm:text-2xl font-bold text-white">Nuova Scheda Wiki</h1>
                 <p class="text-xs text-slate-400 mt-1">Descrivi un personaggio, luogo, fazione o segreto per la campagna.</p>
