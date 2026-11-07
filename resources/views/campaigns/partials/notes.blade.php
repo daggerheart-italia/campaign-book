@@ -91,14 +91,13 @@ x-data="{
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Contenuto *</label>
                     <x-markdown-editor :campaign="$campaign" min-height="8rem" placeholder="Cosa è accaduto? Digita [[ per collegare una pagina della wiki." x-model="content" @input="scheduleSave()" />
                 </div>
-                <div class="flex items-center justify-between pt-1">
-                    <div class="flex items-center gap-3">
+                <div class="flex items-center flex-wrap justify-between pt-1 gap-3">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" name="is_pinned" value="1" class="w-4 h-4 rounded bg-slate-900 border-white/20 text-amber-500 focus:ring-amber-500/20" x-model="isPinned" @change="scheduleSave()">
-                            <span class="text-xs text-slate-300">Fissa in evidenza in cima</span>
+                            <span class="text-xs text-slate-300">Fissa in evidenza</span>
                         </label>
                         <span class="text-xs text-slate-400" x-text="autosaveStatus"></span>
-                    </div>
+                    
                     <button type="submit" class="btn-primary text-xs py-2 px-4"><x-icon-label icon="check" label="Salva Nota" /></button>
                 </div>
             </form>
