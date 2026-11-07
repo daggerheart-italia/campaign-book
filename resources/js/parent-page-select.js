@@ -112,11 +112,13 @@ export function registerParentPageSelect(Alpine) {
                         this.openDropdown();
                     }
                     break;
-            case 'Escape':
-                event.preventDefault();
-                event.stopPropagation();
-                this.closeDropdown();
-                break;
+                case 'Escape':
+                    if (this.open) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        this.closeDropdown();
+                    }
+                    break;
                 case 'Tab':
                     this.closeDropdown();
                     break;

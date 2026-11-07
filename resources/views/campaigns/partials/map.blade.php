@@ -236,27 +236,31 @@
     </div>
 
     <!-- Pin Modal -->
-    <div x-show="modalOpen"
-         x-transition
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         x-cloak>
-        <div @click.away="modalOpen = false" class="glass-panel p-4 sm:p-6 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain relative">
-            <button type="button" @click="modalOpen = false" class="absolute top-4 right-4 min-h-11 min-w-11 flex items-center justify-center text-slate-400 hover:text-white" aria-label="Chiudi segnaposto">
-                <x-app-icon name="x" class="w-5 h-5" />
-            </button>
+    <template x-teleport="body">
+    <dialog x-ref="pinDialog" @cancel.prevent="modalOpen = false" @keydown.escape.stop.prevent="modalOpen = false" @click.self="modalOpen = false"
+            aria-labelledby="pin-dialog-title"
+            class="pin-dialog fixed inset-0 m-auto h-dvh max-h-dvh w-full max-w-none overflow-hidden border border-white/10 bg-[#121826] text-slate-200 shadow-2xl sm:h-auto sm:max-h-[90dvh] sm:max-w-md sm:rounded-2xl">
+        <div class="flex h-full max-h-dvh flex-col sm:max-h-[90dvh]">
+            <div class="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 sm:px-6 sm:pt-4">
+                <h3 id="pin-dialog-title" class="min-w-0 break-words font-['Cinzel'] text-lg font-bold text-white"
+                    x-text="modalMode === 'create' ? 'Nuovo Punto sulla Mappa' : (modalMode === 'edit' ? 'Modifica segnaposto' : selectedPin.title)"></h3>
+                <button type="button" @click="modalOpen = false" class="flex min-h-11 min-w-11 shrink-0 items-center justify-center text-slate-400 hover:text-white" aria-label="Chiudi segnaposto" aria-label-hidden="true">
+                    <x-app-icon name="x" class="w-5 h-5" />
+                </button>
+            </div>
 
+            <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">
             <template x-if="modalMode === 'create' || modalMode === 'edit'">
-            <form @submit.prevent="modalMode === 'create' ? saveNewPin() : savePinDetails()" class="space-y-4 pr-8">
-                <h3 class="font-['Cinzel'] text-lg font-bold text-white mb-1" x-text="modalMode === 'create' ? 'Nuovo Punto sulla Mappa' : 'Modifica segnaposto'"></h3>
+            <form id="pin-dialog-form" @submit.prevent="modalMode === 'create' ? saveNewPin() : savePinDetails()" class="space-y-4">
                 <p x-show="modalMode === 'create'" class="text-xs text-slate-400 mb-4" x-text="'Posizione: X ' + newPinCoords.x.toFixed(1) + '% • Y ' + newPinCoords.y.toFixed(1) + '%'"></p>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nome del Luogo o Etichetta *</label>
-                    <input type="text" x-model="pinForm.title" required maxlength="255" class="input-premium text-sm font-semibold" placeholder="es. Cittadella delle Ossa, Locanda del Lupo" />
+                    <label for="pin-dialog-name" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nome del Luogo o Etichetta *</label>
+                    <input id="pin-dialog-name" type="text" x-model="pinForm.title" required maxlength="255" class="input-premium text-sm font-semibold" placeholder="es. Cittadella delle Ossa, Locanda del Lupo" />
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Descrizione / Note rapide</label>
-                    <textarea x-model="pinForm.description" rows="2" class="input-premium text-xs" placeholder="Chi vive qui? Quali indizi o pericoli attendono gli avventurieri?"></textarea>
+                    <label for="pin-dialog-description" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Descrizione / Note rapide</label>
+                    <textarea id="pin-dialog-description" x-model="pinForm.description" rows="4" class="input-premium text-xs" placeholder="Chi vive qui? Quali indizi o pericoli attendono gli avventurieri?"></textarea>
                 </div>
 
                 <div>
@@ -264,7 +268,7 @@
                     <div class="flex items-center gap-3 flex-wrap">
                         <template x-for="option in pinColors" :key="option.value">
                             <button type="button" @click="pinForm.color = option.value" :aria-label="option.label"
-                                    :aria-pressed="pinForm.color === option.value" class="h-11 w-11 rounded-full border-2 transition-transform hover:scale-110"
+                                    :aria-pressed="pinForm.color === option.value" class="h-6 w-6 rounded-full border-2 transition-transform hover:scale-110"
                                     :class="pinForm.color === option.value ? 'border-white scale-110' : 'border-transparent'"
                                     :style="'background-color: ' + option.value"></button>
                         </template>
@@ -274,18 +278,14 @@
                     label="Collega a Scheda Wiki" modelable="pinForm.wiki_page_id" />
                 <p x-show="mapError" x-text="mapError" role="alert" class="text-xs text-rose-300"></p>
 
-                <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 pt-3 border-t border-white/10">
-                    <button type="button" @click="modalMode === 'create' ? modalOpen = false : modalMode = 'view'" class="btn-secondary text-xs min-h-11 px-3 w-full sm:w-auto"><x-icon-label icon="x" label="Annulla" /></button>
-                    <button type="submit" :disabled="savingPinDetails || !pinForm.title.trim()" class="btn-primary text-xs min-h-11 px-4 w-full sm:w-auto disabled:opacity-50"><x-icon-label icon="check" label="Salva segnaposto" /></button>
-                </div>
             </form>
             </template>
 
             <template x-if="modalMode === 'view'">
-                <div class="pr-8">
+                <div>
                     <div class="flex items-center gap-2.5 mb-2">
                         <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>
-                        <h3 class="font-['Cinzel'] text-xl font-bold text-white min-w-0 break-words flex-1" x-text="selectedPin.title"></h3>
+                        <span class="min-w-0 break-words flex-1 text-sm font-semibold text-slate-200" x-text="selectedPin.title"></span>
                         <button type="button" @click="startPinEdit()" class="shrink-0 min-h-11 min-w-11 flex items-center justify-center text-slate-400 hover:text-amber-300">
                             <x-icon-label icon="pencil" label="Modifica nome e descrizione" />
                         </button>
@@ -317,7 +317,7 @@
                         <!-- Direct button to create wiki page pre-filled from this pin -->
                         <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + selectedPin.id + '&title=' + encodeURIComponent(selectedPin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
                            class="btn-primary w-full text-xs min-h-11 justify-center shadow-lg">
-                            <x-icon-label icon="plus" label="Crea Pagina Wiki per questo Luogo" />
+                            <x-icon-label icon="plus" label="Crea Pagina Wiki" showOnMobile="true"/>
                         </a>
 
                         <!-- Or link to an existing wiki page -->
@@ -334,7 +334,7 @@
                         <template x-for="option in pinColors" :key="option.value">
                             <button type="button" @click="changePinColor(option.value)" :disabled="savingPinColor"
                                     :title="option.label" :aria-label="option.label"
-                                    class="h-8 w-8 rounded-full border-2 transition disabled:opacity-50 hover:scale-110"
+                                    class="h-6 w-6 rounded-full border-2 transition disabled:opacity-50 hover:scale-110"
                                     :class="selectedPin.color === option.value ? 'border-white scale-110' : 'border-transparent hover:border-white/50'"
                                     :style="'background-color: ' + option.value"></button>
                         </template>
@@ -356,8 +356,16 @@
             </div>
                 </div>
             </template>
+            </div>
+            <template x-if="modalMode === 'create' || modalMode === 'edit'">
+                <div class="flex shrink-0 flex-col-reverse gap-2 border-t border-white/10 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6">
+                    <button type="button" @click="modalMode === 'create' ? modalOpen = false : modalMode = 'view'" class="btn-secondary min-h-11 w-full px-3 text-xs sm:w-auto"><x-icon-label icon="x" label="Annulla" :show-on-mobile="true" /></button>
+                    <button type="submit" form="pin-dialog-form" :disabled="savingPinDetails || !pinForm.title.trim()" class="btn-primary min-h-11 w-full px-4 text-xs disabled:opacity-50 sm:w-auto"><x-icon-label icon="check" label="Salva segnaposto" :show-on-mobile="true" /></button>
+                </div>
+            </template>
         </div>
-    </div>
+    </dialog>
+    </template>
 
     <!-- Upload Custom Map Modal -->
     <div x-show="uploadModalOpen" 
@@ -410,6 +418,8 @@
 
 <script>
 function customImageMap(config) {
+    let scrollLock = null;
+
     return {
         campaignId: config.campaignId,
         activeMapId: config.activeMapId,
@@ -446,6 +456,43 @@ function customImageMap(config) {
         savingPinIds: new Set(),
 
         init() {
+            this.$watch('modalOpen', (isOpen) => {
+                if (isOpen) {
+                    const body = document.body;
+                    scrollLock = {
+                        scrollY: window.scrollY,
+                        position: body.style.position,
+                        top: body.style.top,
+                        left: body.style.left,
+                        right: body.style.right,
+                        width: body.style.width,
+                    };
+                    body.style.position = 'fixed';
+                    body.style.top = `-${scrollLock.scrollY}px`;
+                    body.style.left = '0';
+                    body.style.right = '0';
+                    body.style.width = '100%';
+                    this.$nextTick(() => {
+                        if (this.modalOpen && !this.$refs.pinDialog.open) {
+                            this.$refs.pinDialog.showModal();
+                        }
+                    });
+                } else {
+                    if (this.$refs.pinDialog.open) {
+                        this.$refs.pinDialog.close();
+                    }
+                    if (scrollLock) {
+                        const body = document.body;
+                        body.style.position = scrollLock.position;
+                        body.style.top = scrollLock.top;
+                        body.style.left = scrollLock.left;
+                        body.style.right = scrollLock.right;
+                        body.style.width = scrollLock.width;
+                        window.scrollTo(0, scrollLock.scrollY);
+                        scrollLock = null;
+                    }
+                }
+            });
             this.$watch('linkWikiId', (wikiId) => {
                 if (wikiId && this.modalOpen && this.modalMode === 'view' && this.selectedPin.id) {
                     this.linkPinToWiki(this.selectedPin, wikiId);

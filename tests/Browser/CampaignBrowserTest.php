@@ -170,3 +170,70 @@ it('crea modifica e collega un segnaposto dalla modale mappa', function () {
 
     expect($pin->fresh()->wiki_page_id)->toBe($wiki->id);
 });
+
+it('mantiene la modale del segnaposto scorrevole e ripristina la pagina su mobile', function () {
+    $user = User::factory()->create();
+    $campaign = Campaign::factory()->create(['owner_id' => $user->id]);
+    $campaign->users()->attach($user->id, ['role' => 'gm']);
+    MapPin::factory()->create([
+        'campaign_id' => $campaign->id,
+        'created_by' => $user->id,
+        'title' => 'Luogo mobile',
+    ]);
+    WikiPage::factory()->create([
+        'campaign_id' => $campaign->id,
+        'created_by' => $user->id,
+        'updated_by' => $user->id,
+        'title' => 'Scheda mobile',
+    ]);
+
+    $browser = visit('/login')
+        ->resize(375, 500)
+        ->type('email', $user->email)
+        ->type('password', 'password')
+        ->press('Entra nella Campagna')
+        ->navigate("/campaigns/{$campaign->id}?tab=map")
+        ->assertSee('Luogo mobile');
+
+    $browser->script('() => [...document.querySelectorAll("button")].find(button => button.getAttribute("@click") === "openPinPopover(pin)").scrollIntoView()');
+    $originalScroll = $browser->script('() => window.scrollY');
+    $browser->click('button[\\@click="openPinPopover(pin)"]')
+        ->assertVisible('dialog[open]')
+        ->click('Modifica nome e descrizione')
+        ->assertVisible('#pin-dialog-name');
+
+    $state = $browser->script('() => {
+        const dialog = document.querySelector("dialog[open]");
+        const content = dialog.querySelector(".overflow-y-auto");
+        content.scrollTop = content.scrollHeight;
+        const save = dialog.querySelector("[form=pin-dialog-form]").getBoundingClientRect();
+        return {
+            inBody: dialog.parentElement === document.body,
+            bodyPosition: document.body.style.position,
+            scrollable: content.scrollHeight > content.clientHeight && content.scrollTop > 0,
+            saveVisible: save.top >= 0 && save.bottom <= innerHeight,
+        };
+    }');
+    expect($state)->toMatchArray([
+        'inBody' => true,
+        'bodyPosition' => 'fixed',
+        'scrollable' => true,
+        'saveVisible' => true,
+    ]);
+
+    $browser->type('#pin_form_wiki_page_id_search', 'Scheda mobile')
+        ->assertVisible('#pin_form_wiki_page_id_option_0')
+        ->keys('#pin_form_wiki_page_id_search', 'Escape')
+        ->assertVisible('dialog[open]');
+    expect($browser->attribute('#pin_form_wiki_page_id_search', 'aria-expanded'))->toBe('false');
+
+    $browser->click('button[aria-label="Chiudi segnaposto"]');
+    expect($browser->script('() => ({ scrollY: window.scrollY, position: document.body.style.position })'))
+        ->toMatchArray(['scrollY' => $originalScroll, 'position' => '']);
+
+    $browser->click('button[\\@click="openPinPopover(pin)"]')
+        ->assertVisible('dialog[open]')
+        ->keys('button[aria-label="Chiudi segnaposto"]', 'Escape')
+        ->assertMissing('dialog[open]');
+    $browser->assertNoJavascriptErrors();
+});

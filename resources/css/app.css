@@ -43,6 +43,11 @@ body {
     display: none !important;
 }
 
+.pin-dialog::backdrop {
+    background: rgb(0 0 0 / 70%);
+    backdrop-filter: blur(4px);
+}
+
 .icon-label-mobile {
     position: absolute;
     width: 1px;
