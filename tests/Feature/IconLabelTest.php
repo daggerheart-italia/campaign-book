@@ -19,7 +19,7 @@ class IconLabelTest extends TestCase
         foreach ($cases as [$attributes, $expectedClass]) {
             $html = Blade::render('<x-icon-label icon="search" label="Cerca" '.$attributes.' />');
 
-            $this->assertStringContainsString('class="'.$expectedClass.'" data-tooltip="Cerca">Cerca</span>', $html);
+            $this->assertStringContainsString('class="'.$expectedClass.'">Cerca</span>', $html);
         }
     }
 

@@ -47,7 +47,7 @@
 
                 <!-- Mobile Hamburger Button -->
                 <div class="flex items-center md:hidden gap-2">
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10" :aria-label="mobileMenuOpen ? 'Chiudi menu' : 'Apri menu'" data-hide-mobile-tooltip>
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10" :aria-label="mobileMenuOpen ? 'Chiudi menu' : 'Apri menu'">
                         <x-app-icon name="menu" class="w-6 h-6" x-show="!mobileMenuOpen" />
                         <x-app-icon name="x" class="w-6 h-6" x-show="mobileMenuOpen" x-cloak />
                     </button>

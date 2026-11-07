@@ -60,7 +60,7 @@
                             <span class="inline-flex items-center gap-2">
                                 <x-app-icon name="eye" x-show="!open" />
                                 <x-app-icon name="eye-off" x-show="open" x-cloak />
-                                <span class="icon-label-mobile" :data-tooltip="open ? 'Nascondi Contenuto' : 'Visualizza Contenuto'" x-text="open ? 'Nascondi Contenuto' : 'Visualizza Contenuto'"></span>
+                                <span class="icon-label-mobile" x-text="open ? 'Nascondi Contenuto' : 'Visualizza Contenuto'"></span>
                             </span>
                         </button>
 

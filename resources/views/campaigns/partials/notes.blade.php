@@ -144,7 +144,7 @@ x-data="{
                             <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-white/5">
                                 <span class="inline-flex items-center gap-2">
                                     <x-app-icon name="bookmark" class="w-4 h-4" ::class="note.is_pinned ? 'text-amber-400 fill-amber-400/20' : ''" />
-                                    <span class="icon-label-mobile" :data-tooltip="note.is_pinned ? 'Rimuovi evidenza' : 'Fissa in alto'" x-text="note.is_pinned ? 'Rimuovi evidenza' : 'Fissa in alto'"></span>
+                                    <span class="icon-label-mobile" x-text="note.is_pinned ? 'Rimuovi evidenza' : 'Fissa in alto'"></span>
                                 </span>
                             </button>
                         </form>

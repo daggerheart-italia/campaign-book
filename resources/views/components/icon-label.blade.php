@@ -12,5 +12,5 @@
         'icon-label-mobile' => ! $showOnMobile,
         'icon-label-hide-desktop' => ! $showOnMobile && $hideOnDesktop,
         'sm:sr-only' => $showOnMobile && $hideOnDesktop,
-    ]) data-tooltip="{{ $label }}">{{ $label }}</span>
+    ])>{{ $label }}</span>
 </span>

@@ -10,8 +10,8 @@ Le icone sono fornite da `mallardduck/blade-lucide-icons` e renderizzate lato se
 
 1. Usare il set Lucide per tutte le icone funzionali; evitare nuovi SVG disegnati a mano quando esiste un'icona equivalente.
 2. Usare `<x-app-icon name="search" />` per un'icona singola. Il wrapper centralizza il prefisso `lucide-`, la dimensione predefinita e gli attributi decorativi.
-3. Per azioni con etichetta, usare `<x-icon-label icon="search" label="Cerca" />`. Mostra icona ed etichetta da `sm` in su; sotto `sm` mantiene il testo accessibile e lo presenta come tooltip CSS su focus o hover.
-4. Per controlli costituiti soltanto da un'icona, fornire sempre un nome accessibile (`aria-label` sul link o sul pulsante). Su mobile il nome è usato anche come tooltip CSS; il tooltip non sostituisce il nome accessibile.
+3. Per azioni con etichetta, usare `<x-icon-label icon="search" label="Cerca" />`. Mostra icona ed etichetta da `sm` in su; sotto `sm` mantiene il testo accessibile agli screen reader senza mostrare tooltip automatici.
+4. Per controlli costituiti soltanto da un'icona, fornire sempre un nome accessibile (`aria-label` sul link o sul pulsante). Il nome accessibile non viene mostrato automaticamente come tooltip su mobile.
 5. Mantenere la geometria del set: griglia 24 × 24, stile outline e tratto uniforme. Non modificare singole icone per simulare un altro set.
 6. Usare `16 × 16 px` come dimensione standard per toolbar e azioni; riservare `12–14 px` ai metadati compatti e `20–24 px` agli elementi di maggiore rilievo. Verificare sempre la leggibilità alla dimensione effettiva.
 7. Lasciare che le icone ereditino `currentColor`; applicare il colore al componente o al contenitore con utility semantiche. Non codificare colori direttamente nei tracciati SVG.

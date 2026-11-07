@@ -337,7 +337,7 @@
                     <button type="button" @click="togglePinLock(selectedPin)" :disabled="savingPinLock"
                             class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-amber-300 hover:text-amber-200 disabled:opacity-50">
                         <x-app-icon name="lock-keyhole" class="h-4 w-4" />
-                        <span class="icon-label-mobile" :data-tooltip="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'" x-text="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'"></span>
+                        <span class="icon-label-mobile" x-text="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'"></span>
                     </button>
                     <button type="button" @click="deletePin(selectedPin)" class="shrink-0 whitespace-nowrap text-rose-400 hover:text-rose-300 text-xs">
                         <x-icon-label icon="trash-2" label="Elimina segnaposto" />
@@ -397,7 +397,7 @@
                     <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50"><x-icon-label icon="x" label="Annulla" /></button>
                     <button type="submit" :disabled="uploadingMap" class="btn-primary text-xs py-2 px-4 disabled:opacity-50">
                         <x-app-icon name="image" />
-                        <span class="icon-label-mobile" data-tooltip="Carica mappa" x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
+                        <span class="icon-label-mobile" x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
                     </button>
                 </div>
             </form>

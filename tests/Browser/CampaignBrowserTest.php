@@ -6,6 +6,38 @@ use App\Models\MapPin;
 use App\Models\User;
 use App\Models\WikiPage;
 
+it('non mostra tooltip automatici su mobile e conserva i nomi accessibili', function () {
+    $gm = User::factory()->create();
+    $campaign = Campaign::factory()->create(['owner_id' => $gm->id]);
+    $campaign->users()->attach($gm->id, ['role' => 'gm']);
+
+    $browser = visit('/login')
+        ->resize(375, 700)
+        ->type('email', $gm->email)
+        ->type('password', 'password')
+        ->press('Entra nella Campagna')
+        ->navigate("/campaigns/{$campaign->id}?tab=map")
+        ->click('button[aria-label="Carica mappa"]')
+        ->assertVisible('button[aria-label="Chiudi caricamento mappa"]');
+
+    $result = $browser->script('() => {
+        const button = document.querySelector("button[aria-label=\\"Chiudi caricamento mappa\\"]");
+        button.focus();
+        return { label: button.getAttribute("aria-label"), tooltip: getComputedStyle(button, "::after").content };
+    }');
+    expect($result)->toMatchArray(['label' => 'Chiudi caricamento mappa', 'tooltip' => 'none']);
+
+    $browser->click('button[aria-label="Chiudi caricamento mappa"]');
+    $result = $browser->script('() => {
+        const button = [...document.querySelectorAll("button")].find(el => el.getAttribute("@click") === "zoomOut");
+        button.focus();
+        const label = button.querySelector(".icon-label-mobile");
+        return { label: label.textContent.trim(), tooltip: getComputedStyle(label, "::after").content };
+    }');
+    expect($result)->toMatchArray(['label' => 'Riduci zoom', 'tooltip' => 'none']);
+    $browser->assertNoJavascriptErrors();
+});
+
 it('permette di scegliere la mappa e di gestirla dal menu gm', function () {
     $gm = User::factory()->create();
     $campaign = Campaign::factory()->create(['owner_id' => $gm->id, 'public_slug' => 'mappe-browser']);
