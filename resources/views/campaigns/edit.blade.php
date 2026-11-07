@@ -39,9 +39,11 @@
             </div>
 
             <div class="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3">
-                <a href="{{ route('campaigns.show', $campaign) }}" class="btn-secondary w-full sm:w-auto text-sm order-2 sm:order-1"><x-icon-label icon="x" label="Annulla" /></a>
+                <a href="{{ route('campaigns.show', $campaign) }}" class="btn-secondary w-full sm:w-auto text-sm order-2 sm:order-1">
+                    <x-icon-label icon="x" label="Annulla" showOnMobile="true" />
+                </a>
                 <button type="submit" class="btn-primary w-full sm:w-auto text-sm order-1 sm:order-2">
-                    <x-icon-label icon="check" label="Salva modifiche" />
+                    <x-icon-label icon="check" label="Salva modifiche" showOnMobile="true" />
                 </button>
             </div>
         </form>
@@ -84,7 +86,9 @@
             @endif
 
             <div class="flex justify-end">
-                <button type="submit" class="btn-primary text-sm"><x-icon-label icon="check" label="Salva link" /></button>
+                <button type="submit" class="btn-primary text-sm w-full sm:w-auto">
+                    <x-icon-label icon="check" label="Salva link" showOnMobile="true" />
+                </button>
             </div>
         </form>
     </div>
