@@ -114,6 +114,10 @@ body {
         visibility: visible;
         transform: translate(-50%, 0);
     }
+
+    button[data-hide-mobile-tooltip]::after {
+        content: none;
+    }
 }
 
 /* Glassmorphism card */

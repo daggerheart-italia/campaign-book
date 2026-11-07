@@ -13,7 +13,7 @@
 
         <div class="flex items-center gap-2.5">
             <button @click="joinModalOpen = true" class="btn-secondary text-sm">
-                <x-icon-label icon="user-round-plus" label="Unisciti con Codice" />
+                <x-icon-label icon="user-round-plus" label="Unisciti con Codice" showOnMobile="true" />
             </button>
         </div>
     </div>
@@ -30,10 +30,10 @@
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a href="{{ route('campaigns.create') }}" class="btn-primary w-full sm:w-auto">
-                    <x-icon-label icon="plus" label="Crea la tua prima Campagna" />
+                    <x-icon-label icon="plus" label="Crea la tua prima Campagna" showOnMobile="true" />
                 </a>
                 <button @click="joinModalOpen = true" class="btn-secondary w-full sm:w-auto">
-                    <x-icon-label icon="key-round" label="Inserisci Codice Invito" />
+                    <x-icon-label icon="key-round" label="Inserisci Codice Invito" showOnMobile="true" />
                 </button>
             </div>
         </div>
@@ -89,7 +89,7 @@
                         </div>
 
                         <a href="{{ route('campaigns.show', $campaign) }}" class="btn-primary w-full py-2.5 text-xs font-semibold justify-center">
-                            <x-icon-label icon="book-open" label="Apri Grimorio" />
+                            <x-icon-label icon="book-open" label="Apri Grimorio" showOnMobile="true"/>
                         </a>
                     </div>
                 </div>

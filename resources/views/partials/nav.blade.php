@@ -51,10 +51,7 @@
 
                 <!-- Mobile Hamburger Button -->
                 <div class="flex items-center md:hidden gap-2">
-                    <a href="{{ route('campaigns.create') }}" class="btn-primary !p-2 !rounded-lg text-xs">
-                        <x-icon-label icon="plus" label="Nuova Campagna" />
-                    </a>
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10" :aria-label="mobileMenuOpen ? 'Chiudi menu' : 'Apri menu'">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10" :aria-label="mobileMenuOpen ? 'Chiudi menu' : 'Apri menu'" data-hide-mobile-tooltip>
                         <x-app-icon name="menu" class="w-6 h-6" x-show="!mobileMenuOpen" />
                         <x-app-icon name="x" class="w-6 h-6" x-show="mobileMenuOpen" x-cloak />
                     </button>
@@ -91,10 +88,10 @@
 
             <div class="space-y-1">
                 <a href="{{ route('campaigns.index') }}" @click="mobileMenuOpen = false" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200 hover:bg-white/10">
-                    <x-icon-label icon="archive" label="Tutte le Campagne" />
+                    <x-icon-label icon="archive" label="Tutte le Campagne" showOnMobile="true" />
                 </a>
                 <a href="{{ route('campaigns.create') }}" @click="mobileMenuOpen = false" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-amber-300 hover:bg-amber-500/10">
-                    <x-icon-label icon="plus" label="Crea Nuova Campagna" />
+                    <x-icon-label icon="plus" label="Crea Nuova Campagna" showOnMobile="true" />
                 </a>
             </div>
 
@@ -102,7 +99,7 @@
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-rose-300 hover:bg-rose-500/10">
-                        <x-icon-label icon="log-out" label="Disconnetti" />
+                        <x-icon-label icon="log-out" label="Disconnetti" showOnMobile="true" />
                     </button>
                 </form>
             </div>
