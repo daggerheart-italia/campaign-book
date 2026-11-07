@@ -19,9 +19,11 @@
 }" class="space-y-4">
     <div class="glass-panel p-4 rounded-xl">
         <div class="relative">
-            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <x-app-icon name="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input type="text" x-model="search" @keydown.escape="search = ''" placeholder="Cerca tra le pagine della wiki..." class="input-premium !pl-10 text-xs sm:text-sm py-2">
-            <button x-show="search" @click="search = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs" aria-label="Cancella ricerca">✕</button>
+            <button x-show="search" @click="search = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+                <x-icon-label icon="x" label="Cancella ricerca" />
+            </button>
         </div>
     </div>
 
@@ -58,7 +60,7 @@
                 <div class="flex items-center justify-between gap-2 border-t border-white/[0.08] pt-3 text-xs">
                     <a :href="page.url" class="text-amber-400 hover:text-amber-300 font-semibold inline-flex min-h-11 items-center gap-1">
                         <span>Leggi</span>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <x-app-icon name="chevron-right" class="w-3 h-3" />
                     </a>
                     <span x-show="page.children_count > 0" class="text-slate-400" x-text="`Sottopagine (${page.children_count})`"></span>
                 </div>

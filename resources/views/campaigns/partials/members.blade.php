@@ -10,7 +10,7 @@
 
     <!-- Notification when link is copied -->
     <div x-show="copyFeedback" x-transition class="p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-semibold flex items-center gap-2" x-cloak>
-        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <x-app-icon name="check" class="w-4 h-4 text-amber-400" />
         <span x-text="'Copiato negli appunti: ' + copyFeedback"></span>
     </div>
 
@@ -32,8 +32,8 @@
                     <input type="text" readonly value="{{ url('/join/' . $campaign->invite_code_player) }}" 
                            class="input-premium text-xs font-mono select-all bg-black/40">
                     <button @click="copyToClipboard('{{ url('/join/' . $campaign->invite_code_player) }}', 'Link Giocatore')" 
-                            class="btn-secondary text-xs py-2 px-3 shrink-0" title="Copia Link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                            class="btn-secondary text-xs py-2 px-3 shrink-0">
+                        <x-icon-label icon="copy-check" label="Copia link giocatore" />
                     </button>
                 </div>
                 <div class="text-[11px] text-slate-400 flex items-center justify-between">
@@ -57,8 +57,8 @@
                     <input type="text" readonly value="{{ url('/join/' . $campaign->invite_code_gm) }}" 
                            class="input-premium text-xs font-mono select-all bg-black/40">
                     <button @click="copyToClipboard('{{ url('/join/' . $campaign->invite_code_gm) }}', 'Link Game Master')" 
-                            class="btn-secondary text-xs py-2 px-3 shrink-0" title="Copia Link">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                            class="btn-secondary text-xs py-2 px-3 shrink-0">
+                        <x-icon-label icon="copy-check" label="Copia link Game Master" />
                     </button>
                 </div>
                 <div class="text-[11px] text-slate-400 flex items-center justify-between">
@@ -72,7 +72,7 @@
     <!-- Members Roster -->
     <div class="glass-panel p-5 rounded-2xl">
         <h3 class="font-['Cinzel'] text-base font-bold text-white mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <x-app-icon name="users" class="w-5 h-5 text-amber-400" />
             <span>Partecipanti alla Campagna ({{ $campaign->users->count() }})</span>
         </h3>
 
@@ -116,8 +116,8 @@
                             <form method="POST" action="{{ route('campaigns.removeMember', [$campaign, $member->id]) }}" onsubmit="return confirm('Rimuovere questo membro dalla campagna?')" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10" title="Rimuovi membro">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <button type="submit" class="p-1.5 sm:px-3 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10">
+                                    <x-icon-label icon="trash-2" label="Rimuovi membro" />
                                 </button>
                             </form>
                         @else

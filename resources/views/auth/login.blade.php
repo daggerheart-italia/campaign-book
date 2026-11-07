@@ -39,7 +39,7 @@
             </div>
 
             <button type="submit" class="btn-primary w-full py-3 mt-2 text-base">
-                <span>Entra nella Campagna</span>
+                <x-icon-label icon="log-in" label="Entra nella Campagna" />
             </button>
         </form>
 

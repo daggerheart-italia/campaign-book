@@ -21,31 +21,31 @@
     <div class="md-editor-toolbar">
         <template x-if="mode === 'visual'">
             <div class="flex flex-wrap items-center gap-1">
-                <button type="button" title="Grassetto" :class="{ 'is-active': active.bold }" @click="run('bold')"><strong>B</strong></button>
-                <button type="button" title="Corsivo" :class="{ 'is-active': active.italic }" @click="run('italic')"><em>I</em></button>
-                <button type="button" title="Titolo" :class="{ 'is-active': active.h2 }" @click="run('h2')">H2</button>
-                <button type="button" title="Sottotitolo" :class="{ 'is-active': active.h3 }" @click="run('h3')">H3</button>
-                <button type="button" title="Elenco puntato" :class="{ 'is-active': active.bullet }" @click="run('bullet')">• Elenco</button>
-                <button type="button" title="Elenco numerato" :class="{ 'is-active': active.ordered }" @click="run('ordered')">1. Elenco</button>
-                <button type="button" title="Citazione" :class="{ 'is-active': active.quote }" @click="run('quote')">❝</button>
-                <button type="button" title="Collega a una pagina wiki (oppure digita [[)" @click="run('wikilink')">[[ Pagina ]]</button>
-                <button type="button" title="Inserisci immagine da URL pubblico (http/https)" @click="openImageModal('visual')">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                </button>
+                <button type="button" :class="{ 'is-active': active.bold }" @click="run('bold')" class="min-h-11 min-w-11" title="Grassetto"><x-icon-label icon="bold" label="Grassetto" /></button>
+                <button type="button" :class="{ 'is-active': active.italic }" @click="run('italic')" class="min-h-11 min-w-11" title="Corsivo"><x-icon-label icon="italic" label="Corsivo" /></button>
+                <button type="button" :class="{ 'is-active': active.h2 }" @click="run('h2')" class="min-h-11 min-w-11" title="Titolo"><x-icon-label icon="heading-2" label="Titolo" /></button>
+                <button type="button" :class="{ 'is-active': active.h3 }" @click="run('h3')" class="min-h-11 min-w-11" title="Sottotitolo"><x-icon-label icon="heading-3" label="Sottotitolo" /></button>
+                <button type="button" :class="{ 'is-active': active.bullet }" @click="run('bullet')" class="min-h-11 min-w-11" title="Elenco puntato"><x-icon-label icon="list" label="Elenco puntato" /></button>
+                <button type="button" :class="{ 'is-active': active.ordered }" @click="run('ordered')" class="min-h-11 min-w-11" title="Elenco numerato"><x-icon-label icon="list-ordered" label="Elenco numerato" /></button>
+                <button type="button" :class="{ 'is-active': active.quote }" @click="run('quote')" class="min-h-11 min-w-11" title="Citazione"><x-icon-label icon="quote" label="Citazione" /></button>
+                <button type="button" @click="run('wikilink')" class="min-h-11 min-w-11" title="Collega a una pagina wiki"><x-icon-label icon="link" label="Collega a una pagina wiki" /></button>
+                <button type="button" @click="openImageModal('visual')" class="min-h-11 min-w-11" title="Inserisci immagine"><x-icon-label icon="image" label="Inserisci immagine" /></button>
             </div>
         </template>
 
         <template x-if="mode === 'markdown'">
             <div class="flex flex-wrap items-center gap-1">
-                <button type="button" title="Inserisci immagine da URL pubblico (http/https)" @click="openImageModal('markdown')">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                </button>
+                <button type="button" @click="openImageModal('markdown')" class="min-h-11 min-w-11" title="Inserisci immagine"><x-icon-label icon="image" label="Inserisci immagine" /></button>
             </div>
         </template>
 
-        <div class="ml-auto inline-flex p-0.5 rounded-lg bg-black/40 border border-white/10 text-xs">
-            <button type="button" @click="setMode('visual')" :class="mode === 'visual' ? 'bg-amber-500/20 text-amber-300 font-bold' : ''">Visuale</button>
-            <button type="button" @click="setMode('markdown')" :class="mode === 'markdown' ? 'bg-amber-500/20 text-amber-300 font-bold' : ''">Markdown</button>
+        <div class="ml-auto inline-flex p-0.5 rounded-lg bg-black/40 border border-white/10 text-xs gap-0.5">
+            <button type="button" @click="setMode('visual')" :class="mode === 'visual' ? 'bg-amber-500/20 text-amber-300 font-bold' : ''" class="min-h-11 min-w-11">
+                <x-icon-label icon="eye" label="Visuale" />
+            </button>
+            <button type="button" @click="setMode('markdown')" :class="mode === 'markdown' ? 'bg-amber-500/20 text-amber-300 font-bold' : ''" class="min-h-11 min-w-11">
+                <x-icon-label icon="file-code" label="Markdown" />
+            </button>
         </div>
     </div>
 
@@ -64,8 +64,8 @@
                         <h3 class="font-['Cinzel'] text-lg font-bold text-white">Inserisci immagine</h3>
                         <p class="text-xs text-slate-400 mt-1">Usa un URL pubblico (http/https). Il testo alternativo migliora l'accessibilità.</p>
                     </div>
-                    <button type="button" class="text-slate-400 hover:text-white transition-colors" @click="cancelImageModal()">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <button type="button" class="text-slate-400 hover:text-white transition-colors" @click="cancelImageModal()" aria-label="Chiudi finestra">
+                        <x-app-icon name="x" class="w-5 h-5" />
                     </button>
                 </div>
 
@@ -83,8 +83,8 @@
                     </div>
 
                     <div class="flex items-center justify-end gap-2 pt-2">
-                        <button type="button" class="btn-secondary text-xs py-2 px-4" @click.stop.prevent="cancelImageModal()">Annulla</button>
-                        <button type="button" class="btn-primary text-xs py-2 px-4" @click.stop.prevent="confirmImageModal()">Inserisci immagine</button>
+                        <button type="button" class="btn-secondary text-xs py-2 px-4" @click.stop.prevent="cancelImageModal()"><x-icon-label icon="x" label="Annulla" /></button>
+                        <button type="button" class="btn-primary text-xs py-2 px-4" @click.stop.prevent="confirmImageModal()"><x-icon-label icon="image" label="Inserisci immagine" /></button>
                     </div>
                 </form>
             </div>

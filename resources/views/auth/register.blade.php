@@ -41,7 +41,7 @@
             </div>
 
             <button type="submit" class="btn-primary w-full py-3 mt-2 text-base">
-                <span>Crea Account e Inizia</span>
+                <x-icon-label icon="user-round-plus" label="Crea Account e Inizia" />
             </button>
         </form>
 

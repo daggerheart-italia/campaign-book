@@ -22,12 +22,7 @@
                 <div class="hidden md:flex items-center gap-3">
                     <a href="{{ route('campaigns.index') }}" title="Tutte le Campagne" 
                        class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('campaigns.index') ? 'bg-white/10 text-white font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
-                        Campagne
-                    </a>
-
-                    <a href="{{ route('campaigns.create') }}" title="Nuova Campagna" class="btn-primary text-xs py-1.5 px-3">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <!-- <span>Nuova Campagna</span> -->
+                        <x-icon-label icon="archive" label="Campagne" />
                     </a>
 
                     <div class="h-5 w-px bg-white/10 mx-1"></div>
@@ -43,10 +38,8 @@
 
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
-                            <button type="submit" class="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors" title="Disconnetti">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                </svg>
+                            <button type="submit" class="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
+                                <x-icon-label icon="log-out" label="Disconnetti" />
                             </button>
                         </form>
                     </div>
@@ -54,22 +47,15 @@
 
                 <!-- Mobile Hamburger Button -->
                 <div class="flex items-center md:hidden gap-2">
-                    <a href="{{ route('campaigns.create') }}" class="btn-primary !p-2 !rounded-lg text-xs" title="Nuova Campagna">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    </a>
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!mobileMenuOpen">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="mobileMenuOpen" x-cloak>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10" :aria-label="mobileMenuOpen ? 'Chiudi menu' : 'Apri menu'">
+                        <x-app-icon name="menu" class="w-6 h-6" x-show="!mobileMenuOpen" />
+                        <x-app-icon name="x" class="w-6 h-6" x-show="mobileMenuOpen" x-cloak />
                     </button>
                 </div>
             @else
                 <div class="flex items-center gap-2">
-                    <a href="{{ route('login') }}" class="btn-secondary text-xs py-1.5 px-3">Accedi</a>
-                    <a href="{{ route('register') }}" class="btn-primary text-xs py-1.5 px-3">Registrati</a>
+                    <a href="{{ route('login') }}" class="btn-secondary text-xs py-1.5 px-3"><x-icon-label icon="log-in" label="Accedi" /></a>
+                    <a href="{{ route('register') }}" class="btn-primary text-xs py-1.5 px-3"><x-icon-label icon="user-round-plus" label="Registrati" /></a>
                 </div>
             @endauth
         </div>
@@ -98,12 +84,10 @@
 
             <div class="space-y-1">
                 <a href="{{ route('campaigns.index') }}" @click="mobileMenuOpen = false" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-200 hover:bg-white/10">
-                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                    <span>Tutte le Campagne</span>
+                    <x-icon-label icon="archive" label="Tutte le Campagne" showOnMobile="true" />
                 </a>
                 <a href="{{ route('campaigns.create') }}" @click="mobileMenuOpen = false" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-amber-300 hover:bg-amber-500/10">
-                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>Crea Nuova Campagna</span>
+                    <x-icon-label icon="plus" label="Crea Nuova Campagna" showOnMobile="true" />
                 </a>
             </div>
 
@@ -111,8 +95,7 @@
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-rose-300 hover:bg-rose-500/10">
-                        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                        <span>Disconnetti</span>
+                        <x-icon-label icon="log-out" label="Disconnetti" showOnMobile="true" />
                     </button>
                 </form>
             </div>

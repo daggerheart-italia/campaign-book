@@ -12,7 +12,7 @@
     }
 }" class="space-y-4">
     <div class="glass-panel p-4 rounded-xl relative">
-        <svg class="w-4 h-4 text-slate-400 absolute left-7 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <x-app-icon name="search" class="w-4 h-4 text-slate-400 absolute left-7 top-1/2 -translate-y-1/2" />
         <input type="text" x-model="search" @keydown.escape="search = ''" placeholder="Cerca tra le note di sessione..." class="input-premium !pl-10 text-xs sm:text-sm py-2">
     </div>
 
@@ -27,7 +27,7 @@
                     </h3>
                     <p class="text-[11px] text-slate-400" x-text="note.date"></p>
                 </div>
-                <svg class="w-4 h-4 text-slate-300 shrink-0 transition-transform" :class="{ 'rotate-180': openIds.includes(note.id) }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <x-app-icon name="chevron-down" class="w-4 h-4 text-slate-300 shrink-0 transition-transform" ::class="{ 'rotate-180': openIds.includes(note.id) }" />
             </button>
             <div x-show="openIds.includes(note.id)" x-cloak class="px-4 sm:px-5 pb-5 pt-4 border-t border-white/[0.08]">
                 <div class="prose-dagger text-slate-200 text-sm leading-relaxed" x-html="note.content_html"></div>

@@ -124,18 +124,17 @@
     <div class="glass-panel p-4 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <!-- Search Input -->
         <div class="relative flex-1">
-            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
+            <x-app-icon name="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input type="text" x-model="search" @keydown.escape="search = ''" placeholder="Cerca tra le pagine della wiki..."
                    class="input-premium !pl-10 text-xs sm:text-sm py-2">
-            <button x-show="search" @click="search = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">✕</button>
+            <button x-show="search" @click="search = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+                <x-icon-label icon="x" label="Cancella ricerca" />
+            </button>
         </div>
 
         <!-- Add Wiki Page CTA -->
         <a href="{{ route('wiki.create', $campaign) }}" class="btn-primary text-xs sm:text-sm py-2 px-4 shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            <span>Nuova Pagina Wiki</span>
+            <x-icon-label icon="plus" label="Nuova Pagina Wiki" showOnMobile="true" />
         </a>
     </div>
 
@@ -182,9 +181,7 @@
             <button type="button" @click="$refs.childrenDialog.close()"
                     class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white"
                     aria-label="Chiudi">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <x-app-icon name="x" class="h-5 w-5" />
             </button>
         </div>
 
@@ -230,7 +227,7 @@
     <!-- Empty State -->
     <template x-if="(hasActiveFilter() ? filteredPages.length === 0 : pages.length === 0)">
         <div class="glass-panel p-8 rounded-xl text-center max-w-md mx-auto my-6 border-dashed border-white/20">
-            <svg class="w-12 h-12 text-slate-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <x-app-icon name="smile" class="w-12 h-12 text-slate-500 mx-auto mb-3" />
             <h4 class="font-['Cinzel'] font-bold text-white text-base mb-1">Nessuna pagina trovata</h4>
             <p class="text-xs text-slate-400 mb-4">Non ci sono pagine wiki corrispondenti ai filtri o alla ricerca corrente.</p>
             <a href="{{ route('wiki.create', $campaign) }}" class="btn-primary text-xs py-2 px-3">

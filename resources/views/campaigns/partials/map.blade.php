@@ -30,101 +30,85 @@
     mapChunkSize: {{ \App\Http\Controllers\CampaignMapController::MAX_CHUNK_BYTES }},
     mapMaxBytes: {{ \App\Http\Controllers\CampaignMapController::MAX_IMAGE_BYTES }},
     csrfToken: '{{ csrf_token() }}'
-})" class="space-y-4">
+})" class="space-y-4" data-parent-page-select>
 
-    <!-- Top Map Selector & Upload Actions -->
-    <div class="glass-panel p-3.5 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
-        <!-- Map Tabs or Selector -->
-        <div class="flex items-center gap-2 overflow-x-auto scrollbar-none max-w-full">
-            <template x-if="maps.length === 0">
-                <span class="text-xs text-amber-300 font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                    Mappa Predefinita (Esempio)
-                </span>
+    <div class="glass-panel relative z-30 flex items-center gap-2 rounded-xl p-2 sm:p-3">
+        <template x-if="maps.length === 0">
+            <div class="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 text-xs font-semibold text-amber-300">
+                <x-app-icon name="map" class="h-4 w-4 shrink-0" />
+                <span>Mappa Predefinita (Esempio)</span>
+            </div>
+        </template>
+        <template x-if="maps.length > 0">
+            <x-map-selector />
+        </template>
+
+        <button type="button" @click="uploadModalOpen = true" aria-label="Carica mappa" title="Carica mappa"
+                class="btn-primary !h-11 !w-11 !shrink-0 !p-0">
+            <x-app-icon name="upload" />
+        </button>
+
+        @if($isGm)
+            <template x-if="activeMap">
+                <details class="relative shrink-0" @click.outside="$el.open = false" @keydown.escape.stop="$el.open = false; $el.querySelector('summary').focus()">
+                    <summary aria-label="Gestisci mappa" title="Gestisci mappa"
+                             class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 [&::-webkit-details-marker]:hidden">
+                        <x-app-icon name="ellipsis-vertical" />
+                    </summary>
+                    <div class="absolute right-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-[#151b27] p-1.5 shadow-2xl">
+                        <template x-if="!activeMap.is_default">
+                            <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/default'" method="POST">
+                                @csrf
+                                <button type="submit" class="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-amber-300 hover:bg-white/10">
+                                    <x-app-icon name="check" />
+                                    <span>Imposta come predefinita</span>
+                                </button>
+                            </form>
+                        </template>
+                        <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id" method="POST" onsubmit="return confirm('Eliminare questa mappa e i suoi segnaposto?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-rose-400 hover:bg-white/10">
+                                <x-app-icon name="trash-2" />
+                                <span>Elimina mappa</span>
+                            </button>
+                        </form>
+                    </div>
+                </details>
             </template>
-
-            <template x-for="map in maps" :key="map.id">
-                <button @click="selectMap(map.id)" 
-                        :class="activeMapId === map.id ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
-                        class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 shrink-0">
-                    <span class="w-1.5 h-1.5 rounded-full" :class="map.is_default ? 'bg-amber-400' : 'bg-slate-400'"></span>
-                    <span x-text="map.title"></span>
-                    <span class="text-[10px] opacity-70" x-text="'(' + (getPinsForMap(map.id).length) + ')'"></span>
-                </button>
-            </template>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex items-center gap-2 shrink-0">
-            <!-- Labels Toggle -->
-            {{-- <button @click="showLabels = !showLabels"
-                    :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                    class="hidden">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                <span class="hidden sm:inline">Etichette</span>
-            </button> --}}
-
-            <!-- Upload New Map Button -->
-            <button @click="uploadModalOpen = true" class="btn-primary text-xs py-1.5 px-3">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span>Carica Mappa</span>
-            </button>
-        </div>
+        @endif
     </div>
 
     <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
-        <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')" class="btn-secondary !py-1.5 !px-3 text-xs border" aria-label="Stampa mappa">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
-            <span>Stampa</span>
-        </button>
-        <button @click="showLabels = !showLabels"
-                :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                class="btn-secondary !py-1.5 !px-3 text-xs border"
-                aria-label="Mostra o nascondi le etichette con nome">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-            <span>Etichette</span>
-        </button>
+        <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')" class="btn-secondary min-h-11 px-3 text-xs border">
+                <x-icon-label icon="printer" label="Stampa mappa" />
+            </button>
+            <button @click="showLabels = !showLabels"
+                    :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
+                    class="btn-secondary min-h-11 px-3 text-xs border">
+                <x-icon-label icon="tag" label="Etichette" />
+            </button>
+        </div>
 
         <div class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 p-0.5"
              role="group"
              aria-label="Controlli zoom mappa">
             <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
-                    class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Riduci zoom" title="Riduci zoom">−</button>
+                    class="min-h-11 min-w-11 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                <x-icon-label icon="zoom-out" label="Riduci zoom" hideOnDesktop="true"/>
+            </button>
             <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="(Math.round(zoomLevel * 10) / 10) + '%'"></span>
             <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
-                    class="h-8 w-8 rounded text-lg leading-none text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Aumenta zoom" title="Aumenta zoom">+</button>
+                    class="min-h-11 min-w-11 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                <x-icon-label icon="zoom-in" label="Aumenta zoom" hideOnDesktop="true"/>
+            </button>
             <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
-                    class="rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Reimposta zoom al 100%" title="Reimposta zoom">Adatta</button>
+                    class="min-h-11 min-w-11 rounded px-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                <x-icon-label icon="expand" label="Adatta" hideOnDesktop="true"/>
+            </button>
         </div>
     </div>
-
-    <!-- Active Map Management (GM) -->
-    <template x-if="activeMap">
-        <div class="flex items-center justify-between text-xs px-2 text-slate-400">
-            <div>
-                Mappa visualizzata: <strong class="text-white" x-text="activeMap.title"></strong>
-                <span x-show="activeMap.is_default" class="ml-1 text-[10px] text-amber-400 font-bold uppercase">(Predefinita)</span>
-            </div>
-            <div class="flex items-center gap-2">
-                @if($isGm)
-                    <template x-if="!activeMap.is_default">
-                        <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/default'" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="text-amber-400 hover:underline text-[11px]">Imposta come predefinita</button>
-                        </form>
-                    </template>
-                    <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id" method="POST" onsubmit="return confirm('Eliminare questa mappa e i suoi segnaposto?')" class="inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-rose-400 hover:text-rose-300 text-[11px] ml-2">Elimina Mappa</button>
-                    </form>
-                @endif
-            </div>
-        </div>
-    </template>
 
     <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-slate-300 flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
@@ -176,9 +160,7 @@
                             <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125 text-[10px] font-bold"
                                  :style="'background-color: ' + pin.color + '; box-shadow: 0 0 12px ' + pin.color + ', 0 4px 8px rgba(0,0,0,0.6);'">
                                 <template x-if="showLabels">
-                                    <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-                                    </svg>
+                                    <x-app-icon name="circle-dot" class="h-2.5 w-2.5" stroke-width="3" />
                                 </template>
                                 <template x-if="!showLabels">
                                     <span x-text="pinIndex + 1"></span>
@@ -200,7 +182,7 @@
     <div class="glass-panel p-4 rounded-xl">
         <div class="flex items-center justify-between mb-3">
             <h3 class="font-['Cinzel'] text-sm font-bold text-white flex items-center gap-2">
-                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <x-app-icon name="map-pin" class="w-4 h-4 text-amber-400" />
                 <span>Luoghi Segnati (<span x-text="currentPins.length"></span>)</span>
             </h3>
         </div>
@@ -209,33 +191,33 @@
             <p class="text-xs text-slate-400 text-center py-4">Nessun punto segnato su questa mappa. Clicca sull'immagine per posizionare il primo pin!</p>
         </template>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
             <template x-for="(pin, pinIndex) in currentPins" :key="pin.id">
-                <div class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] p-2.5 rounded-lg flex items-center justify-between gap-2 transition-colors">
-                    <button @click="openPinPopover(pin)" class="flex items-center gap-2.5 text-left flex-1 min-w-0">
+                <div class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] p-2.5 rounded-lg flex min-w-0 items-center justify-between gap-2 transition-colors">
+                    <button @click="openPinPopover(pin)" class="flex min-h-11 items-center gap-2.5 text-left flex-1 min-w-0">
                         <span class="w-5 h-5 rounded-full shrink-0 shadow-sm flex items-center justify-center text-[10px] font-bold text-white" :style="'background-color: ' + pin.color" x-text="pinIndex + 1"></span>
-                        <div class="truncate">
-                            <div class="text-xs font-semibold text-slate-200 truncate" x-text="pin.title"></div>
-                            <div class="text-[10px] text-slate-400 truncate" x-text="pin.description || 'Coordinate: ' + pin.x.toFixed(1) + '%, ' + pin.y.toFixed(1) + '%'"></div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-xs font-semibold text-slate-200 line-clamp-2 break-words" x-text="pin.title"></div>
+                            <div class="text-[10px] text-slate-400 line-clamp-2 break-words" x-text="pin.description || 'Coordinate: ' + pin.x.toFixed(1) + '%, ' + pin.y.toFixed(1) + '%'"></div>
                         </div>
                     </button>
 
                     <div class="flex items-center gap-1 shrink-0">
                         <template x-if="pin.wiki_page_url">
-                            <a :href="pin.wiki_page_url" class="p-1 text-amber-400 hover:text-amber-300" title="Apri Scheda Wiki">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                            <a :href="pin.wiki_page_url" aria-label="Apri Scheda Wiki" title="Apri Scheda Wiki" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-amber-400 hover:text-amber-300">
+                                <x-app-icon name="book-open" class="w-3.5 h-3.5" />
                             </a>
                         </template>
 
                         <template x-if="!pin.wiki_page_url">
                             <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + pin.id + '&title=' + encodeURIComponent(pin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
-                               class="p-1 text-emerald-400 hover:text-emerald-300" title="Crea Scheda Wiki per questo Luogo">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                               aria-label="Crea Scheda Wiki" title="Crea Scheda Wiki" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-emerald-400 hover:text-emerald-300">
+                                <x-app-icon name="plus" class="w-3.5 h-3.5" />
                             </a>
                         </template>
 
-                        <button @click="deletePin(pin)" class="p-1 text-slate-500 hover:text-rose-400" title="Elimina Segnaposto">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <button @click="deletePin(pin)" aria-label="Elimina Segnaposto" title="Elimina Segnaposto" class="inline-flex min-h-11 min-w-11 items-center justify-center p-1 text-slate-500 hover:text-rose-400">
+                            <x-app-icon name="trash-2" class="w-3.5 h-3.5" />
                         </button>
                     </div>
                 </div>
@@ -243,118 +225,70 @@
         </div>
     </div>
 
-    <!-- Create Pin Modal -->
-    <div x-show="createModalOpen" 
-         x-transition
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         x-cloak>
-        <div @click.away="createModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
-            <button @click="createModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+    <!-- Pin Modal -->
+    <template x-teleport="body">
+    <dialog x-ref="pinDialog" @cancel.prevent="modalOpen = false" @keydown.escape.stop.prevent="modalOpen = false" @click.self="modalOpen = false"
+            aria-labelledby="pin-dialog-title"
+            class="pin-dialog fixed inset-0 m-auto h-dvh max-h-dvh w-full max-w-none overflow-hidden border border-white/10 bg-[#121826] text-slate-200 shadow-2xl sm:h-auto sm:max-h-[90dvh] sm:max-w-md sm:rounded-2xl">
+        <div class="flex h-full max-h-dvh flex-col sm:max-h-[90dvh]">
+            <div class="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 sm:px-6 sm:pt-4">
+                <h3 id="pin-dialog-title" class="min-w-0 break-words font-['Cinzel'] text-lg font-bold text-white"
+                    x-text="modalMode === 'create' ? 'Nuovo Punto sulla Mappa' : (modalMode === 'edit' ? 'Modifica segnaposto' : selectedPin.title)"></h3>
+                <button type="button" @click="modalOpen = false" class="flex min-h-11 min-w-11 shrink-0 items-center justify-center text-slate-400 hover:text-white" aria-label="Chiudi segnaposto" aria-label-hidden="true">
+                    <x-app-icon name="x" class="w-5 h-5" />
+                </button>
+            </div>
 
-            <h3 class="font-['Cinzel'] text-lg font-bold text-white mb-1">Nuovo Punto sulla Mappa</h3>
-            <p class="text-xs text-slate-400 mb-4" x-text="'Posizione: X ' + newPinCoords.x.toFixed(1) + '% • Y ' + newPinCoords.y.toFixed(1) + '%'"></p>
-
-            <form @submit.prevent="saveNewPin" class="space-y-3">
+            <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">
+            <template x-if="modalMode === 'create' || modalMode === 'edit'">
+            <form id="pin-dialog-form" @submit.prevent="modalMode === 'create' ? saveNewPin() : savePinDetails()" class="space-y-4">
+                <p x-show="modalMode === 'create'" class="text-xs text-slate-400 mb-4" x-text="'Posizione: X ' + newPinCoords.x.toFixed(1) + '% • Y ' + newPinCoords.y.toFixed(1) + '%'"></p>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nome del Luogo o Etichetta *</label>
-                    <input type="text" x-model="newPinForm.title" required autofocus class="input-premium text-sm font-semibold" placeholder="es. Cittadella delle Ossa, Locanda del Lupo" />
+                    <label for="pin-dialog-name" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nome del Luogo o Etichetta *</label>
+                    <input id="pin-dialog-name" type="text" x-model="pinForm.title" required maxlength="255" class="input-premium text-sm font-semibold" placeholder="es. Cittadella delle Ossa, Locanda del Lupo" />
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Descrizione / Note rapide</label>
-                    <textarea x-model="newPinForm.description" rows="2" class="input-premium text-xs" placeholder="Chi vive qui? Quali indizi o pericoli attendono gli avventurieri?"></textarea>
+                    <label for="pin-dialog-description" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Descrizione / Note rapide</label>
+                    <textarea id="pin-dialog-description" x-model="pinForm.description" rows="4" class="input-premium text-xs" placeholder="Chi vive qui? Quali indizi o pericoli attendono gli avventurieri?"></textarea>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Colore Segnaposto</label>
-                        <select x-model="newPinForm.color" class="input-premium text-xs">
-                            <option value="#e11d48">Rosso Cremisi</option>
-                            <option value="#f59e0b">Oro / Ambra</option>
-                            <option value="#10b981">Smeraldo</option>
-                            <option value="#06b6d4">Azzurro Arcano</option>
-                            <option value="#8b5cf6">Viola Mistico</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Collega a Scheda Wiki</label>
-                        <select x-model="newPinForm.wiki_page_id" class="input-premium text-xs">
-                            <option value="">Nessun collegamento</option>
-                            @foreach($campaign->wikiPages as $wp)
-                                <option value="{{ $wp->id }}">{{ $wp->title }} ({{ $wp->category }})</option>
-                            @endforeach
-                        </select>
+                <div>
+                    <span class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Colore Segnaposto</span>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <template x-for="option in pinColors" :key="option.value">
+                            <button type="button" @click="pinForm.color = option.value" :aria-label="option.label"
+                                    :aria-pressed="pinForm.color === option.value" class="h-6 w-6 rounded-full border-2 transition-transform hover:scale-110"
+                                    :class="pinForm.color === option.value ? 'border-white scale-110' : 'border-transparent'"
+                                    :style="'background-color: ' + option.value"></button>
+                        </template>
                     </div>
                 </div>
+                <x-parent-page-select :parent-pages="$campaign->wikiPages" name="pin_form_wiki_page_id"
+                    label="Collega a Scheda Wiki" modelable="pinForm.wiki_page_id" />
+                <p x-show="mapError" x-text="mapError" role="alert" class="text-xs text-rose-300"></p>
 
-                <div class="flex items-center justify-end gap-2 pt-3">
-                    <button type="button" @click="createModalOpen = false" class="btn-secondary text-xs py-2 px-3">Annulla</button>
-                    <button type="submit" class="btn-primary text-xs py-2 px-4">Salva Segnaposto</button>
-                </div>
             </form>
-        </div>
-    </div>
+            </template>
 
-    <!-- Pin Details Popover / Modal with DIRECT WIKI CREATION -->
-    <div x-show="detailsModalOpen" 
-         x-transition
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-         x-cloak>
-        <div @click.away="detailsModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
-            <button @click="detailsModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-
-            <template x-if="!editingPin">
+            <template x-if="modalMode === 'view'">
                 <div>
-                    <div class="flex items-center gap-2.5 mb-2 pr-8">
+                    <div class="flex items-center gap-2.5 mb-2">
                         <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>
-                        <h3 class="font-['Cinzel'] text-xl font-bold text-white min-w-0 break-words" x-text="selectedPin.title"></h3>
-                        <button type="button" @click="startPinEdit()" class="shrink-0 p-1 text-slate-400 hover:text-amber-300" title="Modifica nome e descrizione" aria-label="Modifica nome e descrizione">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13l6.768-6.768a2.5 2.5 0 113.536 3.536L12.536 16.536 8 18l1-5z"/></svg>
+                        <span class="min-w-0 break-words flex-1 text-sm font-semibold text-slate-200" x-text="selectedPin.title"></span>
+                        <button type="button" @click="startPinEdit()" class="shrink-0 min-h-11 min-w-11 flex items-center justify-center text-slate-400 hover:text-amber-300">
+                            <x-icon-label icon="pencil" label="Modifica nome e descrizione" />
                         </button>
                     </div>
 
                     <p class="text-xs text-slate-300 leading-relaxed mb-4 whitespace-pre-wrap" x-text="selectedPin.description || 'Nessuna descrizione specificata.'"></p>
-                </div>
-            </template>
-
-            <template x-if="editingPin">
-                <form @submit.prevent="savePinDetails()" class="space-y-3 mb-4">
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Nome *</label>
-                        <input type="text" x-model="pinEditForm.title" required maxlength="255" class="input-premium text-sm font-semibold" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Descrizione</label>
-                        <textarea x-model="pinEditForm.description" rows="4" class="input-premium text-xs"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Scheda Wiki collegata</label>
-                        <select x-model="pinEditForm.wiki_page_id" class="input-premium text-xs">
-                            <option value="">Nessun collegamento</option>
-                            @foreach($campaign->wikiPages as $wp)
-                                <option value="{{ $wp->id }}">{{ $wp->title }} ({{ $wp->category }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="flex items-center justify-end gap-2">
-                        <button type="button" @click="editingPin = false" :disabled="savingPinDetails" class="btn-secondary text-xs py-1.5 px-3 disabled:opacity-50">Annulla</button>
-                        <button type="submit" :disabled="savingPinDetails || !pinEditForm.title.trim()" class="btn-primary text-xs py-1.5 px-3 disabled:opacity-50">Salva</button>
-                    </div>
-                </form>
-            </template>
-
             <div class="space-y-3 pt-3 border-t border-white/10">
                 <!-- If linked to Wiki page -->
                 <template x-if="selectedPin.wiki_page_url">
                     <div class="space-y-2">
-                        <a :href="selectedPin.wiki_page_url" class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                            <span x-text="'Leggi Scheda Wiki: ' + (selectedPin.wiki_page_title || 'Visualizza')"></span>
+                        <a :href="selectedPin.wiki_page_url" class="btn-primary w-full text-xs min-h-11 justify-center shadow-lg">
+                            <x-icon-label icon="book-open" label="Leggi scheda Wiki" />
+                            <span class="sr-only sm:not-sr-only" x-text="selectedPin.wiki_page_title || 'Visualizza'"></span>
                         </a>
                     </div>
                 </template>
@@ -364,7 +298,7 @@
                     <div class="space-y-3">
                         <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
                             <div class="text-amber-300 font-semibold mb-1 flex items-center gap-1.5">
-                                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <x-app-icon name="info" class="w-4 h-4 text-amber-400" />
                                 <span>Nessuna scheda wiki collegata</span>
                             </div>
                             <p class="text-slate-400 text-[11px] leading-relaxed">Puoi creare una nuova pagina per descrivere la storia, i pericoli e i PNG di questo luogo.</p>
@@ -372,36 +306,25 @@
 
                         <!-- Direct button to create wiki page pre-filled from this pin -->
                         <a :href="'/campaigns/{{ $campaign->id }}/wiki/create?pin_id=' + selectedPin.id + '&title=' + encodeURIComponent(selectedPin.title) + '&category=' + encodeURIComponent('Luoghi & Città')"
-                           class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <span>Crea Pagina Wiki per questo Luogo</span>
+                           class="btn-primary w-full text-xs min-h-11 justify-center shadow-lg">
+                            <x-icon-label icon="plus" label="Crea Pagina Wiki" showOnMobile="true"/>
                         </a>
 
                         <!-- Or link to an existing wiki page -->
-                        <div class="pt-2 border-t border-white/[0.06]" x-data="{ linkWikiId: '' }">
-                            <label class="block text-[11px] text-slate-400 mb-1">Oppure collega a una scheda esistente:</label>
-                            <div class="flex items-center gap-2">
-                                <select x-model="linkWikiId" class="input-premium text-xs py-1.5">
-                                    <option value="">Seleziona pagina wiki...</option>
-                                    @foreach($campaign->wikiPages as $wp)
-                                        <option value="{{ $wp->id }}">{{ $wp->title }} ({{ $wp->category }})</option>
-                                    @endforeach
-                                </select>
-                                <button type="button" @click="linkPinToWiki(selectedPin, linkWikiId)" :disabled="!linkWikiId" class="btn-secondary text-xs py-1.5 px-3 shrink-0 disabled:opacity-50">
-                                    Collega
-                                </button>
-                            </div>
+                        <div class="pt-2 border-t border-white/[0.06]">
+                            <x-parent-page-select :parent-pages="$campaign->wikiPages" name="pin_link_wiki_page_id"
+                                label="Collega a una scheda esistente" modelable="linkWikiId" />
                         </div>
                     </div>
                 </template>
 
                 <div class="flex items-center justify-between gap-2">
                     <span class="text-[11px] text-slate-400">Colore</span>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-3 flex-wrap">
                         <template x-for="option in pinColors" :key="option.value">
                             <button type="button" @click="changePinColor(option.value)" :disabled="savingPinColor"
                                     :title="option.label" :aria-label="option.label"
-                                    class="h-5 w-5 rounded-full border-2 transition disabled:opacity-50"
+                                    class="h-6 w-6 rounded-full border-2 transition disabled:opacity-50 hover:scale-110"
                                     :class="selectedPin.color === option.value ? 'border-white scale-110' : 'border-transparent hover:border-white/50'"
                                     :style="'background-color: ' + option.value"></button>
                         </template>
@@ -412,20 +335,27 @@
                 <p class="text-[11px] text-slate-500 pt-1">Trascina il pin sulla mappa per riposizionarlo</p>
                 <div class="flex items-center justify-between gap-2 text-xs">
                     <button type="button" @click="togglePinLock(selectedPin)" :disabled="savingPinLock"
-                            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-amber-300 hover:text-amber-200 disabled:opacity-50"
-                            :aria-label="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'"
-                            :title="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path x-show="!selectedPin.locked" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0m-2 4h12v10H6V11z"/>
-                            <path x-show="selectedPin.locked" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4m-2 0h12v10H6V11z"/>
-                        </svg>
-                        <span x-text="selectedPin.locked ? 'Sblocca' : 'Blocca'"></span>
+                            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-amber-300 hover:text-amber-200 disabled:opacity-50">
+                        <x-app-icon name="lock-keyhole" class="h-4 w-4" />
+                        <span class="icon-label-mobile" x-text="selectedPin.locked ? 'Sblocca segnaposto' : 'Blocca segnaposto'"></span>
                     </button>
-                    <button type="button" @click="deletePin(selectedPin)" class="shrink-0 whitespace-nowrap text-rose-400 hover:text-rose-300 text-xs" title="Elimina segnaposto">Elimina</button>
+                    <button type="button" @click="deletePin(selectedPin)" class="shrink-0 whitespace-nowrap text-rose-400 hover:text-rose-300 text-xs">
+                        <x-icon-label icon="trash-2" label="Elimina segnaposto" />
+                    </button>
                 </div>
             </div>
+                </div>
+            </template>
+            </div>
+            <template x-if="modalMode === 'create' || modalMode === 'edit'">
+                <div class="flex shrink-0 flex-col-reverse gap-2 border-t border-white/10 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6">
+                    <button type="button" @click="modalMode === 'create' ? modalOpen = false : modalMode = 'view'" class="btn-secondary min-h-11 w-full px-3 text-xs sm:w-auto"><x-icon-label icon="x" label="Annulla" :show-on-mobile="true" /></button>
+                    <button type="submit" form="pin-dialog-form" :disabled="savingPinDetails || !pinForm.title.trim()" class="btn-primary min-h-11 w-full px-4 text-xs disabled:opacity-50 sm:w-auto"><x-icon-label icon="check" label="Salva segnaposto" :show-on-mobile="true" /></button>
+                </div>
+            </template>
         </div>
-    </div>
+    </dialog>
+    </template>
 
     <!-- Upload Custom Map Modal -->
     <div x-show="uploadModalOpen" 
@@ -433,13 +363,13 @@
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
          x-cloak>
         <div @click.away="uploadModalOpen = false" class="glass-panel p-6 sm:p-8 rounded-2xl max-w-lg w-full relative">
-            <button @click="uploadModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button @click="uploadModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi caricamento mappa">
+                <x-app-icon name="x" class="w-5 h-5" />
             </button>
 
             <div class="text-center mb-5">
                 <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto mb-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <x-app-icon name="image" class="w-6 h-6" />
                 </div>
                 <h3 class="font-['Cinzel'] text-xl font-bold text-white mb-1">Carica Mappa di Gioco</h3>
                 <p class="text-xs text-slate-400">Carica una mappa geografica, mappa regionale o piantina di un dungeon (PNG, JPG, WebP fino a 50MB).</p>
@@ -464,9 +394,10 @@
                 <p x-show="uploadError" x-text="uploadError" role="alert" class="text-xs text-rose-300" x-cloak></p>
 
                 <div class="flex items-center justify-end gap-2 pt-2">
-                    <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50">Annulla</button>
+                    <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50"><x-icon-label icon="x" label="Annulla" /></button>
                     <button type="submit" :disabled="uploadingMap" class="btn-primary text-xs py-2 px-4 disabled:opacity-50">
-                        <span x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
+                        <x-app-icon name="image" />
+                        <span class="icon-label-mobile" x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
                     </button>
                 </div>
             </form>
@@ -477,6 +408,8 @@
 
 <script>
 function customImageMap(config) {
+    let scrollLock = null;
+
     return {
         campaignId: config.campaignId,
         activeMapId: config.activeMapId,
@@ -495,20 +428,16 @@ function customImageMap(config) {
         isPinchZooming: false,
         mapError: '',
         savingPinLock: false,
-        createModalOpen: false,
-        detailsModalOpen: false,
+        modalOpen: false,
+        modalMode: 'view',
+        pinForm: { title: '', description: '', color: '#e11d48', wiki_page_id: '' },
+        linkWikiId: '',
         uploadModalOpen: false,
         uploadingMap: false,
         uploadProgress: 0,
         uploadError: '',
         selectedPin: {},
         newPinCoords: { x: 50, y: 50 },
-        newPinForm: {
-            title: '',
-            description: '',
-            color: '#e11d48',
-            wiki_page_id: ''
-        },
         draggingPin: null,
         isDragging: false,
         dragOrigin: null,
@@ -517,6 +446,48 @@ function customImageMap(config) {
         savingPinIds: new Set(),
 
         init() {
+            this.$watch('modalOpen', (isOpen) => {
+                if (isOpen) {
+                    const body = document.body;
+                    scrollLock = {
+                        scrollY: window.scrollY,
+                        position: body.style.position,
+                        top: body.style.top,
+                        left: body.style.left,
+                        right: body.style.right,
+                        width: body.style.width,
+                    };
+                    body.style.position = 'fixed';
+                    body.style.top = `-${scrollLock.scrollY}px`;
+                    body.style.left = '0';
+                    body.style.right = '0';
+                    body.style.width = '100%';
+                    this.$nextTick(() => {
+                        if (this.modalOpen && !this.$refs.pinDialog.open) {
+                            this.$refs.pinDialog.showModal();
+                        }
+                    });
+                } else {
+                    if (this.$refs.pinDialog.open) {
+                        this.$refs.pinDialog.close();
+                    }
+                    if (scrollLock) {
+                        const body = document.body;
+                        body.style.position = scrollLock.position;
+                        body.style.top = scrollLock.top;
+                        body.style.left = scrollLock.left;
+                        body.style.right = scrollLock.right;
+                        body.style.width = scrollLock.width;
+                        window.scrollTo(0, scrollLock.scrollY);
+                        scrollLock = null;
+                    }
+                }
+            });
+            this.$watch('linkWikiId', (wikiId) => {
+                if (wikiId && this.modalOpen && this.modalMode === 'view' && this.selectedPin.id) {
+                    this.linkPinToWiki(this.selectedPin, wikiId);
+                }
+            });
             this.$nextTick(() => {
                 this.mapResizeObserver = new ResizeObserver(() => this.fitMap());
                 this.mapResizeObserver.observe(this.$refs.mapViewport);
@@ -530,7 +501,7 @@ function customImageMap(config) {
                     this.pendingPinChanges = [];
                     const selectedPin = this.pins.find(pin => pin.id === this.selectedPin?.id);
                     if (selectedPin) this.selectedPin = { ...selectedPin };
-                    else if (this.detailsModalOpen) this.detailsModalOpen = false;
+                    else if (this.modalOpen && this.modalMode !== 'create') this.modalOpen = false;
                 },
             });
             window.campaignSyncManager?.registerEntity('map', {
@@ -572,12 +543,12 @@ function customImageMap(config) {
             }
             if (change.deleted) {
                 if (index !== -1) this.pins.splice(index, 1);
-                if (this.selectedPin.id === change.id) this.detailsModalOpen = false;
+                if (this.selectedPin.id === change.id && this.modalMode !== 'create') this.modalOpen = false;
                 return;
             }
             if (index === -1) this.pins.push(change);
             else Object.assign(this.pins[index], change);
-            if (this.selectedPin.id === change.id && !this.editingPin) {
+            if (this.selectedPin.id === change.id && this.modalMode !== 'edit') {
                 this.selectedPin = { ...change };
             }
         },
@@ -829,13 +800,13 @@ function customImageMap(config) {
             const yPercent = Math.max(0, Math.min(100, (clickY / rect.height) * 100));
 
             this.newPinCoords = { x: xPercent, y: yPercent };
-            this.newPinForm = {
+            this.pinForm = {
                 title: '',
                 description: '',
                 color: '#e11d48',
                 wiki_page_id: ''
             };
-            this.createModalOpen = true;
+            this.openCreateModal();
         },
 
         startPan(event) {
@@ -875,29 +846,40 @@ function customImageMap(config) {
 
         openPinPopover(pin, event) {
             if (this.isDragging) return;
-            this.selectedPin = pin;
-            this.mapError = '';
-            this.editingPin = false;
-            this.detailsModalOpen = true;
+            this.openPinModal(pin);
         },
 
-        editingPin: false,
+        openCreateModal() {
+            this.mapError = '';
+            this.modalOpen = true;
+            this.modalMode = 'create';
+        },
+
+        openPinModal(pin) {
+            this.selectedPin = pin;
+            this.mapError = '';
+            this.linkWikiId = '';
+            this.modalOpen = true;
+            this.modalMode = 'view';
+        },
+
         savingPinDetails: false,
-        pinEditForm: { title: '', description: '', wiki_page_id: '' },
 
         startPinEdit() {
-            this.pinEditForm = {
+            this.pinForm = {
                 title: this.selectedPin.title,
                 description: this.selectedPin.description ?? '',
+                color: this.selectedPin.color,
                 wiki_page_id: this.selectedPin.wiki_page_id ? String(this.selectedPin.wiki_page_id) : '',
             };
             this.mapError = '';
-            this.editingPin = true;
+            this.modalMode = 'edit';
         },
 
         async savePinDetails() {
             const pin = this.pins.find((item) => item.id === this.selectedPin.id);
             if (!pin) {
+                this.mapError = 'Il segnaposto non è più disponibile.';
                 return;
             }
 
@@ -913,9 +895,10 @@ function customImageMap(config) {
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        title: this.pinEditForm.title.trim(),
-                        description: this.pinEditForm.description.trim() || null,
-                        wiki_page_id: this.pinEditForm.wiki_page_id || null,
+                        title: this.pinForm.title.trim(),
+                        description: this.pinForm.description.trim() || null,
+                        color: this.pinForm.color,
+                        wiki_page_id: this.pinForm.wiki_page_id || null,
                     })
                 });
                 if (!response.ok) {
@@ -925,12 +908,13 @@ function customImageMap(config) {
                 const data = await response.json();
                 pin.title = data.pin.title;
                 pin.description = data.pin.description;
+                pin.color = data.pin.color;
                 pin.wiki_page_id = data.pin.wiki_page_id;
                 pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
                 pin.wiki_page_url = data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page_id}` : null;
                 pin.sync_version = data.pin.sync_version;
                 this.selectedPin = { ...pin };
-                this.editingPin = false;
+                this.modalMode = 'view';
             } catch (error) {
                 this.mapError = error.message;
                 console.error(error);
@@ -1076,15 +1060,17 @@ function customImageMap(config) {
         },
 
         async saveNewPin() {
+            this.savingPinDetails = true;
+            this.mapError = '';
             try {
                 const payload = {
-                    title: this.newPinForm.title,
-                    description: this.newPinForm.description,
+                    title: this.pinForm.title,
+                    description: this.pinForm.description,
                     x: this.newPinCoords.x,
                     y: this.newPinCoords.y,
-                    color: this.newPinForm.color,
+                    color: this.pinForm.color,
                     campaign_map_id: this.activeMapId,
-                    wiki_page_id: this.newPinForm.wiki_page_id || null
+                    wiki_page_id: this.pinForm.wiki_page_id || null
                 };
 
                 const response = await fetch(config.storePinUrl, {
@@ -1097,33 +1083,43 @@ function customImageMap(config) {
                     body: JSON.stringify(payload)
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const newPin = {
-                        id: data.pin.id,
-                        campaign_map_id: data.pin.campaign_map_id,
-                        title: data.pin.title,
-                        description: data.pin.description,
-                        x: parseFloat(data.pin.x),
-                        y: parseFloat(data.pin.y),
-                        color: data.pin.color,
-                        locked: data.pin.locked,
-                        wiki_page_id: data.pin.wiki_page_id,
-                        wiki_page_title: data.pin.wiki_page ? data.pin.wiki_page.title : null,
-                        wiki_page_url: data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page.id}` : null,
-                        sync_version: data.pin.sync_version,
-                    };
-                    this.pins.push(newPin);
-                    this.createModalOpen = false;
+                if (!response.ok) {
+                    throw new Error(`Impossibile creare il segnaposto (${response.status}).`);
                 }
+                const data = await response.json();
+                const newPin = {
+                    id: data.pin.id,
+                    campaign_map_id: data.pin.campaign_map_id,
+                    title: data.pin.title,
+                    description: data.pin.description,
+                    x: parseFloat(data.pin.x),
+                    y: parseFloat(data.pin.y),
+                    color: data.pin.color,
+                    locked: data.pin.locked,
+                    wiki_page_id: data.pin.wiki_page_id,
+                    wiki_page_title: data.pin.wiki_page ? data.pin.wiki_page.title : null,
+                    wiki_page_url: data.pin.wiki_page ? `/campaigns/${config.campaignId}/wiki/${data.pin.wiki_page.id}` : null,
+                    sync_version: data.pin.sync_version,
+                };
+                const existing = this.pins.find(pin => pin.id === newPin.id);
+                if (existing) {
+                    Object.assign(existing, newPin);
+                } else {
+                    this.pins.push(newPin);
+                }
+                this.modalOpen = false;
             } catch (err) {
+                this.mapError = err.message;
                 console.error(err);
+            } finally {
+                this.savingPinDetails = false;
             }
         },
 
         async linkPinToWiki(pin, wikiId) {
             if (!wikiId) return;
 
+            this.mapError = '';
             try {
                 const response = await fetch(`${config.updatePinBaseUrl}/${pin.id}`, {
                     method: 'PUT',
@@ -1137,15 +1133,18 @@ function customImageMap(config) {
                     })
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    pin.wiki_page_id = parseInt(wikiId);
-                    pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
-                    pin.wiki_page_url = `/campaigns/${config.campaignId}/wiki/${wikiId}`;
-                    pin.sync_version = data.pin.sync_version;
-                    this.selectedPin = { ...pin };
+                if (!response.ok) {
+                    throw new Error(`Impossibile collegare la scheda wiki (${response.status}).`);
                 }
+                const data = await response.json();
+                pin.wiki_page_id = data.pin.wiki_page_id;
+                pin.wiki_page_title = data.pin.wiki_page ? data.pin.wiki_page.title : null;
+                pin.wiki_page_url = `/campaigns/${config.campaignId}/wiki/${wikiId}`;
+                pin.sync_version = data.pin.sync_version;
+                this.selectedPin = { ...pin };
             } catch (err) {
+                this.mapError = err.message;
+                this.linkWikiId = '';
                 console.error(err);
             }
         },
@@ -1164,7 +1163,7 @@ function customImageMap(config) {
 
                 if (response.ok) {
                     this.pins = this.pins.filter(p => p.id !== pin.id);
-                    this.detailsModalOpen = false;
+                    this.modalOpen = false;
                 }
             } catch (err) {
                 console.error(err);
@@ -1270,8 +1269,9 @@ function customImageMap(config) {
                 pin.x = originalPosition.x;
                 pin.y = originalPosition.y;
                 this.mapError = error.message;
-                this.detailsModalOpen = true;
                 this.selectedPin = pin;
+                this.modalOpen = true;
+                this.modalMode = 'view';
                 console.error(error);
             } finally {
                 this.savingPinIds.delete(pin.id);

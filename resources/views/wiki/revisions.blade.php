@@ -20,15 +20,14 @@
     <div class="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="font-['Cinzel'] text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-                <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <x-app-icon name="clock-3" class="w-6 h-6 text-amber-400" />
                 <span>Cronologia Revisioni</span>
             </h1>
             <p class="text-xs text-slate-400 mt-1">Solo i master possono visualizzare e ripristinare le revisioni.</p>
         </div>
 
         <a href="{{ route('wiki.show', [$campaign, $wiki]) }}" class="btn-secondary text-xs py-2 px-3 self-start sm:self-auto">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            <span>Torna all'articolo</span>
+            <x-icon-label icon="arrow-left" label="Torna all'articolo" />
         </a>
     </div>
 
@@ -58,14 +57,18 @@
                     <!-- Actions -->
                     <div class="flex items-center gap-2 self-end sm:self-auto">
                         <button type="button" @click="open = !open" class="btn-secondary !py-1.5 !px-3 text-xs">
-                            <span x-text="open ? 'Nascondi Contenuto' : 'Visualizza Contenuto'"></span>
+                            <span class="inline-flex items-center gap-2">
+                                <x-app-icon name="eye" x-show="!open" />
+                                <x-app-icon name="eye-off" x-show="open" x-cloak />
+                                <span class="icon-label-mobile" x-text="open ? 'Nascondi Contenuto' : 'Visualizza Contenuto'"></span>
+                            </span>
                         </button>
 
                         @if(!$isCurrent)
                             <form method="POST" action="{{ route('wiki.restoreRevision', [$campaign, $wiki, $rev]) }}" onsubmit="return confirm('Ripristinare questa versione? Verrà salvata come nuova revisione.')" class="inline">
                                 @csrf
                                 <button type="submit" class="btn-primary !py-1.5 !px-3 text-xs">
-                                    Ripristina
+                                    <x-icon-label icon="rotate-ccw" label="Ripristina" />
                                 </button>
                             </form>
                         @endif

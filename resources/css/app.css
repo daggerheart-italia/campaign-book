@@ -43,6 +43,36 @@ body {
     display: none !important;
 }
 
+.pin-dialog::backdrop {
+    background: rgb(0 0 0 / 70%);
+    backdrop-filter: blur(4px);
+}
+
+.icon-label-mobile {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (min-width: 40rem) {
+    .icon-label-mobile:not(.icon-label-hide-desktop) {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+    }
+}
+
 /* Glassmorphism card */
 .glass-panel {
     background: var(--bg-card);
@@ -185,4 +215,15 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(245, 158, 11, 0.4);
+}
+
+/* Mobile touch interactions */
+button, a {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+}
+
+/* Improved modal scrolling */
+.overscroll-contain {
+    overscroll-behavior: contain;
 }
