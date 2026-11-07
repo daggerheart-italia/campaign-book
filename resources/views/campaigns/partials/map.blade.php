@@ -32,36 +32,51 @@
     csrfToken: '{{ csrf_token() }}'
 })" class="space-y-4" data-parent-page-select>
 
-    <!-- Top Map Selector & Upload Actions -->
-    <div class="glass-panel p-3.5 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
-        <!-- Map Tabs or Selector -->
-        <div class="flex items-center flex-wrap gap-2 overflow-x-auto scrollbar-none max-w-full">
-            <template x-if="maps.length === 0">
-                <span class="text-xs text-amber-300 font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                    Mappa Predefinita (Esempio)
-                </span>
-            </template>
+    <div class="glass-panel relative z-30 flex items-center gap-2 rounded-xl p-2 sm:p-3">
+        <template x-if="maps.length === 0">
+            <div class="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 text-xs font-semibold text-amber-300">
+                <x-app-icon name="map" class="h-4 w-4 shrink-0" />
+                <span>Mappa Predefinita (Esempio)</span>
+            </div>
+        </template>
+        <template x-if="maps.length > 0">
+            <x-map-selector />
+        </template>
 
-            <template x-for="map in maps" :key="map.id">
-                <button @click="selectMap(map.id)" 
-                        :class="activeMapId === map.id ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
-                        :title="map.title"
-                        class="w-48 px-3 min-h-11 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 shrink-0">
-                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="map.is_default ? 'bg-amber-400' : 'bg-slate-400'"></span>
-                    <span class="min-w-0 flex-1 truncate text-left" x-text="map.title"></span>
-                    <span class="text-[10px] opacity-70 shrink-0" x-text="'(' + (getPinsForMap(map.id).length) + ')'"></span>
-                </button>
-            </template>
-        </div>
+        <button type="button" @click="uploadModalOpen = true" aria-label="Carica mappa" title="Carica mappa"
+                class="btn-primary !h-11 !w-11 !shrink-0 !p-0">
+            <x-app-icon name="upload" />
+        </button>
 
-        <!-- Action Buttons -->
-        <div class="flex items-center gap-2 shrink-0">
-            <!-- Upload New Map Button -->
-            <button @click="uploadModalOpen = true" class="btn-primary w-48 text-xs min-h-11 px-3">
-                <x-icon-label icon="upload" label="Carica Mappa" showOnMobile="true" />
-            </button>
-        </div>
+        @if($isGm)
+            <template x-if="activeMap">
+                <details class="relative shrink-0" @click.outside="$el.open = false" @keydown.escape.stop="$el.open = false; $el.querySelector('summary').focus()">
+                    <summary aria-label="Gestisci mappa" title="Gestisci mappa"
+                             class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 [&::-webkit-details-marker]:hidden">
+                        <x-app-icon name="ellipsis-vertical" />
+                    </summary>
+                    <div class="absolute right-0 z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-[#151b27] p-1.5 shadow-2xl">
+                        <template x-if="!activeMap.is_default">
+                            <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/default'" method="POST">
+                                @csrf
+                                <button type="submit" class="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-amber-300 hover:bg-white/10">
+                                    <x-app-icon name="check" />
+                                    <span>Imposta come predefinita</span>
+                                </button>
+                            </form>
+                        </template>
+                        <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id" method="POST" onsubmit="return confirm('Eliminare questa mappa e i suoi segnaposto?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-rose-400 hover:bg-white/10">
+                                <x-app-icon name="trash-2" />
+                                <span>Elimina mappa</span>
+                            </button>
+                        </form>
+                    </div>
+                </details>
+            </template>
+        @endif
     </div>
 
     <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
@@ -94,31 +109,6 @@
             </button>
         </div>
     </div>
-
-    <!-- Active Map Management (GM) -->
-    <template x-if="activeMap">
-        <div class="flex items-center justify-between text-xs px-2 text-slate-400">
-            <div>
-                Mappa visualizzata: <strong class="text-white" x-text="activeMap.title"></strong>
-                <span x-show="activeMap.is_default" class="ml-1 text-[10px] text-amber-400 font-bold uppercase">(Predefinita)</span>
-            </div>
-            <div class="flex items-center gap-2">
-                @if($isGm)
-                    <template x-if="!activeMap.is_default">
-                        <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/default'" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="text-amber-400 hover:underline text-[11px]"><x-icon-label icon="check" label="Imposta come predefinita" /></button>
-                        </form>
-                    </template>
-                    <form :action="'/campaigns/{{ $campaign->id }}/maps/' + activeMap.id" method="POST" onsubmit="return confirm('Eliminare questa mappa e i suoi segnaposto?')" class="inline">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="text-rose-400 hover:text-rose-300 text-[11px] ml-2"><x-icon-label icon="trash-2" label="Elimina mappa" /></button>
-                    </form>
-                @endif
-            </div>
-        </div>
-    </template>
 
     <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-slate-300 flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>

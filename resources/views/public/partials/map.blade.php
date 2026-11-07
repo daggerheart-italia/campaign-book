@@ -7,15 +7,8 @@
 
     <div x-show="maps.length > 0" class="space-y-4">
         <div class="space-y-4">
-            <div class="glass-panel p-3.5 sm:p-4 rounded-xl flex items-center gap-2 overflow-x-auto scrollbar-none">
-                <template x-for="map in maps" :key="map.id">
-                    <button @click="selectMap(map.id)"
-                            :class="activeMapId === map.id ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
-                            class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 shrink-0">
-                        <span x-text="map.title"></span>
-                        <span class="text-[10px] opacity-70" x-text="'(' + pinsForMap(map.id).length + ')'"></span>
-                    </button>
-                </template>
+            <div class="glass-panel flex items-center gap-2 rounded-xl p-2 sm:p-3">
+                <x-map-selector />
             </div>
 
             <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
@@ -155,7 +148,7 @@ function publicImageMap(config) {
         },
 
         get currentPins() {
-            return this.pinsForMap(this.activeMapId);
+            return this.getPinsForMap(this.activeMapId);
         },
 
         get mapCanvasStyle() {
@@ -163,7 +156,7 @@ function publicImageMap(config) {
             return `width: ${this.mapFitWidth * zoom}px; height: ${this.mapFitHeight * zoom}px;`;
         },
 
-        pinsForMap(mapId) {
+        getPinsForMap(mapId) {
             return this.pins.filter(pin => pin.campaign_map_id === mapId);
         },
 

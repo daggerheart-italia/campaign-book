@@ -1,9 +1,98 @@
 <?php
 
 use App\Models\Campaign;
+use App\Models\CampaignMap;
 use App\Models\MapPin;
 use App\Models\User;
 use App\Models\WikiPage;
+
+it('permette di scegliere la mappa e di gestirla dal menu gm', function () {
+    $gm = User::factory()->create();
+    $campaign = Campaign::factory()->create(['owner_id' => $gm->id, 'public_slug' => 'mappe-browser']);
+    $campaign->users()->attach($gm->id, ['role' => 'gm']);
+    $default = CampaignMap::factory()->create([
+        'campaign_id' => $campaign->id,
+        'title' => 'Mappa predefinita',
+        'is_default' => true,
+    ]);
+    $other = CampaignMap::factory()->create([
+        'campaign_id' => $campaign->id,
+        'title' => 'Mappa secondaria',
+    ]);
+    MapPin::factory()->create([
+        'campaign_id' => $campaign->id,
+        'campaign_map_id' => $other->id,
+        'created_by' => $gm->id,
+        'title' => 'Luogo secondario',
+    ]);
+
+    $browser = visit('/login')
+        ->resize(320, 700)
+        ->type('email', $gm->email)
+        ->type('password', 'password')
+        ->press('Entra nella Campagna')
+        ->navigate("/campaigns/{$campaign->id}?tab=map")
+        ->assertVisible('select[aria-label="Mappa visualizzata"]');
+
+    expect($browser->script('() => document.querySelector("select[aria-label=\\"Mappa visualizzata\\"]").value'))
+        ->toBe((string) $default->id);
+    foreach ([320, 768, 1280] as $width) {
+        $browser->resize($width, 700);
+        $layout = $browser->script('() => {
+            const select = document.querySelector("select[aria-label=\\"Mappa visualizzata\\"]").getBoundingClientRect();
+            const upload = document.querySelector("button[aria-label=\\"Carica mappa\\"]").getBoundingClientRect();
+            const menu = document.querySelector("summary[aria-label=\\"Gestisci mappa\\"]").getBoundingClientRect();
+            return { sameRow: select.top === upload.top && upload.top === menu.top, fits: select.left >= 0 && menu.right <= innerWidth };
+        }');
+        expect($layout)->toMatchArray(['sameRow' => true, 'fits' => true]);
+    }
+    $browser->resize(320, 700);
+    $browser->click('summary[aria-label="Gestisci mappa"]')
+        ->assertMissing('details[open] form[action$="/default"]')
+        ->click('summary[aria-label="Gestisci mappa"]');
+    $browser->select('select[aria-label="Mappa visualizzata"]', (string) $other->id)
+        ->assertSee('Luogo secondario')
+        ->click('summary[aria-label="Gestisci mappa"]')
+        ->assertVisible('details[open]')
+        ->assertSee('Imposta come predefinita');
+
+    expect($browser->script('() => document.querySelector("select[aria-label=\\"Mappa visualizzata\\"]").selectedOptions[0].textContent'))
+        ->toBe('Mappa secondaria · 1 pin');
+    $actions = $browser->script('() => [...document.querySelectorAll("details[open] form")].map(form => form.action)');
+    expect($actions)->toBe([
+        url("/campaigns/{$campaign->id}/maps/{$other->id}/default"),
+        url("/campaigns/{$campaign->id}/maps/{$other->id}"),
+    ]);
+    $browser->click('summary[aria-label="Gestisci mappa"]')
+        ->click('button[aria-label="Carica mappa"]')
+        ->assertSee('Carica Mappa di Gioco')
+        ->click('button[aria-label="Chiudi caricamento mappa"]')
+        ->navigate('/share/mappe-browser?tab=map')
+        ->assertVisible('select[aria-label="Mappa visualizzata"]')
+        ->select('select[aria-label="Mappa visualizzata"]', (string) $other->id)
+        ->assertSee('Luogo secondario')
+        ->assertMissing('summary[aria-label="Gestisci mappa"]')
+        ->assertNoJavascriptErrors();
+});
+
+it('non mostra le azioni gm ai giocatori', function () {
+    $gm = User::factory()->create();
+    $player = User::factory()->create();
+    $campaign = Campaign::factory()->create(['owner_id' => $gm->id]);
+    $campaign->users()->attach($gm->id, ['role' => 'gm']);
+    $campaign->users()->attach($player->id, ['role' => 'player']);
+    CampaignMap::factory()->create(['campaign_id' => $campaign->id, 'title' => 'Mappa del gruppo']);
+
+    visit('/login')
+        ->type('email', $player->email)
+        ->type('password', 'password')
+        ->press('Entra nella Campagna')
+        ->navigate("/campaigns/{$campaign->id}?tab=map")
+        ->assertVisible('select[aria-label="Mappa visualizzata"]')
+        ->assertMissing('summary[aria-label="Gestisci mappa"]')
+        ->assertVisible('button[aria-label="Carica mappa"]')
+        ->assertNoJavascriptErrors();
+});
 
 it('permette il login contemporaneo di due utenti su browser separati', function () {
     $alice = User::factory()->create(['name' => 'Alice']);
