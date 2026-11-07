@@ -76,13 +76,13 @@
             <div class="flex flex-col items-stretch gap-2.5 shrink-0">
                 <div>
                     <a href="{{ route('campaigns.export', $campaign) }}" class="btn-secondary w-full justify-center whitespace-nowrap text-xs py-2 px-3" title="Esporta l'intero compendio in formato Markdown">
-                        <x-icon-label icon="download" label="Esporta Markdown" />
+                        <x-icon-label icon="download" label="Esporta Markdown" showOnMobile="true" />
                     </a>
                 </div>
                 @if($isGm)
                     <div>
                         <button @click="setTab('members')" class="btn-secondary w-full justify-center whitespace-nowrap text-xs py-2 px-3" title="Codici e link di invito">
-                            <x-icon-label icon="user-round-plus" label="Invita" />
+                            <x-icon-label icon="user-round-plus" label="Invita" showOnMobile="true" />
                         </button>
                     </div>
                 @endif

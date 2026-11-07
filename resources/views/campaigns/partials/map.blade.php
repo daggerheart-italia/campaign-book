@@ -35,7 +35,7 @@
     <!-- Top Map Selector & Upload Actions -->
     <div class="glass-panel p-3.5 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-3">
         <!-- Map Tabs or Selector -->
-        <div class="flex items-center gap-2 overflow-x-auto scrollbar-none max-w-full">
+        <div class="flex items-center flex-wrap gap-2 overflow-x-auto scrollbar-none max-w-full">
             <template x-if="maps.length === 0">
                 <span class="text-xs text-amber-300 font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-amber-400"></span>
@@ -46,10 +46,11 @@
             <template x-for="map in maps" :key="map.id">
                 <button @click="selectMap(map.id)" 
                         :class="activeMapId === map.id ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
-                        class="px-3 min-h-11 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 shrink-0">
-                    <span class="w-1.5 h-1.5 rounded-full" :class="map.is_default ? 'bg-amber-400' : 'bg-slate-400'"></span>
-                    <span x-text="map.title"></span>
-                    <span class="text-[10px] opacity-70" x-text="'(' + (getPinsForMap(map.id).length) + ')'"></span>
+                        :title="map.title"
+                        class="w-48 px-3 min-h-11 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="map.is_default ? 'bg-amber-400' : 'bg-slate-400'"></span>
+                    <span class="min-w-0 flex-1 truncate text-left" x-text="map.title"></span>
+                    <span class="text-[10px] opacity-70 shrink-0" x-text="'(' + (getPinsForMap(map.id).length) + ')'"></span>
                 </button>
             </template>
         </div>
@@ -57,8 +58,8 @@
         <!-- Action Buttons -->
         <div class="flex items-center gap-2 shrink-0">
             <!-- Upload New Map Button -->
-            <button @click="uploadModalOpen = true" class="btn-primary text-xs min-h-11 px-3">
-                <x-icon-label icon="image" label="Carica Mappa" />
+            <button @click="uploadModalOpen = true" class="btn-primary w-48 text-xs min-h-11 px-3">
+                <x-icon-label icon="upload" label="Carica Mappa" showOnMobile="true" />
             </button>
         </div>
     </div>

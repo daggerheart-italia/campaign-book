@@ -134,7 +134,7 @@
 
         <!-- Add Wiki Page CTA -->
         <a href="{{ route('wiki.create', $campaign) }}" class="btn-primary text-xs sm:text-sm py-2 px-4 shrink-0">
-            <x-icon-label icon="plus" label="Nuova Pagina Wiki" />
+            <x-icon-label icon="plus" label="Nuova Pagina Wiki" showOnMobile="true" />
         </a>
     </div>
 
