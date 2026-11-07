@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.1.17] - 2026-11-07
+
+- style(ui): show note save label on mobile and keep wiki header row (5289dec)
+- fix(a11y): remove automatic mobile tooltips from icon controls (5ad6e22)
+- feat(maps): add reusable map selector component and GM management menu (5edbb3d)
+- style(ui): update icons and layout alignment across views (326aa7e)
+- refactor(campaigns): convert pin modal to native dialog element (44dd97c)
+- feat(campaigns): show icon labels on mobile in edit view actions (ef3a56c)
+- style(campaigns): adjust notes form footer layout and shorten pin label (93febfe)
+- refactor(ui): improve map selector layout and icon-label visibility (c33f4b8)
+- feat(mobile): show icon labels on mobile and simplify nav hamburger (2627379)
+- feat(ui): add native tooltip to desktop-hidden icon labels (2d3524b)
+- feat(icon-label): add mobile and desktop visibility toggles (92a314d)
+- refactor(ui): improve pin roster responsiveness and accessibility (d5374c3)
+- feat(mobile): enhance touch targets and responsive UI for premium mobile UX (ddcc338)
+- feat(map): unify pin modal sub-states and wire parent page select component (a8470e1)
+- refactor(ui): track create and details modal state separately in map view (a4d5487)
+- Refactor code structure for improved readability and maintainability (968f10c)
+- feat(icons): replace inline SVGs with Lucide Blade icon components (7166249)
+- feat(docs): add icon guidelines and usage standards (9ae9ed3)
+- feat(mobile): add incremental todo list for mobile polish and unified pin modal (8b86f61)
+- refactor(ui): unify map pin modal state and improve responsive layouts (693f6a4)
+- feat(mobile): implement mobile-first visual refinements and unified pin modal (430179e)
+- chore(changelog): add entries for version 0.1.16 (db71f8c)
+
 ## [0.1.16] - 2026-11-06
 
 - feat(config): make route throttle limits configurable (7fc20b0)
