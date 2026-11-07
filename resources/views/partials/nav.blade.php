@@ -25,10 +25,6 @@
                         <x-icon-label icon="archive" label="Campagne" />
                     </a>
 
-                    <a href="{{ route('campaigns.create') }}" class="btn-primary text-xs py-1.5 px-3">
-                        <x-icon-label icon="plus" label="Nuova Campagna" />
-                    </a>
-
                     <div class="h-5 w-px bg-white/10 mx-1"></div>
 
                     <!-- User Profile / Logout -->

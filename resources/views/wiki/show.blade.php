@@ -53,7 +53,7 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-2 shrink-0 overflow-x-auto scrollbar-none">
+            <div class="flex items-center gap-2 shrink-0 overflow-x-auto scrollbar-none justify-end">
                 @if($campaign->isGm(auth()->user()))
                     <a href="{{ route('wiki.revisions', [$campaign, $wiki]) }}" class="btn-secondary text-xs min-h-11 px-3 shrink-0" title="Visualizza revisioni storiche">
                         <x-icon-label icon="clock-3" label="Revisioni ({{ $wiki->revisions->count() }})" />

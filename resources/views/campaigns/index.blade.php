@@ -11,9 +11,9 @@
             <p class="text-sm text-slate-400 mt-1">Gestisci i tuoi mondi, consulta il grimorio e prepara la prossima sessione.</p>
         </div>
 
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2.5 justify-center">
             <button @click="joinModalOpen = true" class="btn-secondary text-sm">
-                <x-icon-label icon="user-round-plus" label="Unisciti con Codice" showOnMobile="true" />
+                <x-icon-label icon="star-plus" label="Unisciti con Codice" showOnMobile="true" />
             </button>
         </div>
     </div>
@@ -112,10 +112,7 @@
                 <x-app-icon name="x" class="w-5 h-5" />
             </button>
 
-            <div class="text-center mb-6">
-                <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mx-auto mb-3">
-                    <x-app-icon name="key-round" class="w-6 h-6" />
-                </div>
+            <div class="text-center mb-6 mt-4">
                 <h3 class="font-['Cinzel'] text-xl font-bold text-white mb-1">Unisciti a una Campagna</h3>
                 <p class="text-xs text-slate-400">Incolla il codice di invito ricevuto dal Game Master.</p>
             </div>
@@ -129,7 +126,7 @@
 
                 <div class="flex items-center gap-3 pt-2">
                     <button type="button" @click="joinModalOpen = false" class="btn-secondary w-1/2 py-2.5 text-xs"><x-icon-label icon="x" label="Annulla" /></button>
-                    <button type="submit" class="btn-primary w-1/2 py-2.5 text-xs"><x-icon-label icon="user-round-plus" label="Unisciti" /></button>
+                    <button type="submit" class="btn-primary w-1/2 py-2.5 text-xs"><x-icon-label icon="star-plus" label="Unisciti" /></button>
                 </div>
             </form>
         </div>
