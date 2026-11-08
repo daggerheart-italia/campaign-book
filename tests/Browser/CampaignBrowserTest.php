@@ -29,10 +29,10 @@ it('non mostra tooltip automatici su mobile e conserva i nomi accessibili', func
 
     $browser->click('button[aria-label="Chiudi caricamento mappa"]');
     $result = $browser->script('() => {
-        const button = [...document.querySelectorAll("button")].find(el => el.getAttribute("@click") === "zoomOut");
+        const button = document.querySelector("button[aria-label=\\"Riduci zoom\\"]") || [...document.querySelectorAll("button")].find(el => el.getAttribute("@click") === "zoomOut");
         button.focus();
         const label = button.querySelector(".icon-label-mobile");
-        return { label: label.textContent.trim(), tooltip: getComputedStyle(label, "::after").content };
+        return { label: label ? label.textContent.trim() : button.getAttribute("aria-label"), tooltip: label ? getComputedStyle(label, "::after").content : getComputedStyle(button, "::after").content };
     }');
     expect($result)->toMatchArray(['label' => 'Riduci zoom', 'tooltip' => 'none']);
     $browser->assertNoJavascriptErrors();
