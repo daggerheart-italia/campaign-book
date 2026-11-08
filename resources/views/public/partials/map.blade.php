@@ -11,32 +11,29 @@
                 <x-map-selector />
             </div>
 
-            <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
+            <div class="glass-panel rounded-xl p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2">
                 <button @click="showLabels = !showLabels" :aria-pressed="showLabels"
                         :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                        class="btn-secondary !py-1.5 !px-3 text-xs border">
-                    <x-icon-label icon="tag" label="Etichette" icon-class="w-3.5 h-3.5" />
+                        class="btn-secondary h-10 w-10 sm:h-auto sm:w-auto sm:!py-1.5 sm:!px-3 shrink-0 p-0 sm:p-2 text-xs border justify-center" :aria-label="showLabels ? 'Nascondi etichette' : 'Mostra etichette'">
+                    <x-icon-label icon="tag" label="Etichette" icon-class="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                 </button>
 
-                <div class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 p-0.5" role="group" aria-label="Controlli zoom mappa">
+                <div class="ml-auto inline-flex items-center gap-0.5 rounded-lg border border-white/10 bg-black/40 p-0.5" role="group" aria-label="Controlli zoom mappa">
                     <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
-                            class="min-w-8 rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                        <x-icon-label icon="zoom-out" label="Riduci zoom" />
+                            class="h-10 w-10 rounded text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center" aria-label="Riduci zoom">
+                        <x-app-icon name="zoom-out" class="h-4 w-4" />
                     </button>
-                    <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="(Math.round(zoomLevel * 10) / 10) + '%'"></span>
+                    <span class="min-w-11 px-0.5 text-center text-[11px] sm:text-xs font-mono tabular-nums text-slate-200" x-text="Math.round(zoomLevel) + '%'"></span>
                     <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
-                            class="min-w-8 rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                        <x-icon-label icon="zoom-in" label="Aumenta zoom" />
-                    </button>
-                    <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
-                            class="rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                        <x-icon-label icon="scan" label="Adatta" />
+                            class="h-10 w-10 rounded text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center" aria-label="Aumenta zoom">
+                        <x-app-icon name="zoom-in" class="h-4 w-4" />
                     </button>
                 </div>
             </div>
 
-            <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-slate-300">
-                Trascina per spostare la mappa • Pizzica per zoomare su mobile, Ctrl + rotella su desktop • Tocca un pin per i dettagli
+            <div class="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] sm:text-xs text-slate-400 leading-snug">
+                <span class="sm:hidden">Trascina per muovere · Pizzica per zoom · Tocca un pin</span>
+                <span class="hidden sm:inline">Trascina per spostare la mappa · Ctrl+rotella per zoom · Tocca un pin per i dettagli</span>
             </div>
 
             <div class="glass-panel p-2 sm:p-3 rounded-2xl relative">
@@ -48,7 +45,7 @@
                      @touchend="endMapTouch($event)"
                      @touchcancel="endMapTouch($event)"
                      :class="isPanning ? 'cursor-grabbing' : 'cursor-grab'"
-                     class="flex h-[70vh] min-h-80 max-h-[800px] w-full overflow-auto rounded-xl border border-white/10 bg-[#070a12] scrollbar-thin select-none touch-none">
+                     class="flex h-[60vh] min-h-[420px] sm:h-[70vh] sm:min-h-80 max-h-[800px] w-full overflow-auto rounded-xl border border-white/10 bg-[#070a12] scrollbar-thin select-none touch-none">
                     <div class="relative m-auto shrink-0 transition-none" :style="mapCanvasStyle">
                         <img x-ref="mapImage" :src="activeMap?.image_url" @load="fitMap" alt="Mappa di Campagna"
                              class="block h-full w-full rounded-lg object-fill shadow-2xl" draggable="false" />
@@ -73,6 +70,11 @@
                         </template>
                     </div>
                 </div>
+                <button type="button" x-show="Math.abs(zoomLevel - defaultZoom()) > 0.5" x-cloak @click="resetZoomAndCenter()"
+                        class="btn-secondary absolute bottom-3 right-3 z-20 !p-2.5 min-h-11 min-w-11 rounded-full shadow-lg border border-white/10 bg-black/50 backdrop-blur-sm"
+                        aria-label="Reimposta zoom e centra mappa">
+                    <x-app-icon name="scan" class="h-4 w-4" />
+                </button>
             </div>
 
             <div class="glass-panel p-4 rounded-xl">
@@ -80,7 +82,7 @@
                 <p x-show="currentPins.length === 0" class="text-xs text-slate-400 text-center py-4">Nessun punto segnato su questa mappa.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                     <template x-for="pin in currentPins" :key="pin.id">
-                        <button @click="openPin(pin)" class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] p-2.5 rounded-lg flex items-center gap-2.5 text-left transition-colors min-w-0">
+                        <button @click="openPin(pin)" class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] min-h-11 p-2.5 rounded-lg flex items-center gap-2.5 text-left transition-colors min-w-0">
                             <span class="w-3 h-3 rounded-full shrink-0" :style="'background-color: ' + pin.color"></span>
                             <span class="min-w-0">
                                 <span class="block text-xs font-semibold text-slate-200 truncate" x-text="pin.title"></span>
@@ -93,21 +95,32 @@
         </div>
     </div>
 
-    <div x-show="detailsOpen" x-transition x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-        <div @click.away="detailsOpen = false" class="glass-panel p-6 rounded-2xl max-w-md w-full relative">
-            <button @click="detailsOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi">
-                <x-app-icon name="x" class="w-5 h-5" />
-            </button>
-            <div class="flex items-center gap-2.5 mb-2 pr-8">
-                <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>
-                <h3 class="font-['Cinzel'] text-xl font-bold text-white min-w-0 break-words" x-text="selectedPin.title"></h3>
+    <div x-show="detailsOpen" x-cloak class="fixed inset-0 z-50">
+        <div x-show="detailsOpen" x-transition.opacity class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="detailsOpen = false"></div>
+        <div class="absolute inset-x-0 bottom-0 flex justify-center sm:inset-0 sm:items-center sm:p-4">
+            <div x-show="detailsOpen" @click.away="detailsOpen = false"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95"
+                 class="glass-panel relative w-full max-h-[70vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl sm:max-w-md p-5 sm:p-6">
+                <div class="mx-auto mb-3 h-1.5 w-12 rounded-full bg-white/20 sm:hidden" aria-hidden="true"></div>
+                <button @click="detailsOpen = false" class="absolute top-3 right-3 sm:top-4 sm:right-4 text-slate-400 hover:text-white p-2 min-h-11 min-w-11 flex items-center justify-center" aria-label="Chiudi">
+                    <x-app-icon name="x" class="w-5 h-5" />
+                </button>
+                <div class="flex items-center gap-2.5 mb-2 pr-12">
+                    <span class="w-4 h-4 rounded-full shrink-0" :style="'background-color: ' + selectedPin.color"></span>
+                    <h3 class="font-['Cinzel'] text-xl font-bold text-white min-w-0 break-words" x-text="selectedPin.title"></h3>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed mb-4 whitespace-pre-wrap" x-text="selectedPin.description || 'Nessuna descrizione specificata.'"></p>
+                <template x-if="selectedPin.wiki_page_url">
+                    <a :href="selectedPin.wiki_page_url" class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
+                        <span x-text="'Leggi Scheda Wiki: ' + (selectedPin.wiki_page_title || 'Visualizza')"></span>
+                    </a>
+                </template>
             </div>
-            <p class="text-xs text-slate-300 leading-relaxed mb-4 whitespace-pre-wrap" x-text="selectedPin.description || 'Nessuna descrizione specificata.'"></p>
-            <template x-if="selectedPin.wiki_page_url">
-                <a :href="selectedPin.wiki_page_url" class="btn-primary w-full text-xs py-2.5 justify-center shadow-lg">
-                    <span x-text="'Leggi Scheda Wiki: ' + (selectedPin.wiki_page_title || 'Visualizza')"></span>
-                </a>
-            </template>
         </div>
     </div>
 </div>
@@ -132,6 +145,7 @@ function publicImageMap(config) {
         selectedPin: {},
 
         init() {
+            this.defaultViewportZoom = 100;
             this.$nextTick(() => {
                 this.mapResizeObserver = new ResizeObserver(() => this.fitMap());
                 this.mapResizeObserver.observe(this.$refs.mapViewport);
@@ -160,9 +174,28 @@ function publicImageMap(config) {
             return this.pins.filter(pin => pin.campaign_map_id === mapId);
         },
 
+        isMobileViewport() {
+            return window.matchMedia('(max-width: 639.98px)').matches;
+        },
+
+        defaultZoom() {
+            return this.defaultViewportZoom ?? 100;
+        },
+
+        applyDefaultViewportZoom() {
+            if (!this.isMobileViewport() || !this.mapFitHeight || !this.$refs.mapViewport?.clientHeight) {
+                this.defaultViewportZoom = 100;
+                return;
+            }
+
+            this.defaultViewportZoom = Math.round(Math.max(50, Math.min(300, (this.$refs.mapViewport.clientHeight / this.mapFitHeight) * 100)) * 10) / 10;
+            this.zoomLevel = this.defaultViewportZoom;
+        },
+
         selectMap(mapId) {
             this.activeMapId = mapId;
-            this.resetZoom();
+            this.defaultViewportZoom = 100;
+            this.zoomLevel = 100;
             this.$nextTick(() => this.fitMap());
         },
 
@@ -181,6 +214,9 @@ function publicImageMap(config) {
             const fitScale = Math.min(viewport.clientWidth / image.naturalWidth, viewport.clientHeight / image.naturalHeight);
             this.mapFitWidth = image.naturalWidth * fitScale;
             this.mapFitHeight = image.naturalHeight * fitScale;
+            if (this.zoomLevel === 100) {
+                this.applyDefaultViewportZoom();
+            }
         },
 
         zoomIn() {
@@ -192,7 +228,25 @@ function publicImageMap(config) {
         },
 
         resetZoom() {
-            this.zoomLevel = 100;
+            this.zoomLevel = this.defaultZoom();
+            this.$nextTick(() => {
+                const viewport = this.$refs.mapViewport;
+                if (viewport) {
+                    viewport.scrollLeft = 0;
+                    viewport.scrollTop = 0;
+                }
+            });
+        },
+
+        resetZoomAndCenter() {
+            this.resetZoom();
+        },
+                if (!viewport) {
+                    return;
+                }
+                viewport.scrollLeft = 0;
+                viewport.scrollTop = 0;
+            });
         },
 
         setZoomAt(zoomLevel, clientX, clientY) {
