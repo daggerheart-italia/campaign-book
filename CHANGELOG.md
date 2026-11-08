@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.19] - 2026-11-08
+
+- style(maps): use upload icon for map upload button (4fb9e3c)
+- fix(maps): clarify desktop zoom control hint in map legend (e71ffc8)
+- feat(wiki): redesign related-pages navigation and card stacking (927df03)
+- feat(maps): add numbered pin labels with showLabels toggle (3edf151)
+- chore(changelog): add entries for version 0.1.18 (4823386)
+
 ## [0.1.18] - 2026-11-08
 
 - style(ui): improve mobile ergonomics for campaign maps (5d9377e)

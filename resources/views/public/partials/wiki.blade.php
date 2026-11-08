@@ -48,7 +48,7 @@
 
     <div x-show="visiblePages.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <template x-for="page in visiblePages" :key="page.id">
-            <article class="glass-panel glass-panel-hover p-4 rounded-xl flex flex-col justify-between group">
+            <article :class="{ 'wiki-card-stack': selectedCategory === 'all' && page.children_count > 0 }" class="glass-panel glass-panel-hover p-4 rounded-xl flex flex-col justify-between group">
                 <div>
                     <div class="flex items-center justify-between gap-2 mb-2">
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20" x-text="page.category"></span>

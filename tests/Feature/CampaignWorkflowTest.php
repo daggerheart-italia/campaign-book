@@ -762,7 +762,7 @@ class CampaignWorkflowTest extends TestCase
         $response->assertSee('Leggi', false);
         $response->assertDontSee('Apri scheda', false);
         $response->assertDontSee('Esplora', false);
-        $response->assertSee(":class=\"{ 'wiki-card-stack': Array.isArray(page.children_ids) && page.children_ids.length > 0 }\"", false);
+        $response->assertSee(":class=\"{ 'wiki-card-stack': selectedCategory === 'all' && Array.isArray(page.children_ids) && page.children_ids.length > 0 }\"", false);
         $response->assertDontSee('-right-1 -bottom-1', false);
         $response->assertSee($child->title, false);
         $response->assertSee($grandchild->title, false);

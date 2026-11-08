@@ -106,7 +106,7 @@
 
     <div class="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] sm:text-xs text-slate-400 leading-snug">
         <span class="sm:hidden">Trascina per muovere · Pizzica per zoom · Tocca un pin per dettagli</span>
-        <span class="hidden sm:inline">Trascina per spostare la mappa · Ctrl+rotella per zoom · Tasto destro o doppio clic per inserire un pin · Trascina un pin per riposizionarlo</span>
+        <span class="hidden sm:inline">Trascina per spostare la mappa · Ctrl + rotella su desktop per zoom · Tasto destro o doppio clic per inserire un pin · Trascina un pin per riposizionarlo</span>
     </div>
 
     <!-- Interactive Map Stage (Custom Image with Pins) -->
@@ -395,7 +395,7 @@
                 <div class="flex items-center justify-end gap-2 pt-2">
                     <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50"><x-icon-label icon="x" label="Annulla" /></button>
                     <button type="submit" :disabled="uploadingMap" class="btn-primary text-xs py-2 px-4 disabled:opacity-50">
-                        <x-app-icon name="image" />
+                        <x-app-icon name="upload" />
                         <span class="icon-label-mobile" x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
                     </button>
                 </div>
