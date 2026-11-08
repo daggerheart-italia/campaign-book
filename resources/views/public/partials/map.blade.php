@@ -50,7 +50,7 @@
                         <img x-ref="mapImage" :src="activeMap?.image_url" @load="fitMap" alt="Mappa di Campagna"
                              class="block h-full w-full rounded-lg object-fill shadow-2xl" draggable="false" />
 
-                        <template x-for="pin in currentPins" :key="pin.id">
+                        <template x-for="(pin, pinIndex) in currentPins" :key="pin.id">
                             <div data-map-pin
                                  class="absolute -translate-x-1/2 -translate-y-full cursor-pointer group z-30"
                                  :style="'left: ' + pin.x + '%; top: ' + pin.y + '%;'"
@@ -60,9 +60,14 @@
                                     <span x-text="pin.title"></span>
                                 </div>
                                 <div class="relative flex flex-col items-center">
-                                    <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125"
+                                    <div class="h-5 w-5 rounded-full flex items-center justify-center text-white border-2 border-white shadow-xl transition-transform group-hover:scale-125 text-[10px] font-bold"
                                          :style="'background-color: ' + pin.color + '; box-shadow: 0 0 12px ' + pin.color + ', 0 4px 8px rgba(0,0,0,0.6);'">
-                                        <x-app-icon name="map-pin" class="h-2.5 w-2.5" />
+                                        <template x-if="showLabels">
+                                            <x-app-icon name="circle-dot" class="h-2.5 w-2.5" stroke-width="3" />
+                                        </template>
+                                        <template x-if="!showLabels">
+                                            <span x-text="pinIndex + 1"></span>
+                                        </template>
                                     </div>
                                     <div class="w-0 h-0 border-x-[3px] border-x-transparent border-t-[5px] -mt-[1px]" :style="'border-top-color: ' + pin.color + ';'"></div>
                                 </div>
@@ -81,9 +86,9 @@
                 <h3 class="font-['Cinzel'] text-sm font-bold text-white mb-3">Luoghi Segnati (<span x-text="currentPins.length"></span>)</h3>
                 <p x-show="currentPins.length === 0" class="text-xs text-slate-400 text-center py-4">Nessun punto segnato su questa mappa.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                    <template x-for="pin in currentPins" :key="pin.id">
+                    <template x-for="(pin, pinIndex) in currentPins" :key="pin.id">
                         <button @click="openPin(pin)" class="bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] min-h-11 p-2.5 rounded-lg flex items-center gap-2.5 text-left transition-colors min-w-0">
-                            <span class="w-3 h-3 rounded-full shrink-0" :style="'background-color: ' + pin.color"></span>
+                            <span class="w-5 h-5 rounded-full shrink-0 shadow-sm flex items-center justify-center text-[10px] font-bold text-white" :style="'background-color: ' + pin.color" x-text="pinIndex + 1"></span>
                             <span class="min-w-0">
                                 <span class="block text-xs font-semibold text-slate-200 truncate" x-text="pin.title"></span>
                                 <span class="block text-[10px] text-slate-400 truncate" x-text="pin.description || ''"></span>
@@ -127,7 +132,7 @@
 
 @push('scripts')
 <script>
-function publicImageMap(config) {
+window.publicImageMap = function publicImageMap(config) {
     return {
         maps: config.maps,
         pins: config.pins,
@@ -240,13 +245,6 @@ function publicImageMap(config) {
 
         resetZoomAndCenter() {
             this.resetZoom();
-        },
-                if (!viewport) {
-                    return;
-                }
-                viewport.scrollLeft = 0;
-                viewport.scrollTop = 0;
-            });
         },
 
         setZoomAt(zoomLevel, clientX, clientY) {
