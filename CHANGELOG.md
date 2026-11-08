@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.18] - 2026-11-08
+
+- style(ui): improve mobile ergonomics for campaign maps (5d9377e)
+- chore(changelog): update entries for version 0.1.17 (9cfd0ff)
+
 ## [0.1.17] - 2026-11-07
 
 - style(ui): show note save label on mobile and keep wiki header row (5289dec)
