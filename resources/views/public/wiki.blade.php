@@ -26,14 +26,34 @@
     </article>
 
     @if($wiki->parent || $childPages->isNotEmpty())
-        <nav aria-label="Schede correlate" class="flex flex-wrap gap-2 text-sm">
+        <nav aria-label="Schede correlate" class="glass-panel rounded-xl p-3 sm:p-4 space-y-3">
             @if($wiki->parent)
-                <a href="{{ route('public.wiki', [$campaign->public_slug, $wiki->parent]) }}" class="text-amber-300 hover:text-amber-200">← {{ $wiki->parent->title }}</a>
+                <div>
+                    <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Pagina genitore</p>
+                    <a href="{{ route('public.wiki', [$campaign->public_slug, $wiki->parent]) }}"
+                       class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-amber-300 transition-colors hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-200">
+                        <x-app-icon name="chevron-left" class="h-4 w-4 shrink-0" />
+                        <span>{{ $wiki->parent->title }}</span>
+                    </a>
+                </div>
             @endif
-            @foreach($childPages as $childPage)
-                <a href="{{ route('public.wiki', [$campaign->public_slug, $childPage]) }}"
-                   class="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-amber-300 hover:bg-amber-500/10">{{ $childPage->title }}</a>
-            @endforeach
+
+            @if($childPages->isNotEmpty())
+                <div>
+                    <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sottopagine</p>
+                    <ul class="flex flex-wrap gap-2">
+                        @foreach($childPages as $childPage)
+                            <li>
+                                <a href="{{ route('public.wiki', [$campaign->public_slug, $childPage]) }}"
+                                   class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-amber-300 transition-colors hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-200">
+                                    <span>{{ $childPage->title }}</span>
+                                    <x-app-icon name="chevron-right" class="h-4 w-4 shrink-0 text-amber-400/80" />
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </nav>
     @endif
 </div>

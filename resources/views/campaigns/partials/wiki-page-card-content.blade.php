@@ -1,5 +1,5 @@
 <div class="relative isolate space-y-3" data-wiki-page-id="" x-bind:data-wiki-page-id="page ? page.id : ''">
-    <article :class="{ 'wiki-card-stack': Array.isArray(page.children_ids) && page.children_ids.length > 0 }"
+    <article :class="{ 'wiki-card-stack': selectedCategory === 'all' && Array.isArray(page.children_ids) && page.children_ids.length > 0 }"
              class="glass-panel glass-panel-hover p-4 rounded-xl flex flex-col justify-between relative group">
         <div>
             <div class="flex items-center justify-between gap-2 mb-2">
@@ -27,10 +27,10 @@
 
             <div class="flex items-center gap-2">
                 <a :href="page.revisions_url" class="text-slate-400 hover:text-slate-200 text-[11px] flex min-h-11 items-center gap-1" title="Cronologia Revisioni">
-                    <x-icon-label icon="clock-3" label="Revisioni" />
+                    <x-icon-label icon="clock-3" label="Revisioni" hideOnDesktop="true" />
                 </a>
                 <a :href="page.edit_url" class="btn-secondary !p-1.5 sm:!px-3 !rounded-lg text-slate-300 hover:text-amber-400">
-                    <x-icon-label icon="pencil" label="Modifica" />
+                    <x-icon-label icon="pencil" label="Modifica" hideOnDesktop="true" />
                 </a>
             </div>
         </div>
