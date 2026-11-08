@@ -79,40 +79,34 @@
         @endif
     </div>
 
-    <div class="glass-panel p-2 rounded-xl flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-2 flex-wrap">
-            <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')" class="btn-secondary min-h-11 px-3 text-xs border">
-                <x-icon-label icon="printer" label="Stampa mappa" />
-            </button>
-            <button @click="showLabels = !showLabels"
-                    :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
-                    class="btn-secondary min-h-11 px-3 text-xs border">
-                <x-icon-label icon="tag" label="Etichette" />
-            </button>
-        </div>
+    <div class="glass-panel rounded-xl p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2">
+        <button type="button" @click="if (activeMap) window.open('/campaigns/{{ $campaign->id }}/maps/' + activeMap.id + '/print', '_blank')"
+                class="btn-secondary h-10 w-10 sm:h-auto sm:w-auto sm:min-h-11 sm:px-3 shrink-0 p-0 sm:p-2 text-xs border justify-center" aria-label="Stampa mappa" title="Stampa mappa">
+            <x-icon-label icon="printer" label="Stampa mappa" hideOnDesktop="false" />
+        </button>
+        <button @click="showLabels = !showLabels" :aria-pressed="showLabels"
+                :class="showLabels ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 border-white/5'"
+                class="btn-secondary h-10 w-10 sm:h-auto sm:w-auto sm:min-h-11 sm:px-3 shrink-0 p-0 sm:p-2 text-xs border justify-center" :aria-label="showLabels ? 'Nascondi etichette' : 'Mostra etichette'" :title="showLabels ? 'Nascondi etichette' : 'Mostra etichette'">
+            <x-icon-label icon="tag" label="Etichette" />
+        </button>
 
-        <div class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/40 p-0.5"
-             role="group"
-             aria-label="Controlli zoom mappa">
+        <div class="ml-auto inline-flex items-center gap-0.5 rounded-lg border border-white/10 bg-black/40 p-0.5"
+             role="group" aria-label="Controlli zoom mappa">
             <button type="button" @click="zoomOut" :disabled="zoomLevel <= 50"
-                    class="min-h-11 min-w-11 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                <x-icon-label icon="zoom-out" label="Riduci zoom" hideOnDesktop="true"/>
+                    class="h-10 w-10 rounded text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center" aria-label="Riduci zoom">
+                <x-app-icon name="zoom-out" class="h-4 w-4" />
             </button>
-            <span class="min-w-12 px-1 text-center text-xs font-mono text-slate-200" x-text="(Math.round(zoomLevel * 10) / 10) + '%'"></span>
+            <span class="min-w-11 px-0.5 text-center text-[11px] sm:text-xs font-mono tabular-nums text-slate-200" x-text="Math.round(zoomLevel) + '%'"></span>
             <button type="button" @click="zoomIn" :disabled="zoomLevel >= 300"
-                    class="min-h-11 min-w-11 rounded px-2 text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                <x-icon-label icon="zoom-in" label="Aumenta zoom" hideOnDesktop="true"/>
-            </button>
-            <button type="button" @click="resetZoom" :disabled="zoomLevel === 100"
-                    class="min-h-11 min-w-11 rounded px-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
-                <x-icon-label icon="expand" label="Adatta" hideOnDesktop="true"/>
+                    class="h-10 w-10 rounded text-slate-300 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center" aria-label="Aumenta zoom">
+                <x-app-icon name="zoom-in" class="h-4 w-4" />
             </button>
         </div>
     </div>
 
-    <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-slate-300 flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-        <span>Trascina per spostare la mappa • Pizzica per zoomare su mobile, Ctrl + rotella su desktop • Tasto destro o doppio clic per inserire un pin • Trascina un pin per riposizionarlo</span>
+    <div class="rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-1.5 text-[11px] sm:text-xs text-slate-400 leading-snug">
+        <span class="sm:hidden">Trascina per muovere · Pizzica per zoom · Tocca un pin per dettagli</span>
+        <span class="hidden sm:inline">Trascina per spostare la mappa · Ctrl+rotella per zoom · Tasto destro o doppio clic per inserire un pin · Trascina un pin per riposizionarlo</span>
     </div>
 
     <!-- Interactive Map Stage (Custom Image with Pins) -->
@@ -125,7 +119,7 @@
              @touchend="endMapTouch($event)"
              @touchcancel="endMapTouch($event)"
              :class="isPanning ? 'cursor-grabbing' : 'cursor-grab'"
-             class="flex h-[70vh] min-h-80 max-h-[800px] w-full overflow-auto rounded-xl border border-white/10 bg-[#070a12] scrollbar-thin select-none touch-none">
+             class="flex h-[60vh] min-h-[420px] sm:h-[70vh] sm:min-h-80 max-h-[800px] w-full overflow-auto rounded-xl border border-white/10 bg-[#070a12] scrollbar-thin select-none touch-none">
             <div class="relative m-auto shrink-0 transition-none"
                  :style="mapCanvasStyle">
 
@@ -176,6 +170,11 @@
 
             </div>
         </div>
+        <button type="button" x-show="Math.abs(zoomLevel - defaultZoom()) > 0.5" x-cloak @click="resetZoomAndCenter()"
+                class="btn-secondary absolute bottom-3 right-3 z-20 !p-2.5 min-h-11 min-w-11 rounded-full shadow-lg border border-white/10 bg-black/50 backdrop-blur-sm"
+                aria-label="Reimposta zoom e centra mappa">
+            <x-app-icon name="expand" class="h-4 w-4" />
+        </button>
     </div>
 
     <!-- Location Roster (List of Places on Current Map) -->
@@ -446,6 +445,7 @@ function customImageMap(config) {
         savingPinIds: new Set(),
 
         init() {
+            this.defaultViewportZoom = 100;
             this.$watch('modalOpen', (isOpen) => {
                 if (isOpen) {
                     const body = document.body;
@@ -635,10 +635,31 @@ function customImageMap(config) {
             return this.pins.filter(p => p.campaign_map_id === mapId);
         },
 
+        isMobileViewport() {
+            return window.matchMedia('(max-width: 639.98px)').matches;
+        },
+
+        defaultZoom() {
+            return this.defaultViewportZoom ?? 100;
+        },
+
+        applyDefaultViewportZoom() {
+            if (!this.isMobileViewport() || !this.mapFitHeight || !this.$refs.mapViewport?.clientHeight) {
+                this.defaultViewportZoom = 100;
+                return;
+            }
+
+            this.defaultViewportZoom = Math.round(Math.max(50, Math.min(300, (this.$refs.mapViewport.clientHeight / this.mapFitHeight) * 100)) * 10) / 10;
+            this.zoomLevel = this.defaultViewportZoom;
+        },
+
         selectMap(mapId) {
             this.activeMapId = mapId;
-            this.resetZoom();
-            this.$nextTick(() => this.fitMap());
+            this.defaultViewportZoom = 100;
+            this.zoomLevel = 100;
+            this.$nextTick(() => {
+                this.fitMap();
+            });
         },
 
         fitMap() {
@@ -654,6 +675,9 @@ function customImageMap(config) {
             );
             this.mapFitWidth = image.naturalWidth * fitScale;
             this.mapFitHeight = image.naturalHeight * fitScale;
+            if (this.zoomLevel === 100) {
+                this.applyDefaultViewportZoom();
+            }
         },
 
         zoomIn() {
@@ -783,7 +807,18 @@ function customImageMap(config) {
         },
 
         resetZoom() {
-            this.zoomLevel = 100;
+            this.zoomLevel = this.defaultZoom();
+            this.$nextTick(() => {
+                const viewport = this.$refs.mapViewport;
+                if (viewport) {
+                    viewport.scrollLeft = 0;
+                    viewport.scrollTop = 0;
+                }
+            });
+        },
+
+        resetZoomAndCenter() {
+            this.resetZoom();
         },
 
         handleMapInsert(event) {
