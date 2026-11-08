@@ -395,7 +395,7 @@
                 <div class="flex items-center justify-end gap-2 pt-2">
                     <button type="button" @click="uploadModalOpen = false" :disabled="uploadingMap" class="btn-secondary text-xs py-2 px-3 disabled:opacity-50"><x-icon-label icon="x" label="Annulla" /></button>
                     <button type="submit" :disabled="uploadingMap" class="btn-primary text-xs py-2 px-4 disabled:opacity-50">
-                        <x-app-icon name="image" />
+                        <x-app-icon name="upload" />
                         <span class="icon-label-mobile" x-text="uploadingMap ? 'Caricamento… ' + uploadProgress + '%' : 'Carica Mappa'"></span>
                     </button>
                 </div>
