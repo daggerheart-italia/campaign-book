@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.20] - 2026-11-23
+
+- Enhance modals by setting max height and enabling scroll for better usability (dc28bff)
+- Fix edit modal overflow by setting max height and enabling scroll (99a7810)
+- Add showOnMobile attribute to icon labels in login and landing pages for better mobile visibility (a54de4b)
+- chore(changelog): add entries for version 0.1.19 (a6f8c54)
+
 ## [0.1.19] - 2026-11-08
 
 - style(maps): use upload icon for map upload button (4fb9e3c)
