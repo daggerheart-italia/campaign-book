@@ -176,8 +176,8 @@ x-data="{
         </template>
     </div>
 
-    <div x-show="editModalOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" x-cloak>
-        <div @click.away="editModalOpen = false" class="glass-panel p-6 rounded-2xl max-w-lg w-full relative max-h-[90vh] overflow-y-auto">
+    <div x-show="editModalOpen" x-transition class="fixed inset-0 z-50 flex items-stretch sm:items-center sm:justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm" x-cloak>
+        <div @click.away="editModalOpen = false" class="glass-panel p-4 sm:p-6 rounded-none sm:rounded-2xl w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl relative overflow-y-auto">
             <button @click="editModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
                 <x-app-icon name="x" class="w-5 h-5" />
             </button>
