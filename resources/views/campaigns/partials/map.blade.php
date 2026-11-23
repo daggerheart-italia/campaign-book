@@ -361,7 +361,7 @@
          x-transition
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
          x-cloak>
-        <div @click.away="uploadModalOpen = false" class="glass-panel p-6 sm:p-8 rounded-2xl max-w-lg w-full relative">
+        <div @click.away="uploadModalOpen = false" class="glass-panel p-6 sm:p-8 rounded-2xl max-w-lg w-full relative max-h-[90vh] overflow-y-auto">
             <button @click="uploadModalOpen = false" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1" aria-label="Chiudi caricamento mappa">
                 <x-app-icon name="x" class="w-5 h-5" />
             </button>
