@@ -22,10 +22,10 @@
         <!-- CTA Buttons -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md mx-auto mb-16">
             <a href="{{ route('register') }}" class="btn-primary w-full sm:w-auto py-3 px-6 text-base">
-                <x-icon-label icon="arrow-right" label="Inizia Subito Gratis" />
+                <x-icon-label icon="arrow-right" label="Inizia Subito Gratis" showOnMobile="true" />
             </a>
             <a href="{{ route('login') }}" class="btn-secondary w-full sm:w-auto py-3 px-6 text-base">
-                <x-icon-label icon="log-in" label="Accedi al tuo Grimorio" />
+                <x-icon-label icon="log-in" label="Accedi al tuo Grimorio" showOnMobile="true" />
             </a>
         </div>
     </div>
