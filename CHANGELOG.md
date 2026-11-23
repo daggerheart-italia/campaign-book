@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.21] - 2026-11-23
+
+- fix(modal): adjust layout and styling for edit modal responsiveness (cedebda)
+- chore(changelog): add entries for version 0.1.20 (ca46ac8)
+
 ## [0.1.20] - 2026-11-23
 
 - Enhance modals by setting max height and enabling scroll for better usability (dc28bff)
