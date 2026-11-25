@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.22] - 2026-11-25
+
+- feat(category-filter): enhance category filter with scroll functionality and responsive design (da81712)
+- chore(changelog): add entries for version 0.1.21 (82e832d)
+
 ## [0.1.21] - 2026-11-23
 
 - fix(modal): adjust layout and styling for edit modal responsiveness (cedebda)
