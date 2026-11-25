@@ -27,19 +27,69 @@
         </div>
     </div>
 
-    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        <button @click="selectedCategory = 'all'"
-                :class="selectedCategory === 'all' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
-                class="px-3 py-1 rounded-full text-xs font-semibold border transition-all shrink-0">
-            Tutte (<span x-text="pages.length"></span>)
-        </button>
-        @foreach($categories as $category)
-            <button @click="selectedCategory = {{ Js::from($category) }}"
-                    :class="selectedCategory === {{ Js::from($category) }} ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
-                    class="px-3 py-1 rounded-full text-xs font-semibold border transition-all shrink-0">
-                {{ $category }} (<span x-text="pages.filter(page => page.category === {{ Js::from($category) }}).length"></span>)
+    <div x-data="{
+        canScrollLeft: false,
+        canScrollRight: false,
+        resizeObserver: null,
+        init() {
+            this.$nextTick(() => {
+                this.updateScrollIndicators();
+                this.resizeObserver = new ResizeObserver(() => this.updateScrollIndicators());
+                this.resizeObserver.observe(this.$refs.categoryFilters);
+            });
+        },
+        destroy() {
+            this.resizeObserver?.disconnect();
+        },
+        updateScrollIndicators() {
+            const element = this.$refs.categoryFilters;
+            if (!element) return;
+
+            this.canScrollLeft = element.scrollLeft > 2;
+            this.canScrollRight = element.scrollLeft + element.clientWidth < element.scrollWidth - 2;
+        },
+        scrollCategories(direction) {
+            this.$refs.categoryFilters.scrollBy({
+                left: direction * Math.max(160, this.$refs.categoryFilters.clientWidth * 0.7),
+                behavior: 'smooth',
+            });
+        },
+    }" class="relative">
+        <div x-ref="categoryFilters"
+             @scroll.passive="updateScrollIndicators()"
+             class="flex items-center gap-1.5 overflow-x-auto pb-1 snap-x snap-proximity scrollbar-none">
+            <button @click="selectedCategory = 'all'"
+                    :class="selectedCategory === 'all' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
+                    class="px-3 py-1 rounded-full text-xs font-semibold border transition-all shrink-0 snap-start">
+                Tutte (<span x-text="pages.length"></span>)
             </button>
-        @endforeach
+            @foreach($categories as $category)
+                <button @click="selectedCategory = {{ Js::from($category) }}"
+                        :class="selectedCategory === {{ Js::from($category) }} ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/5 text-slate-400 hover:text-white border-white/5'"
+                        class="px-3 py-1 rounded-full text-xs font-semibold border transition-all shrink-0 snap-start">
+                    {{ $category }} (<span x-text="pages.filter(page => page.category === {{ Js::from($category) }}).length"></span>)
+                </button>
+            @endforeach
+        </div>
+
+        <button type="button"
+                x-show="canScrollLeft"
+                x-transition.opacity
+                x-cloak
+                @click="scrollCategories(-1)"
+                aria-label="Scorri le categorie a sinistra"
+                class="absolute inset-y-0 left-0 flex w-10 items-center justify-start bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent">
+            <x-app-icon name="chevron-left" class="h-4 w-4 text-slate-400" />
+        </button>
+        <button type="button"
+                x-show="canScrollRight"
+                x-transition.opacity
+                x-cloak
+                @click="scrollCategories(1)"
+                aria-label="Scorri le categorie a destra"
+                class="absolute inset-y-0 right-0 flex w-10 items-center justify-end bg-gradient-to-l from-slate-950 via-slate-950/80 to-transparent">
+            <x-app-icon name="chevron-right" class="h-4 w-4 text-slate-400" />
+        </button>
     </div>
 
     <p x-show="!hasActiveFilter() && pages.some(page => !page.is_root)" class="text-[11px] text-slate-500">
